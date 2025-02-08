@@ -9,6 +9,10 @@
   <button id="readClipboardButton">读取剪贴板内容</button>
   <div id="clipboardContent"></div>
 
+  <div id="disableSelect">该区域禁止选中-JS</div>
+  <div class="disableSelect">该区域禁止选中-CSS</div>
+  <div>该区域可以选中</div>
+
   <script>
     document.getElementById("readClipboardButton").addEventListener("click", async () => {
       try {
@@ -18,6 +22,15 @@
         console.error("读取剪贴板失败:", error);
       }
     });
+
+    document.getElementById("disableSelect").addEventListener("selectstart", (event) => {
+      event.preventDefault();
+    });
   </script>
+  <style>
+    .disableSelect {
+      user-select: none;
+    }
+  </style>
 </body>
 </html>
