@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- 什么是默认行为？
+  某些 HTML 元素或事件具有浏览器预定义的默认行为。例如：
+
+  点击 <a> 标签会跳转到 href 指定的 URL。
+
+  点击表单的提交按钮（<button type="submit"> 或 <input type="submit">）会提交表单并刷新页面。
+
+  右键点击会弹出浏览器的上下文菜单。
+
+  e.preventDefault() 的作用就是阻止这些默认行为的发生。 -->
+
+    <a href="https://example.com" id="link">点击我</a>
+    <script>
+      document.getElementById("link").addEventListener("click", function (e) {
+        e.preventDefault(); // 阻止跳转
+        console.log("链接点击被阻止");
+      });
+    </script>
+
+    <form id="myForm">
+      <input type="text" name="username" required />
+      <button type="submit">提交</button>
+    </form>
+    <script>
+      document
+        .getElementById("myForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault(); // 阻止表单提交
+          console.log("表单提交被阻止");
+        });
+
+      document.addEventListener("contextmenu", function (e) {
+        e.preventDefault(); // 阻止右键菜单
+        console.log("右键菜单被阻止");
+      });
+
+      // e.preventDefault() 不会阻止事件冒泡：
+      // 阻止默认行为和阻止事件冒泡是两个不同的概念。
+      // 如果需要阻止事件冒泡，可以使用 e.stopPropagation()。
+
+      // 并非所有事件都可以取消默认行为。可以通过 e.cancelable 属性检查事件是否支持取消默认行为。
+
+      // if (e.cancelable) {
+      //   e.preventDefault(); // 只有可取消的事件才能调用
+      // }
+
+    </script>
+  </body>
+</html>

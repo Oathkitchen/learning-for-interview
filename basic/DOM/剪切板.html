@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard API Example</title>
+</head>
+<body>
+  <button id="readClipboardButton">读取剪贴板内容</button>
+  <div id="clipboardContent"></div>
+
+  <script>
+    document.getElementById("readClipboardButton").addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById("clipboardContent").textContent = "剪贴板内容: " + text;
+      } catch (error) {
+        console.error("读取剪贴板失败:", error);
+      }
+    });
+  </script>
+</body>
+</html>

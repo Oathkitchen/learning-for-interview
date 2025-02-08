@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <ul id="parent">
+      <li>Item 1</li>
+      <li>Item 2</li>
+      <li>Item 3</li>
+    </ul>
+
+    <script>
+      document.getElementById("parent").addEventListener("click", function (e) {
+        // e.currentTarget 始终是父元素 ul
+        console.log("currentTarget:", e.currentTarget.tagName); // 输出: UL
+
+        // e.target 是实际被点击的子元素（如 li）
+        console.log("target:", e.target.tagName); // 输出: LI（如果点击的是 li）
+
+        // 判断是否点击的是 li 元素
+        if (e.target.tagName === "LI") {
+          console.log("你点击了:", e.target.textContent);
+        }
+      });
+    </script>
+  </body>
+</html>

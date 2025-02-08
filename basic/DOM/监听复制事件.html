@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard Event Listener</title>
+</head>
+<body>
+  <textarea id="textArea" rows="5" cols="30">这是默认的文本，你可以尝试复制我。</textarea>
+  
+  <script>
+    document.getElementById('textArea').addEventListener('copy', (event) => {
+      event.preventDefault();
+
+      const customText = "这是你复制时看到的自定义内容！";
+      
+      // 将自定义内容放入剪贴板
+      event.clipboardData.setData('text/plain', customText);
+      console.log('复制事件触发，剪贴板内容已被替换为自定义内容');
+    });
+  </script>
+</body>
+</html>
