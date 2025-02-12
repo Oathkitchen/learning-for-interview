@@ -78,3 +78,48 @@ res.send(responseData);
 - **JSONP** 是一个解决跨域问题的技术，特别适用于需要从不同域获取数据的情况。
 - 它通过动态创建 `<script>` 标签的方式，利用 JavaScript 跨域加载的特性，绕过浏览器的同源策略限制。
 - 但是 JSONP 仅支持 **GET** 请求，且存在一些安全性问题，因此在现代 Web 开发中，通常推荐使用 **CORS**（跨域资源共享）替代 JSONP，尤其是在涉及 POST 请求或敏感数据时。
+
+--- 
+
+### **JSONP 完整实现**
+
+```javascript 
+
+function stringify(data) {
+  const pairs = Object.entries(data);
+  const qs = pairs
+    .map(([k, v]) => {
+      let noValue = false;
+      if (v === null || v === undefined || typeof v === "object") {
+        noValue = true;
+      }
+      return `${encodeURIComponent(k)}=${noValue ? "" : encodeURIComponent(v)}`;
+    })
+    .join("&");
+  return qs;
+}
+
+function jsonp({ url, onData, params }) {
+  const script = document.createElement("script");
+ 
+  // 一、为了避免全局污染，使用一个随机函数名
+  const cbFnName = `JSONP_PADDING_${Math.random().toString().slice(2)}`;
+ 
+  // 二、默认 callback 函数为 cbFnName
+  script.src = `${url}?${stringify({ callback: cbFnName, ...params })}`;
+ 
+  // 三、使用 onData 作为 cbFnName 回调函数，接收数据
+  window[cbFnName] = onData;
+ 
+  document.body.appendChild(script);
+}
+ 
+// 发送 JSONP 请求
+jsonp({
+  url: "http://localhost:10010",
+  params: { id: 10000 },
+  onData(data) {
+    console.log("Data:", data);
+  },
+});
+```
