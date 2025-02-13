@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DOMContentLoaded vs onload</title>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOMContentLoaded: DOM 已加载完成！");
+      });
+
+      window.onload = function () {
+        console.log("window.onload: 页面所有资源已加载完成！");
+      };
+    </script>
+  </head>
+  <body>
+    <h1>Hello, World!</h1>
+    <img src="https://images.unsplash.com/photo-1738584672973-f33b662c05d4?q=80&w=3003&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Large Image" id="img"/>
+    <script>
+      const img = document.getElementById("img")
+
+      // 监听图片加载完成事件
+      img.addEventListener("load", function () {
+        console.log("图片加载完成！");
+        console.log("图片尺寸:", img.width, "x", img.height);
+      });
+
+      // 监听图片加载失败事件
+      img.addEventListener("error", function () {
+        console.log("图片加载失败！");
+        img.src = "fallback-image.jpg"; // 加载备用图片
+      });
+    </script>
+  </body>
+</html>
