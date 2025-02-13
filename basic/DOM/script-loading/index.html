@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Module Script Example</title>
+  <script type="module" defer src="utils.js"></script>
+  <!-- 
+    多个 defer 脚本会按照它们在文档中出现的顺序执行
+    因此这里 main.js 引用了 utils.js 中的内容，所以 main.js 要放在下面
+  -->
+  <script type="module" defer src="main.js"></script>
+</head>
+<bod>
+  <img src="./asyncdefer.svg">
+  <h1>Hello, Modules!</h1>
+</body>
+</html>

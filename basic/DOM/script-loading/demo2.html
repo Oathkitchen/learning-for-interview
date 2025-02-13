@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title></title>
+  </head>
+  <body>
+    肯定是 start 开始，defer 在 DCL 之前，async 不一定，
+    <br>
+    如果 async 加载的快，就会在 defer 之前，如果 async 加载的慢，则甚至有可能在 DCL 之后。
+    <script src="./async.js" async></script>
+    <script src="./defer.js" defer></script>
+    <script>
+      console.log("Start");
+      window.onload = () => {
+        console.log('window onload')
+      }
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("DCL");
+      });
+    </script>
+  </body>
+</html>
