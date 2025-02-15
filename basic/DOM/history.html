@@ -11,6 +11,7 @@
     <button id="pushState">pushState url</button>
     <button id="pushStateHash">pushState hash</button>
     <button id="locationAssign">location.assign</button>
+    <button id="locationHash">location.hash</button>
     <script>
       let counter = 0;
       document.getElementById("back").addEventListener("click", () => {
@@ -29,6 +30,10 @@
       });
       document.getElementById("locationAssign").addEventListener("click", () => {
         window.location.assign("/basic/DOM/history.html/abc#" + counter);
+        counter++;
+      });
+      document.getElementById("locationHash").addEventListener("click", () => {
+        window.location.hash = counter;
         counter++;
       });
       window.addEventListener("popstate", (event) => {

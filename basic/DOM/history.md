@@ -190,6 +190,7 @@ window.addEventListener('popstate', (event) => {
 - `pushState()` 和 `replaceState()` 不会触发 `hashchange` 事件
 - 用户点击**前进/后退**按钮,会触发 `hashchange` 事件
 - `location.assign` 会使得浏览器直接向后端请求页面
+- `location.hash` 不会让浏览器请求后端，但可以触发 `hashchange` 事件
 
 ```js
 window.addEventListener('hashchange', () => {
