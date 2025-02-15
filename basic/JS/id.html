@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="location"></div>
+    <div id="test"></div>
+    <div id="str"></div>
+
+    <script>
+      // 还好这里 location 并没有被覆盖
+      console.log(location); // ⚠️ 可能会变成 <div> 元素，而不是 window.location
+      console.log(test); 
+      let str = 'hello world'
+      console.log(str)
+    </script>
+  </body>
+</html>
