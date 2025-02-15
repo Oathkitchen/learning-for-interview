@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      console.log("-------------Number API-------------");
+      console.log("Number.isNaN(NaN): " + Number.isNaN(NaN));
+      console.log("Number.MAX_SAFE_INTEGER: " + Number.MAX_SAFE_INTEGER);
+      console.log(
+        `(2 ** 53 - 1) === Number.MAX_SAFE_INTEGER: ${
+          2 ** 53 - 1 === Number.MAX_SAFE_INTEGER
+        }`
+      );
+      console.log("Number.isInteger(2 ** 53): " + Number.isInteger(2 ** 53));
+      console.log(
+        "Number.isSafeInteger(2 ** 53): " + Number.isSafeInteger(2 ** 53)
+      );
+      console.log("Number.isFinite(1.1): " + Number.isFinite(1.1));
+      console.log("123.456.toFixed(2): " + (123.456).toFixed(2));
+
+      console.log("-------------String API-------------");
+      console.log(
+        "String.fromCharCode(65, 66, 67): " + String.fromCharCode(65, 66, 67)
+      );
+      console.log(
+        "String.fromCharCode(0xd83c, 0xdf03): " +
+          String.fromCharCode(0xd83c, 0xdf03)
+      );
+      console.log(
+        "String.fromCodePoint(0x1f303): " + String.fromCodePoint(0x1f303)
+      );
+      console.log(
+        "String.fromCodePoint(0x1F600): " + String.fromCodePoint(0x1f600)
+      ); // "😀"
+      console.log(`simple string template: Hello\nWorld`);
+      console.log("String.raw: " + String.raw`Hello\nWorld`);
+
+      const translations = {
+        en: {
+          greeting: "Hello",
+          farewell: "Goodbye",
+        },
+        es: {
+          greeting: "Hola",
+          farewell: "Adiós",
+        },
+        fr: {
+          greeting: "Bonjour",
+          farewell: "Au revoir",
+        },
+      };
+
+      function i18n(strings, ...values) {
+        const lang = values[0]; // 获取语言代码
+        return strings.reduce((result, str, i) => {
+          const key = str.trim();
+          const translation = translations[lang][key] || key;
+          return result + translation;
+        }, "");
+      }
+
+      // 使用示例
+      const lang = "es"; // 假设当前语言是西班牙语
+      const greeting = i18n`${lang} greeting`;
+      const farewell = i18n`${lang} farewell`;
+
+      console.log(`i18n ${lang}: ${greeting}`); // 输出：Hola
+      console.log(`i18n ${lang}: ${farewell}`); // 输出：Adiós
+
+    </script>
+    <script src="./escapeHTML.js"></script>
+  </body>
+</html>

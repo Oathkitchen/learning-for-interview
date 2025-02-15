@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    七种 number bigint: 这个常常会忽略，最新加入的 string undefined null symbol bool
+
+    <button onclick="alertIsPrimitive(undefined)">undefined</button>
+
+    <script>
+      function isPrimitive(value) {
+        const type = typeof value;
+        console.log(type)
+        return (
+          type === "string" ||
+          type === "number" ||
+          type === "symbol" ||
+          type === "boolean" ||
+          type === "bigint" ||
+          value === null || 
+          value === undefined
+        );
+      }
+
+      function alertIsPrimitive(value) {
+        alert(isPrimitive(value))
+      }
+    </script>
+  </body>
+</html>
