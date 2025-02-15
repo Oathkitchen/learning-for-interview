@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="back">Go Back</button>
+    <button id="forward">Go forward</button>
+    <button id="pushState">pushState url</button>
+    <button id="pushStateHash">pushState hash</button>
+    <button id="locationAssign">location.assign</button>
+    <script>
+      let counter = 0;
+      document.getElementById("back").addEventListener("click", () => {
+        window.history.back();
+      });
+      document.getElementById("forward").addEventListener("click", () => {
+        window.history.forward();
+      });
+      document.getElementById("pushState").addEventListener("click", () => {
+        window.history.pushState({ name: "pushState", counter}, "pushState", "/basic/DOM/history.html/abc?counter=" + counter);
+        counter++;
+      });
+      document.getElementById("pushStateHash").addEventListener("click", () => {
+        window.history.pushState({ name: "pushState", counter}, "pushState", "/basic/DOM/history.html/abc/#" + counter);
+        counter++;
+      });
+      document.getElementById("locationAssign").addEventListener("click", () => {
+        window.location.assign("/basic/DOM/history.html/abc#" + counter);
+        counter++;
+      });
+      window.addEventListener("popstate", (event) => {
+        console.log("popstate event", event.state);
+      });
+      window.addEventListener("hashchange", (event) => {
+        console.log("hashchange event",event.newURL);
+      });
+    </script>
+  </body>
+</html>

@@ -174,10 +174,10 @@ history.replaceState({}, '', '/page2');  // 替换为 /page2
 
 ---
 
-## **5. `pushState()` 相关事件**
+## **5. `pushState()` 不会触发 `popstate` 事件**
 ### **(1) `popstate` 事件**
 - **触发时机**：用户点击**前进/后退**按钮。
-- **不会触发** `pushState()` 或 `replaceState()`。// TODO 找机会实验一下，然后更正
+- **不会触发**：`pushState()` 或 `replaceState()`。
 
 ```js
 window.addEventListener('popstate', (event) => {
@@ -187,7 +187,9 @@ window.addEventListener('popstate', (event) => {
 
 ### **(2) `hashchange` vs `popstate`**
 - `hashchange` 只适用于 `#` 变化（如 `example.com/#about`）。
-- `popstate` 适用于 `pushState()` 和 `replaceState()`。
+- `pushState()` 和 `replaceState()` 不会触发 `hashchange` 事件
+- 用户点击**前进/后退**按钮,会触发 `hashchange` 事件
+- `location.assign` 会使得浏览器直接向后端请求页面
 
 ```js
 window.addEventListener('hashchange', () => {
