@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 实现思路
+      // 遍历字符串的开头，找到第一个非空白字符的位置。
+      // 遍历字符串的结尾，找到最后一个非空白字符的位置。
+      // 使用 substring 方法返回去除两端空白字符的新字符串。
+
+      function trim(str) {
+        let start = 0;
+        let end = str.length - 1;
+
+        // 找到第一个非空白字符的位置
+        while (start <= end && /\s/.test(str[start])) {
+          start++;
+        }
+
+        // 找到最后一个非空白字符的位置
+        while (end >= start && /\s/.test(str[end])) {
+          end--;
+        }
+
+        // 返回去除两端空白字符的新字符串
+        return str.substring(start, end + 1);
+      }
+
+      // 测试示例
+      const greetings = "   Hello world!   ";
+      console.log("Original: '" + greetings + "'");
+      console.log("Trimmed: '" + trim(greetings) + "'");
+    </script>
+  </body>
+</html>

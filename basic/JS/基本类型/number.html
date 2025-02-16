@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      console.log("Number.isNaN(NaN): " + Number.isNaN(NaN));
+      console.log("Number.MAX_SAFE_INTEGER: " + Number.MAX_SAFE_INTEGER);
+      console.log(
+        `(2 ** 53 - 1) === Number.MAX_SAFE_INTEGER: ${
+          2 ** 53 - 1 === Number.MAX_SAFE_INTEGER
+        }`
+      );
+      console.log("Number.isInteger(2 ** 53): " + Number.isInteger(2 ** 53));
+      console.log(
+        "Number.isSafeInteger(2 ** 53): " + Number.isSafeInteger(2 ** 53)
+      );
+      console.log("Number.isFinite(1.1): " + Number.isFinite(1.1));
+      console.log("123.456.toFixed(2): " + (123.456).toFixed(2));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="./escapeHTML.js"></script>
+    <script>
+      console.log(
+        "String.fromCharCode(65, 66, 67): " + String.fromCharCode(65, 66, 67)
+      );
+      console.log(
+        "String.fromCharCode(0xd83c, 0xdf03): " +
+          String.fromCharCode(0xd83c, 0xdf03)
+      );
+      console.log(
+        "String.fromCodePoint(0x1f303): " + String.fromCodePoint(0x1f303)
+      );
+      console.log(
+        "String.fromCodePoint(0x1F600): " + String.fromCodePoint(0x1f600)
+      ); // "😀"
+      console.log(`simple string template: Hello\nWorld`);
+      console.log("String.raw: " + String.raw`Hello\nWorld`);
+
+      const translations = {
+        en: {
+          greeting: "Hello",
+          farewell: "Goodbye",
+        },
+        es: {
+          greeting: "Hola",
+          farewell: "Adiós",
+        },
+        fr: {
+          greeting: "Bonjour",
+          farewell: "Au revoir",
+        },
+      };
+
+      function i18n(strings, ...values) {
+        const lang = values[0]; // 获取语言代码
+        return strings.reduce((result, str, i) => {
+          const key = str.trim();
+          const translation = translations[lang][key] || key;
+          return result + translation;
+        }, "");
+      }
+
+      // 使用示例
+      const lang = "es"; // 假设当前语言是西班牙语
+      const greeting = i18n`${lang} greeting`;
+      const farewell = i18n`${lang} farewell`;
+
+      console.log(`i18n ${lang}: ${greeting}`); // 输出：Hola
+      console.log(`i18n ${lang}: ${farewell}`); // 输出：Adiós
+
+      // charAt() 方法总是将字符串作为 UTF-16 码元序列进行索引，因此它可能会返回孤项代理。
+      // 要获取给定索引处的完整 Unicode 码位，请使用 String.prototype.codePointAt() 和 String.fromCodePoint()。
+      const sentence = "The quick brown fox jumps over the lazy dog.";
+      const index = 4;
+      console.log(
+        `The character at index ${index} is ${sentence.charAt(index)}`
+      );
+
+      // charCodeAt() 方法总是将字符串当作 UTF-16 码元序列进行索引，因此它可能返回单独代理项（lone surrogate）。
+      // 如果要获取给定索引处的完整 Unicode 码位，请使用 String.prototype.codePointAt() 方法。
+      console.log(
+        `Character code ${sentence.charCodeAt(
+          index
+        )} is equal to ${sentence.charAt(index)}`
+      );
+      // Expected output: "Character code 113 is equal to q"
+
+      const icons = "😄😄";
+      console.log(
+        `The charCode at index 0 get by charCodeAt is ${icons.charCodeAt(0)}`
+      );
+      console.log(
+        `The charCode at index 0 get by codePointAt is ${icons.codePointAt(0)}`
+      );
+      console.log(
+        `The charCode at index 1 get by charCodeAt is ${icons.charCodeAt(1)}`
+      );
+      console.log(
+        `The charCode at index 1 get by codePointAt is ${icons.codePointAt(1)}`
+      );
+      console.log(
+        `The charCode at index 2 get by charCodeAt is ${icons.charCodeAt(2)}`
+      );
+      console.log(
+        `The charCode at index 2 get by codePointAt is ${icons.codePointAt(2)}`
+      );
+      console.log(
+        `The charCode at index 3 get by charCodeAt is ${icons.charCodeAt(3)}`
+      );
+      console.log(
+        `The charCode at index 3 get by codePointAt is ${icons.codePointAt(3)}`
+      );
+
+      // startsWith endsWith 区分大小写
+      const str = "To be, or not to be, that is the question.";
+      console.log("str: " + str);
+      console.log('str.startsWith("To be"): ' + str.startsWith("To be")); // true
+      console.log('str.startsWith("to be"): ' + str.startsWith("to be")); // false
+      console.log(
+        'str.startsWith("not to be", 10): ' + str.startsWith("not to be", 10)
+      ); // true
+      console.log('str.endsWith("question."): ' + str.endsWith("question.")); // true
+      console.log('str.endsWith("Question."): ' + str.endsWith("Question.")); // false
+      console.log('str.endsWith("to be", 19): ' + str.endsWith("to be", 19)); // true
+      console.log('str.includes("to be"): ' + str.includes("to be")); // true
+      console.log('str.includes("to Be"): ' + str.includes("to Be")); // false
+      console.log(
+        'str.includes("to be number one"): ' + str.includes("to be number one")
+      ); // true
+      console.log(
+        'str.includes("not to be", 10): ' + str.includes("not to be", 10)
+      ); // true
+
+      // indexof 区分大小写
+      let count = 0;
+      let position = str.indexOf("e");
+
+      while (position !== -1) {
+        count++;
+        position = str.indexOf("e", position + 1);
+      }
+
+      console.log(`ther are ${count} e in the str`); // 4
+
+      const greetings = "   Hello world!   ";
+
+      console.log("greetings: " + greetings);
+      console.log("greetings.trim(): " + greetings.trim());
+      console.log("greetings.trimStart(): " + greetings.trimStart());
+      console.log("greetings.trimEnd(): " + greetings.trimEnd());
+
+      const mood = "Happy! ";
+      console.log(`String.prototype.repeat: I feel ${mood.repeat(3)}`);
+
+      function replacer(match, p1, p2, p3, offset, string) {
+        // p1 是非数字，p2 是数字，且 p3 非字母数字
+        return [p1, p2, p3].join(" - ");
+      }
+      const newString = "abc12345#$*%".replace(
+        /([^\d]*)(\d*)([^\w]*)/,
+        replacer
+      );
+      console.log(newString); // abc - 12345 - #$*%
+
+      const re = /apples/gi;
+      const stra = "Apples are round, and apples are juicy.";
+      const newstr = stra.replace(re, "oranges");
+      console.log(newstr); // oranges are round, and oranges are juicy.
+
+      const res = /(\w+)\s(\w+)/;
+      const strb = "Maria Cruz";
+      const newstra = strb.replace(res, "$2, $1");
+      console.log(newstra); // Cruz, Maria
+
+      function styleHyphenFormat(propertyName) {
+        function upperToHyphenLower(match, offset, string) {
+          return (offset > 0 ? "-" : "") + match.toLowerCase();
+        }
+        return propertyName.replace(/[A-Z]/g, upperToHyphenLower);
+      }
+      console.log(styleHyphenFormat("borderTop")); // border-top
+
+      function f2c(x) {
+        function convert(str, p1, offset, s) {
+          return `${((p1 - 32) * 5) / 9}C`;
+        }
+        const s = String(x);
+        const test = /(-?\d+(?:\.\d*)?)F\b/g;
+        return s.replace(test, convert);
+      }
+
+      const test = /(-?\d+(?:\.\d*)?)F\b/g;
+      let str1 = "The temperature is 32F today.";
+      let str2 = "It was -10.5F last night.";
+      let str3 = "Water freezes at 0F.";
+      let str4 = "The temperature is 100.0F.";
+
+      console.log(str1.match(test)); // 输出: ["32F"]
+      console.log(str2.match(test)); // 输出: ["-10.5F"]
+      console.log(str3.match(test)); // 输出: ["0F"]
+      console.log(str4.match(test)); // 输出: ["100.0F"]
+
+      function addOffset(match, ...args) {
+        const hasNamedGroups = typeof args.at(-1) === "object";
+        const offset = hasNamedGroups ? args.at(-3) : args.at(-2);
+        return `${match} (${offset}) `;
+      }
+
+      console.log("abcd".replace(/(bc)/, addOffset)); // "abc (1) d"
+      console.log("abcd".replace(/(?<group>bc)/, addOffset)); // "abc (1) d"
+
+      // 与 replace() 不同，该方法将替换所有匹配的字符串，而不仅仅是第一个。
+      // 如果字符串不是静态已知的，那么这特别有用，因为调用 RegExp() 构造函数而不转义特殊字符可能会意外地改变它的语义。
+      function unsafeRedactName(text, name) {
+        return text.replace(new RegExp(name, "g"), "[REDACTED]");
+      }
+      function safeRedactName(text, name) {
+        return text.replaceAll(name, "[REDACTED]");
+      }
+
+      const report =
+        "A hacker called ha.*er used special characters in their name to breach the system.";
+
+      console.log(unsafeRedactName(report, "ha.*er")); // "A [REDACTED]s in their name to breach the system."
+      console.log(safeRedactName(report, "ha.*er")); // "A hacker called [REDACTED] used special characters in their name to breach the system."
+
+      // slice() 方法提取字符串的一部分，并将其作为新字符串返回，而不修改原始字符串。
+      const strSlice = "The quick brown fox jumps over the lazy dog.";
+
+      console.log(strSlice.slice(31));
+      // Expected output: "the lazy dog."
+
+      console.log(strSlice.slice(4, 19));
+      // Expected output: "quick brown fox"
+
+      console.log(strSlice.slice(-4));
+      // Expected output: "dog."
+
+      console.log(strSlice.slice(-9, -5));
+      // Expected output: "lazy"
+      console.log(strSlice.slice(-9, 39));
+      // Expected output: "lazy"
+      console.log(strSlice.slice(35, -5));
+      // Expected output: "lazy"
+
+      // 关于 String.prototype.split()
+      // 当空字符串（""）被用作分隔符时，字符串不是由用户感知的字符（grapheme cluster）或 unicode 字符（码位）分割，而是由 UTF-16 代码单位分割。这破坏了代理对
+      // 如果 separator 是一个匹配空字符串的正则表达式，匹配是由 UTF-16 码元（code unit）还是 Unicode 码位（code point）分割，取决于是否设置了 u 标志。
+      // 如果 separator 是包含捕获括号的正则表达式，则每次 separator 匹配时，捕获括号的结果（包括任何 undefined 的结果）将被拼接到输出数组中。
+      // 此行为是由正则表达式对象的 Symbol.split 方法指定的
+
+      console.log("😄😄".split(/(?:)/)); // [ "\ud83d", "\ude04", "\ud83d", "\ude04" ]
+      console.log("😄😄".split(/(?:)/u)); // [ "😄", "😄" ]
+
+      function splitString(stringToSplit, separator) {
+        const arrayOfStrings = stringToSplit.split(separator);
+
+        console.log("原始字符串为：", stringToSplit);
+        console.log("分隔符为：", separator);
+        console.log(
+          "分隔后的数组有",
+          arrayOfStrings.length,
+          "个元素：",
+          arrayOfStrings.join(" / ")
+        );
+      }
+
+      const tempestString = "Oh brave new world that has such people in it.";
+      const monthString = "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec";
+
+      const space = " ";
+      const comma = ",";
+
+      splitString(tempestString, space);
+      splitString(tempestString);
+      splitString(monthString, comma);
+
+      const names =
+        "Harry Trump ;Fred Barney; Helen Rigby ; Bill Abel ;Chris Hand ";
+
+      console.log(names);
+
+      const re1 = /\s*(?:;|$)\s*/;
+      const nameList = names.split(re1);
+
+      console.log(nameList);
+
+      let str11 = "hello ; world";
+      let str21 = "hello;world";
+      let str31 = "hello ;";
+      let str41 = "hello";
+
+      console.log(str11.split(re1)); // 输出: ["hello", "world"]
+      console.log(str21.split(re1)); // 输出: ["hello", "world"]
+      console.log(str31.split(re1)); // 输出: ["hello", ""]
+      console.log(str41.split(re1)); // 输出: ["hello"]
+
+      const myString = "Hello World. How are you doing?";
+      const splits = myString.split(" ", 3);
+
+      console.log(splits);
+
+      // 如果 separator 包含捕获括号 ( )，则其匹配结果将会包含在返回的数组中。
+
+      const myString1 = "Hello 1 word. Sentence number 2.";
+      const splits1 = myString1.split(/(\d)/);
+
+      console.log(splits1);
+      // [ "Hello ", "1", " word. Sentence number ", "2", "." ]
+
+      // 一个包含 Symbol.split 方法的对象可以用作分割器，可以自定义分割行为。
+      const splitByNumber = {
+        [Symbol.split](str) {
+          let num = 1;
+          let pos = 0;
+          const result = [];
+          while (pos < str.length) {
+            const matchPos = str.indexOf(num, pos);
+            if (matchPos === -1) {
+              result.push(str.substring(pos));
+              break;
+            }
+            result.push(str.substring(pos, matchPos));
+            pos = matchPos + String(num).length;
+            num++;
+          }
+          return result;
+        },
+      };
+
+      const myString2 = "a1bc2c5d3e4f5asdf6sdf7asdf8asdf9asdf10asdf11fdsa";
+      console.log(myString2.split(splitByNumber));
+
+      // 下面的示例使用一个内部状态来强制执行某些行为，并确保产生一个“有效”的结果。 
+      const DELIMITER = ";";
+
+      // 分割命令，移除任何不合法或不需要的值
+      const splitCommands = {
+        [Symbol.split](str, lim) {
+          const results = [];
+          const state = {
+            on: false,
+            brightness: {
+              current: 2,
+              min: 1,
+              max: 3,
+            },
+          };
+          let pos = 0;
+          let matchPos = str.indexOf(DELIMITER, pos);
+
+          while (matchPos !== -1) {
+            const subString = str.slice(pos, matchPos).trim();
+
+            switch (subString) {
+              case "light on":
+                // 如果 `on` 状态已经为 true，什么都不做。
+                if (!state.on) {
+                  state.on = true;
+                  results.push(subString);
+                }
+                break;
+
+              case "light off":
+                // 如果 `on` 状态已经为 false，什么都不做。
+                if (state.on) {
+                  state.on = false;
+                  results.push(subString);
+                }
+                break;
+
+              case "brightness up":
+                // 亮度有一个最大值检查
+                if (state.brightness.current < state.brightness.max) {
+                  state.brightness.current += 1;
+                  results.push(subString);
+                }
+                break;
+
+              case "brightness down":
+                // 亮度有一个最小值检查
+                if (state.brightness.current > state.brightness.min) {
+                  state.brightness.current -= 1;
+                  results.push(subString);
+                }
+                break;
+            }
+
+            if (results.length === lim) {
+              break;
+            }
+
+            pos = matchPos + DELIMITER.length;
+            matchPos = str.indexOf(DELIMITER, pos);
+          }
+
+          // 如果到达分割极限 `lim`，不要添加剩下的命令
+          if (results.length < lim) {
+            results.push(str.slice(pos).trim());
+          }
+          return results;
+        },
+      };
+
+      const commands =
+        "light on; brightness up; brightness up; brightness up; light on; brightness down; brightness down; light off";
+      console.log(commands.split(splitCommands, 3)); // ["light on", "brightness up", "brightness down"]
+    </script>
+  </body>
+</html>
