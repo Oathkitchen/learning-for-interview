@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // Object.keys() 静态方法返回一个由给定对象自身的可枚举的字符串键属性名组成的数组。
+      // Object.keys() 返回一个数组，其元素是字符串，对应于直接在对象上找到的可枚举的字符串键属性名。
+      // 这与使用 for...in 循环迭代相同，只是 for...in 循环还会枚举原型链中的属性。
+      // Object.keys() 返回的数组顺序和与 for...in 循环提供的顺序相同。
+      // 简单数组
+      const arr = ["a", "b", "c"];
+      console.log(Object.keys(arr)); // ['0', '1', '2']
+
+      // 类数组对象
+      const obj = { 0: "a", 1: "b", 2: "c" };
+      console.log(Object.keys(obj)); // ['0', '1', '2']
+
+      // 键的顺序随机的类数组对象
+      const anObj = { 100: "a", 2: "b", 7: "c" };
+      console.log(Object.keys(anObj)); // ['2', '7', '100']
+
+      // getFoo 是一个不可枚举的属性
+      const myObj = Object.create(
+        {},
+        {
+          getFoo: {
+            value() {
+              return this.foo;
+            },
+          },
+        }
+      );
+      myObj.foo = 1;
+      console.log(Object.keys(myObj)); // ['foo']
+
+      // 如果你想要所有以字符串为键的自有属性，包括不可枚举的属性，参见 Object.getOwnPropertyNames()。
+
+      // Object.values() 静态方法返回一个给定对象的自有可枚举字符串键属性值组成的数组。
+
+      // Object.entries() 静态方法返回一个数组，包含给定对象自有的可枚举字符串键属性的键值对。
+      const object1 = {
+        a: "somestring",
+        b: 42,
+      };
+
+      for (const [key, value] of Object.entries(object1)) {
+        console.log(`${key}: ${value}`);
+      }
+
+      // Map() 构造函数接受一个 entries 可迭代对象。使用 Object.entries，你可以很容易地将 Object 转换成 Map：
+      const obj = { foo: "bar", baz: 42 };
+      const map = new Map(Object.entries(obj));
+      console.log(map); // Map(2) {"foo" => "bar", "baz" => 42}
+
+      // 使用 for...of 循环
+      const obj = { a: 5, b: 7, c: 9 };
+      for (const [key, value] of Object.entries(obj)) {
+        console.log(`${key} ${value}`); // "a 5", "b 7", "c 9"
+      }
+
+      // 使用数组方法
+      Object.entries(obj).forEach(([key, value]) => {
+        console.log(`${key} ${value}`); // "a 5", "b 7", "c 9"
+      });
+
+      // Object.fromEntries() 静态方法将键值对列表转换为一个对象。
+      const entries = new Map([
+        ["foo", "bar"],
+        ["baz", 42],
+      ]);
+
+      const obj = Object.fromEntries(entries);
+
+      console.log(obj);
+
+      const arr = [
+        ["0", "a"],
+        ["1", "b"],
+        ["2", "c"],
+      ];
+      const obj = Object.fromEntries(arr);
+      console.log(obj); // { 0: "a", 1: "b", 2: "c" }
+
+      const object1 = { a: 1, b: 2, c: 3 };
+
+      const object2 = Object.fromEntries(
+        Object.entries(object1).map(([key, val]) => [key, val * 2])
+      );
+
+      console.log(object2);
+      // { a: 2, b: 4, c: 6 }
+
+      // Object.is() 静态方法确定两个值是否为相同值。
+      console.log(Object.is("1", 1));
+      // Expected output: false
+
+      console.log(Object.is(NaN, NaN));
+      // Expected output: true
+
+      console.log(Object.is(-0, 0));
+      // Expected output: false
+
+      const obj = {};
+      console.log(Object.is(obj, {}));
+      // Expected output: false
+
+      // Object.is() 确定两个值是否为相同值。如果以下其中一项成立，则两个值相同：
+      // 都是 undefined
+      // 都是 null
+      // 都是 true 或者都是 false
+      // 都是长度相同、字符相同、顺序相同的字符串
+      // 都是相同的对象（意味着两个值都引用了内存中的同一对象）
+      // 都是 BigInt 且具有相同的数值
+      // 都是 symbol 且引用相同的 symbol 值
+      // 都是数字且
+      //  都是 +0
+      //  都是 -0
+      //  都是 NaN
+      //  都有相同的值，非零且都不是 NaN
+
+      // Object.is() 与 == 运算符并不等价。== 运算符在测试相等性之前，会对两个操作数进行类型转换（如果它们不是相同的类型），这可能会导致一些非预期的行为，
+      // 例如 "" == false 的结果是 true，但是 Object.is() 不会对其操作数进行类型转换。
+
+      // Object.is() 也不等价于 === 运算符。Object.is() 和 === 之间的唯一区别在于它们处理带符号的 0 和 NaN 值的时候。
+      // === 运算符（和 == 运算符）将数值 -0 和 +0 视为相等，但是会将 NaN 视为彼此不相等。
+
+      // Object.getOwnPropertyNames() 静态方法返回一个数组，其包含给定对象中所有自有属性（包括不可枚举属性，但不包括使用 symbol 值作为名称的属性）。
+      // 如果你只想获取可枚举属性，请参见 Object.keys() 或使用 for...in 循环（请注意，这也将返回对象原型链中找到的可枚举属性，除非使用 hasOwn() 过滤）。
+
+      // Object.getPrototypeOf() 静态方法返回指定对象的原型（即内部 [[Prototype]] 属性的值）。
+      const prototype1 = {};
+      const object1 = Object.create(prototype1);
+
+      console.log(Object.getPrototypeOf(object1) === prototype1);
+      // Expected output: true
+
+      // Object.getOwnPropertyDescriptor() 静态方法返回一个对象，该对象描述给定对象上特定属性（即直接存在于对象上而不在对象的原型链中的属性）的配置。
+      // 返回的对象是可变的，但对其进行更改不会影响原始属性的配置。
+
+      const object1 = {
+        property1: 42,
+      };
+
+      const descriptor1 = Object.getOwnPropertyDescriptor(object1, "property1");
+
+      console.log(descriptor1.configurable);
+      // Expected output: true
+
+      console.log(descriptor1.value);
+      // Expected output: 42
+    </script>
+  </body>
+</html>

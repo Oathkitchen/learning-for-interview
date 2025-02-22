@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // Object.create() 静态方法以一个现有对象作为原型，创建一个新对象。
+
+      // 下面的例子演示了如何使用 Object.create() 来实现类式继承。这是一个所有版本 JavaScript 都支持的单继承。
+      // Shape——父类
+      function Shape() {
+        this.x = 0;
+        this.y = 0;
+      }
+
+      // 父类方法
+      Shape.prototype.move = function (x, y) {
+        this.x += x;
+        this.y += y;
+        console.info("Shape moved.");
+      };
+
+      // Rectangle——子类
+      function Rectangle() {
+        Shape.call(this); // 调用父类构造函数。
+      }
+
+      // 子类继承父类
+      Rectangle.prototype = Object.create(Shape.prototype, {
+        // 如果不将 Rectangle.prototype.constructor 设置为 Rectangle，
+        // 它将采用 Shape（父类）的 prototype.constructor。
+        // 为避免这种情况，我们将 prototype.constructor 设置为 Rectangle（子类）。
+        constructor: {
+          value: Rectangle,
+          enumerable: false,
+          writable: true,
+          configurable: true,
+        },
+      });
+
+      const rect = new Rectangle();
+
+      console.log("rect 是 Rectangle 类的实例吗？", rect instanceof Rectangle); // true
+      console.log("rect 是 Shape 类的实例吗？", rect instanceof Shape); // true
+      rect.move(1, 1); // 打印 'Shape moved.'
+
+      let o = Object.create(null);
+      // 等价于：
+      o = { __proto__: null };
+
+      // Object.assign() 静态方法将一个或者多个源对象中所有可枚举的自有属性复制到目标对象，并返回修改后的目标对象。
+      // Object.assign(target, ...sources)
+
+      // 如果要将属性定义（包括它们的可枚举性）复制到原型中，则应改用 Object.getOwnPropertyDescriptor() 和 Object.defineProperty() 方法。
+      // 字符串和 Symbol 类型属性都会被复制。
+      // 针对深拷贝，需要使用其他办法，因为 Object.assign() 只复制属性值。
+
+      const o1 = { a: 1 };
+      const o2 = { b: 2 };
+      const o3 = { c: 3 };
+
+      const obj = Object.assign(o1, o2, o3);
+      console.log(obj); // { a: 1, b: 2, c: 3 }
+      console.log(o1); // { a: 1, b: 2, c: 3 }，目标对象本身发生了变化
+      console.log(o2); // { b: 2 }
+
+      // 原型链上的属性和不可枚举的属性不能被复制
+      const obj3 = Object.create(
+        // foo 在 obj 的原型链上
+        { foo: 1 },
+        {
+          bar: {
+            value: 2, // bar 是不可枚举的属性
+          },
+          baz: {
+            value: 3,
+            enumerable: true, // baz 是可枚举的自有属性
+          },
+        }
+      );
+
+      const copy = Object.assign({}, obj3);
+      console.log(copy); // { baz: 3 }
+
+      // 基本类型会被封装为对象
+      const v1 = "abc";
+      const v2 = true;
+      const v3 = 10;
+      const v4 = Symbol("foo");
+
+      const obj4 = Object.assign({}, v1, null, v2, undefined, v3, v4);
+      // 基本类型将被封装，null 和 undefined 将被忽略。
+      // 注意，只有字符串封装对象才拥有可枚举的自有属性。
+      console.log(obj4); // { "0": "a", "1": "b", "2": "c" }
+
+      // 异常会中断后续的复制
+      const target = Object.defineProperty({}, "foo", {
+        value: 1,
+        writable: false,
+      }); // target.foo 是一个只读属性
+
+      Object.assign(
+        target,
+        { bar: 2 },
+        { foo2: 3, foo: 3, foo3: 3 },
+        { baz: 4 }
+      );
+      // TypeError: "foo" is read-only
+      // 这个异常会在给 target.foo 赋值的时候抛出
+
+      console.log(target.bar); // 2，第一个源对象成功复制。
+      console.log(target.foo2); // 3，第二个源对象的第一个属性也成功复制。
+      console.log(target.foo); // 1，异常在这里被抛出
+      console.log(target.foo3); // undefined，属性赋值已经结束，foo3 不会被复制
+      console.log(target.baz); // undefined，第三个源对象也不会被复制
+
+      const obj2 = {
+        foo: 1,
+        get bar() {
+          return 2;
+        },
+      };
+
+      let copy2 = Object.assign({}, obj2);
+      console.log(copy2);
+      // { foo: 1, bar: 2 }
+      // copy.bar 的值是 obj.bar 的 getter 的返回值。
+
+      // 这是一个将完整描述符复制的赋值函数
+      function completeAssign(target, ...sources) {
+        sources.forEach((source) => {
+          const descriptors = Object.keys(source).reduce((descriptors, key) => {
+            descriptors[key] = Object.getOwnPropertyDescriptor(source, key);
+            return descriptors;
+          }, {});
+
+          // 默认情况下，Object.assign 也会复制可枚举的 Symbol 属性
+          Object.getOwnPropertySymbols(source).forEach((sym) => {
+            const descriptor = Object.getOwnPropertyDescriptor(source, sym);
+            if (descriptor.enumerable) {
+              descriptors[sym] = descriptor;
+            }
+          });
+          Object.defineProperties(target, descriptors);
+        });
+        return target;
+      }
+
+      copy3 = completeAssign({}, obj2);
+      console.log(copy3);
+      // { foo:1, get bar() { return 2 } }
+
+      // Object.defineProperties() 静态方法直接在一个对象上定义新的属性或修改现有属性，并返回该对象。
+      // 数据描述符和访问器描述符可以包含以下可选键：
+      //    configurable:如果此属性描述符的类型可以更改并且属性可以从相应的对象中删除，则为 true。默认为 false。
+      //    enumerable:如果此属性在枚举相应对象的属性时应显示出来，则为 true。默认为 false。
+      // 数据描述符还具有以下可选键：
+      //    value:与属性关联的值。可以是任何有效的 JavaScript 值（数字、对象、函数等）。默认为 undefined。
+      //    writable: 如果与属性关联的值可以使用赋值运算符更改，则为 true。默认为 false。
+      // 访问器描述符还具有以下可选键：
+      //    get:作为该属性的 getter 函数，如果没有 getter 则为 undefined。函数返回值将被用作属性的值。默认为 undefined。
+      //    set:作为该属性的 setter 函数，如果没有 setter 则为 undefined。该函数将只接收一个参数，即被分配给属性的新值。默认为 undefined。
+      // 如果一个属性描述符没有 value、writable、get、set 键中的任何一个，那么它被视为一个数据描述符。
+      // 如果一个属性描述符同时具有 value 或 writable 和 get 或 set 键中的任意一个组合，就会抛出异常。
+
+      const obj1 = {};
+      Object.defineProperties(obj1, {
+        property1: {
+          value: true,
+          writable: true,
+        },
+        property2: {
+          value: "Hello",
+          writable: false,
+        },
+        // 等等……
+      });
+
+      // Object.defineProperty() 静态方法会直接在一个对象上定义一个新属性，或修改其现有属性，并返回此对象。
+      // 默认情况下，使用 Object.defineProperty() 添加的属性是不可写、不可枚举和不可配置的。
+      // 数据描述符是一个具有可写或不可写值的属性。访问器描述符是由 getter/setter 函数对描述的属性。描述符只能是这两种类型之一，不能同时为两者。
+      // configurable 特性控制属性是否可以从对象中删除以及其特性（除了 value 和 writable）是否可以更改。
+      const object1 = {};
+
+      Object.defineProperty(object1, "property1", {
+        value: 42,
+        writable: false,
+      });
+
+      object1.property1 = 77;
+      // Throws an error in strict mode
+
+      console.log(object1.property1);
+      // Expected output: 42
+
+      const oo = {};
+      debugger;
+      Object.defineProperty(oo, "b", {
+        writable: true,
+        configurable: false,
+      });
+      console.log(oo.b); // undefined
+      Object.defineProperty(oo, "b", {
+        value: 1,
+      }); // 即使 configurable 为 false，因为对象是可写的，我们仍然可以替换属性的值。
+      console.log(oo.b); // 1
+      oo.b = 2; // 我们也可以使用赋值运算符来更改属性的值
+      console.log(oo.b); // 2
+      // 切换属性的可写性
+      Object.defineProperty(oo, "b", {
+        writable: false,
+      });
+      Object.defineProperty(oo, "b", {
+        value: 1,
+      }); // TypeError: because the property is neither writable nor configurable, it cannot be modified
+      // 此时，无法再次修改属性 'b' 或者恢复它的可写性。
+
+      // 这个示例演示了一个可配置但不可写的数据属性。该属性的 value 仍然可以使用 defineProperty 进行替换（但不能使用赋值运算符），并且 writable 特性仍然可以切换。
+      const o = {};
+      Object.defineProperty(o, "b", {
+        writable: false,
+        configurable: true,
+      });
+      Object.defineProperty(o, "b", {
+        value: 1,
+      }); // 我们可以使用 defineProperty 方法替换属性的值
+      console.log(o.b); // 1
+      o.b = 2; // 在严格模式下抛出 TypeError：cannot change a non-writable property's value with assignment
+
+      // 这个示例演示了一个不可配置且不可写的数据属性。无法更新该属性的任何特性，包括它的 value 值。
+      const o = {};
+      Object.defineProperty(o, "b", {
+        writable: false,
+        configurable: false,
+      });
+      Object.defineProperty(o, "b", {
+        value: 1,
+      }); // TypeError: the property cannot be modified because it is neither writable nor configurable.
+
+      const o = {};
+
+      o.a = 1;
+      // 等价于：
+      Object.defineProperty(o, "a", {
+        value: 1,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+
+      // 另一种情况
+      Object.defineProperty(o, "a", { value: 1 });
+      // 等价于：
+      Object.defineProperty(o, "a", {
+        value: 1,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      });
+
+      function Archiver() {
+        let temperature = null;
+        const archive = [];
+
+        Object.defineProperty(this, "temperature", {
+          get() {
+            console.log("get!");
+            return temperature;
+          },
+          set(value) {
+            temperature = value;
+            archive.push({ val: temperature });
+          },
+        });
+
+        this.getArchive = () => archive;
+      }
+
+      const arc = new Archiver();
+      arc.temperature; // 'get!'
+      arc.temperature = 11;
+      arc.temperature = 13;
+      arc.getArchive(); // [{ val: 11 }, { val: 13 }]
+
+      function MyClass() {}
+
+      let value;
+      Object.defineProperty(MyClass.prototype, "x", {
+        get() {
+          return value;
+        },
+        set(x) {
+          value = x;
+        },
+      });
+
+      const a = new MyClass();
+      const b = new MyClass();
+      a.x = 1;
+      console.log(b.x); // 1
+
+      function MyClass() {}
+
+      Object.defineProperty(MyClass.prototype, "x", {
+        get() {
+          return this.storedX;
+        },
+        set(x) {
+          this.storedX = x;
+        },
+      });
+
+      const a = new MyClass();
+      const b = new MyClass();
+      a.x = 1;
+      console.log(b.x); // undefined
+
+      function MyClass() {}
+
+      MyClass.prototype.x = 1;
+      Object.defineProperty(MyClass.prototype, "y", {
+        writable: false,
+        value: 1,
+      });
+
+      const a = new MyClass();
+      a.x = 2;
+      console.log(a.x); // 2
+      console.log(MyClass.prototype.x); // 1
+      a.y = 2; // 没有作用；严格模式下会报错
+      console.log(a.y); // 1
+      console.log(MyClass.prototype.y); // 1
+    </script>
+  </body>
+</html>
