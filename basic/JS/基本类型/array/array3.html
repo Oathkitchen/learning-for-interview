@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // forEach() 不会改变其调用的数组，但是，作为 callbackFn 的函数可以更改数组。请注意，在第一次调用 callbackFn 之前，数组的长度已经被保存。因此：
+
+      // 当调用 forEach() 时，callbackFn 不会访问超出数组初始长度的任何元素。
+      // 已经访问过的索引的更改不会导致 callbackFn 再次调用它们。
+      // 如果 callbackFn 更改了数组中已经存在但尚未访问的元素，则传递给 callbackFn 的值将是在访问该元素时的值。已经被删除的元素不会被访问。
+
+      // forEach() 期望的是一个同步函数，它不会等待 Promise 兑现。在使用 Promise（或异步函数）作为 forEach 回调时，请确保你意识到这一点可能带来的影响。
+      const ratings = [5, 4, 5];
+      let sum = 0;
+
+      const sumFunction = async (a, b) => a + b;
+
+      ratings.forEach(async (rating) => {
+        sum = await sumFunction(sum, rating);
+      });
+
+      console.log(sum);
+      // 期望的输出：14
+      // 实际的输出：0
+
+      // 举个勉强的例子，按照每个数组中的元素值，更新一个对象的属性：
+      class Counter {
+        constructor() {
+          this.sum = 0;
+          this.count = 0;
+        }
+        add(array) {
+          // 只有函数表达式才有自己的 this 绑定
+          array.forEach(function countEntry(entry) {
+            this.sum += entry;
+            ++this.count;
+          }, this);
+        }
+      }
+
+      const obj = new Counter();
+      obj.add([2, 5, 9]);
+      console.log(obj.count); // 3
+      console.log(obj.sum); // 16
+
+      const copy = (obj) => {
+        const copy = Object.create(Object.getPrototypeOf(obj));
+        const propNames = Object.getOwnPropertyNames(obj);
+        propNames.forEach((name) => {
+          const desc = Object.getOwnPropertyDescriptor(obj, name);
+          Object.defineProperty(copy, name, desc);
+        });
+        return copy;
+      };
+
+      const obj1 = { a: 1, b: 2 };
+      const obj2 = copy(obj1); // 现在 obj2 看起来和 obj1 一模一样了
+
+      const words = ["one", "two", "three", "four"];
+      words.forEach((word) => {
+        console.log(word);
+        if (word === "two") {
+          words.shift(); //'one' 将从数组中删除
+        }
+      }); // one // two // four
+
+      console.log(words); // ['two', 'three', 'four']
+
+      const flatten = (arr) => {
+        const result = [];
+        arr.forEach((item) => {
+          if (Array.isArray(item)) {
+            result.push(...flatten(item));
+          } else {
+            result.push(item);
+          }
+        });
+        return result;
+      };
+
+      // 用例
+      const nested = [1, 2, 3, [4, 5, [6, 7], 8, 9]];
+      console.log(flatten(nested)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+      // filter() 方法创建给定数组一部分的浅拷贝，其包含通过所提供函数实现的测试的所有元素。
+
+      // every() 方法测试一个数组内的所有元素是否都能通过指定函数的测试。它返回一个布尔值。
+      // every 和数学中的全称量词"任意（∀）"类似。特别的，对于空数组，它只返回 true。（这种情况属于无条件正确，因为空集的所有元素都符合给定的条件。）
+
+      let arr = [1, 2, 3, 4];
+      arr.every((elem, index, arr) => {
+        arr[index + 1]--;
+        console.log(`[${arr}][${index}] -> ${elem}`);
+        return elem < 2;
+      });
+
+      // some() 方法测试数组中是否至少有一个元素通过了由提供的函数实现的测试。
+      // 如果在数组中找到一个元素使得提供的函数返回 true，则返回 true；否则返回 false。它不会修改数组。
+      // some() 类似于数学中的“存在量词（∃）”。特别地，在对于一个空数组，任何条件下它都返回 false。
+
+      // flat() 方法创建一个新的数组，并根据指定深度递归地将所有子数组元素拼接到新的数组中。
+      // flat() 方法属于复制方法。它不会改变 this 数组，而是返回一个浅拷贝，该浅拷贝包含了原始数组中相同的元素。
+      const arr1 = ["it's Sunny in", "", "California"];
+
+      arr1.map((x) => x.split(" "));
+      // [["it's","Sunny","in"],[""],["California"]]
+
+      arr1.flatMap((x) => x.split(" "));
+      // ["it's","Sunny","in", "", "California"]
+
+      // 假设我们想要删除所有负数，并将奇数拆分成偶数和 1
+      const a = [5, 4, -3, 20, 17, -33, -4, 18];
+      //         |\  \  x   |  | \   x   x   |
+      //        [4,1, 4,   20, 16, 1,       18]
+
+      const result = a.flatMap((n) => {
+        if (n < 0) {
+          return [];
+        }
+        return n % 2 === 0 ? [n] : [n - 1, 1];
+      });
+      console.log(result); // [4, 1, 4, 20, 16, 1, 18]
+    </script>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- slice() 方法返回一个新的数组对象，这一对象是一个由 start 和 end 决定的原数组的浅拷贝（包括 start，不包括 end），其中 start 和 end 代表了数组元素的索引。原始数组不会被改变。 -->
+    <!-- 如果索引是负数，则从数组末尾开始计算——如果 start/end < 0，则使用 start/end + array.length -->
+    <!-- slice() 方法经常与 bind() 和 call() 一起使用，用于创建一个实用方法，将类数组对象转换为数组。 -->
+    <script>
+      // 调用 slice() 方法时，会将 this 对象作为第一个参数传入
+      const slice = Function.prototype.call.bind(Array.prototype.slice);
+
+      function list() {
+        return slice(arguments);
+      }
+
+      const list1 = list(1, 2, 3); // [1, 2, 3]
+      console.log(list1);
+
+      // 如果源数组是稀疏数组，slice() 方法返回的数组也会是稀疏数组。
+      console.log([1, 2, , 4, 5].slice(1, 4)); // [2, empty, 4]
+
+      // 判断稀疏数组
+      function isSparseArray(arr) {
+        let count = 0;
+        for (let i = 0; i < arr.length; i++) {
+          if (Object.prototype.hasOwnProperty.call(arr, i)) {
+            count++;
+          }
+        }
+        return count < arr.length;
+      }
+
+      // 测试示例
+      const sparseArray = new Array(5);
+      sparseArray[2] = "value";
+      console.log(isSparseArray(sparseArray)); // 输出: true
+
+      const denseArray = [1, 2, 3];
+      console.log(isSparseArray(denseArray)); // 输出: false
+
+      // splice() 方法就地移除或者替换已存在的元素和/或添加新的元素。此方法会修改原数组。
+      // 语法
+      // splice(start)
+      // splice(start, deleteCount)
+      // splice(start, deleteCount, item1)
+      // splice(start, deleteCount, item1, item2, /* …, */ itemN)
+      // 返回值
+      //   一个包含了删除的元素的数组。
+      //   如果只移除一个元素，则返回一个元素的数组。
+      //   如果没有删除任何元素，则返回一个空数组。
+
+      // 负索引从数组末尾开始计算——如果 -buffer.length <= start < 0，使用 start + array.length
+
+      // splice() 方法读取 this 的 length 属性。然后，它根据需要更新整数键属性和 length 属性。
+      const arrayLike = {
+        length: 3,
+        unrelated: "foo",
+        0: 5,
+        2: 4,
+      };
+      console.log(Array.prototype.splice.call(arrayLike, 0, 1, 2, 3));
+      // [ 5 ]
+      console.log(arrayLike);
+      // { '0': 2, '1': 3, '3': 4, length: 4, unrelated: 'foo' }
+
+      // Array 实例的 toSpliced() 方法是 splice() 方法的复制版本。它返回一个新数组，并在给定的索引处删除和/或替换了一些元素。
+      // toSpliced() 方法不会产生稀疏数组。如果原始数组是稀疏的，在新数组中空槽将会被替换成 undefined。
+
+      // sort() 方法就地对数组的元素进行排序，并返回对相同数组的引用。默认排序是将元素转换为字符串，然后按照它们的 UTF-16 码元值升序排序。
+      // 如果想要不改变原数组的排序方法，可以使用 toSorted()。
+
+      // reverse() 方法就地反转数组中的元素，并返回同一数组的引用。数组的第一个元素会变成最后一个，数组的最后一个元素变成第一个。换句话说，数组中的元素顺序将被翻转，变为与之前相反的方向。
+      // 要在不改变原始数组的情况下反转数组中的元素，使用 toReversed()。
+      // reverse() 方法返回对原始数组的引用，因此改变返回的数组也会改变原始数组。
+
+      const numbers = [3, 2, 4, 1, 5];
+      // [...numbers] 创建一个浅拷贝，因此 reverse() 不会改变原始数据
+      const reverted = [...numbers].reverse();
+      reverted[0] = 5;
+      console.log(numbers[0]); // 3
+
+      // indexOf() 方法返回数组中第一次出现给定元素的下标，如果不存在则返回 -1。
+      // indexOf() 使用严格相等（与 === 运算符使用的算法相同）将 searchElement 与数组中的元素进行比较。NaN 值永远不会被比较为相等，因此当 searchElement 为 NaN 时 indexOf() 总是返回 -1。
+      // 找出指定元素出现的所有位置
+      const indices = [];
+      const array = ["a", "b", "a", "c", "a", "d"];
+      const element = "a";
+      let idx = array.indexOf(element);
+      while (idx !== -1) {
+        indices.push(idx);
+        idx = array.indexOf(element, idx + 1);
+      }
+      console.log(indices);
+      // [0, 2, 4]
+
+      // 不能使用 indexOf() 在稀疏数组中搜索空槽。
+      console.log([1, , 3].indexOf(undefined)); // -1
+      const arrayLike = {
+        length: 3,
+        0: 2,
+        1: 3,
+        2: 4,
+      };
+      console.log(Array.prototype.indexOf.call(arrayLike, 2));
+      // 0
+      console.log(Array.prototype.indexOf.call(arrayLike, 5));
+      // -1
+
+      const indices2 = [];
+      const array2 = ["a", "b", "a", "c", "a", "d"];
+      const element2 = "a";
+      let idx2 = array2.lastIndexOf(element2);
+      while (idx2 !== -1) {
+        indices2.push(idx2);
+        // 需要注意的是，这里必须单独处理 idx === 0 的情况，因为如果该元素是数组的第一个元素，则无论 fromIndex 参数的值为何，它总是会被找到。这与 indexOf 方法不同。
+        idx2 = idx2 > 0 ? array.lastIndexOf(element, idx2 - 1) : -1;
+      }
+      console.log(indices2);
+
+      // includes() 方法使用零值相等算法将 searchElement 与数组中的元素进行比较。0 值都被认为是相等的，不管符号是什么。（即 -0 等于 0），但 false 不被认为与 0 相同。NaN 可以被正确搜索到。
+      // 你可以在稀疏数组中搜索 undefined，得到 true 。
+      console.log([1, , 3].includes(undefined)); // true
+
+      const plainObj = {};
+      // 这里没有长度属性，所以长度为 0
+      Array.prototype.push.call(plainObj, 1, 2);
+      console.log(plainObj);
+      // { '0': 1, '1': 2, length: 2 }
+
+      // 尽管 obj 不是一个数组，push 方法仍成功地增加了 obj 的 length 属性，就像我们处理一个真正的数组一样。
+      const obj = {
+        length: 0,
+
+        addElem(elem) {
+          // obj.length 在每次添加元素时自动增加
+          [].push.call(this, elem);
+        },
+      };
+
+      // 让我们添加一些空对象来说明
+      obj.addElem({});
+      obj.addElem({});
+      console.log(obj.length); // 2
+
+      const collection = {
+        length: 0,
+        addElements(...elements) {
+          // 每次添加元素时
+          // obj.length 都会自动增加
+
+          // 返回 push 方法的返回值，即 length 属性的新值
+          return [].push.call(this, ...elements);
+        },
+        removeElement() {
+          // 每次移除元素时
+          // obj.length 都会自动减少
+
+          // 返回 pop 方法的返回值，即被移除的元素
+          return [].pop.call(this);
+        },
+      };
+
+      collection.addElements(10, 20, 30);
+      console.log(collection.length); // 3
+      collection.removeElement();
+      console.log(collection.length); // 2
+
+      // shift() 方法从数组中删除第一个元素，并返回该元素的值。此方法更改数组的长度。
+      const names = ["Andrew", "Tyrone", "Paul", "Maria", "Gayatri"];
+
+      while (typeof (i = names.shift()) !== "undefined") {
+        console.log(i);
+      }
+      // Andrew, Tyrone, Paul, Maria, Gayatri
+
+      const arrayLike = {
+        length: 3,
+        unrelated: "foo",
+        2: 4,
+      };
+      Array.prototype.unshift.call(arrayLike, 1, 2);
+      console.log(arrayLike);
+      // { '0': 1, '1': 2, '4': 4, length: 5, unrelated: 'foo' }
+
+      const plainObj = {};
+      // 这里没有长度属性，所以这里的长的为 0
+      Array.prototype.unshift.call(plainObj, 1, 2);
+      console.log(plainObj);
+      // { '0': 1, '1': 2, length: 2 }
+    </script>
+  </body>
+</html>
