@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 在 js 中如何把类数组转化为数组
+      // 一个简单的定义，如果一个对象有 length 属性值，则它就是类数组
+      // [undefined, undefined, undefined]
+      console.log(Array.from({ length: 3 }));
+      const arrayLike = {
+        0: 3,
+        1: 4,
+        2: 5,
+        length: 3,
+      };
+      console.log(Array.prototype.slice.call(arrayLike));
+      // 把类数组转化成数组最靠谱的方式是以下三个
+      Array.from(arrayLike);
+      Array.apply(null, arrayLike);
+      Array.prototype.concat.apply([], arrayLike);
+
+      // 以下几种方式需要考虑稀疏数组的转化
+      Array.prototype.filter.call(divs, (x) => 1);
+      Array.prototype.map.call(arrayLike, (x) => x);
+      Array.prototype.filter.call(arrayLike, (x) => 1);
+
+      // 以下方法要注意是否是 iterable object
+      [...arrayLike];
+
+      // 注意下面的结果是：[0, 1, 2, 1, 2, 3]，是因为用了 Funtion.prototype.apply() 方法
+      // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
+      console.log(
+        Array.prototype.concat.apply([], {
+          0: 0,
+          1: 1,
+          2: 2,
+          3: [1, 2, 3],
+          length: 4,
+        })
+      );
+
+      const num1 = [[1]];
+      const num2 = [2, [3]];
+      const numbers = num1.concat(num2);
+      console.log(numbers);
+
+      // js 中什么是可选链操作符，如何访问数组
+      const obj = { a: [1, 2], b() {} };
+      // 访问数组
+      obj?.a?.[0];
+      //使用方法
+      obj?.b?.();
+    </script>
+  </body>
+</html>
