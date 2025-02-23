@@ -24,12 +24,12 @@
       Array.prototype.concat.apply([], arrayLike);
 
       // 以下几种方式需要考虑稀疏数组的转化
-      Array.prototype.filter.call(divs, (x) => 1);
+      // Array.prototype.filter.call(divs, (x) => 1);
       Array.prototype.map.call(arrayLike, (x) => x);
       Array.prototype.filter.call(arrayLike, (x) => 1);
 
       // 以下方法要注意是否是 iterable object
-      [...arrayLike];
+      // [...arrayLike];
 
       // 注意下面的结果是：[0, 1, 2, 1, 2, 3]，是因为用了 Funtion.prototype.apply() 方法
       // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
@@ -54,6 +54,212 @@
       obj?.a?.[0];
       //使用方法
       obj?.b?.();
+
+      // 手动实现 Promise.allSettled
+
+      function allSettled(promises = []) {
+        return new Promise((resolve) => {
+          let count = 0;
+          let values = new Array(promises.length);
+          const collect = (index, status) => (value) => {
+            const prop = status === "fulfilled" ? "value" : "reason";
+            values[index] = { status, [prop]: value };
+            ++count === promises.length && resolve(values);
+          };
+          promises.forEach((promise, i) => {
+            if (isPromise(promise)) {
+              promise.then(collect(i, "fulfilled"), collect(i, "rejected"));
+            } else {
+              collect(i, "fulfilled")(promise);
+            }
+          });
+        });
+      }
+
+      function isPromise(promise) {
+        return promise && typeof promise.then === "function";
+      }
+
+      // my own Symbol.iterator
+      let range = {
+        from: 1,
+        to: 5,
+      };
+
+      // 1. call to for..of initially calls this
+      range[Symbol.iterator] = function () {
+        // ...it returns the iterator object:
+        // 2. Onward, for..of works only with the iterator object below, asking it for next values
+        return {
+          current: this.from,
+          last: this.to,
+
+          // 3. next() is called on each iteration by the for..of loop
+          next() {
+            // 4. it should return the value as an object {done:.., value :...}
+            if (this.current <= this.last) {
+              return { done: false, value: this.current++ };
+            } else {
+              return { done: true };
+            }
+          },
+        };
+      };
+
+      // now it works!
+      for (let num of range) {
+        alert(num); // 1, then 2, 3, 4, 5
+      }
+
+      // another example
+      // The downside is that now it’s impossible to have two for..of loops running over the object simultaneously:
+      // they’ll share the iteration state, because there’s only one iterator – the object itself.
+      // But two parallel for-ofs is a rare thing, even in async scenarios.
+      let range = {
+        from: 1,
+        to: 5,
+
+        [Symbol.iterator]() {
+          this.current = this.from;
+          return this;
+        },
+
+        next() {
+          if (this.current <= this.to) {
+            return { done: false, value: this.current++ };
+          } else {
+            return { done: true };
+          }
+        },
+      };
+
+      for (let num of range) {
+        alert(num); // 1, then 2, 3, 4, 5
+      }
+
+      // Iterables are objects that implement the Symbol.iterator method, as described above.
+      // Array-likes are objects that have indexes and length, so they look like arrays.
+      // There’s a universal method Array.from that takes an iterable or array-like value and makes a “real” Array from it.
+      // Then we can call array methods on it.
+      // Unlike str.split, it relies on the iterable nature of the string and so, just like for..of, correctly works with surrogate pairs.
+
+      let str = "𝒳😂";
+
+      // splits str into array of characters
+      let chars = Array.from(str);
+
+      alert(chars[0]); // 𝒳
+      alert(chars[1]); // 😂
+      alert(chars.length); // 2
+
+      // We can even build surrogate-aware slice on it:
+      function slice(str, start, end) {
+        return Array.from(str).slice(start, end).join("");
+      }
+
+      let str = "𝒳😂𩷶";
+
+      alert(slice(str, 1, 3)); // 😂𩷶
+
+      // the native method does not support surrogate pairs
+      alert(str.slice(1, 3)); // garbage (two pieces from different surrogate pairs)
+
+      // JS 如何检测到对象中有循环引用
+      function hasCircularReference(obj) {
+        const seen = new WeakMap(); // 用 WeakMap 记录已访问的对象（避免内存泄漏）
+
+        function detect(obj) {
+          // 非对象或 null 直接返回
+          if (obj === null || typeof obj !== "object") return false;
+
+          // 若对象已记录过，说明存在循环引用
+          if (seen.has(obj)) return true;
+
+          // 标记当前对象为已访问
+          seen.set(obj, true);
+
+          // 递归检查所有属性值
+          for (const key of Object.keys(obj)) {
+            const value = obj[key];
+            if (detect(value)) return true; // 发现循环
+          }
+
+          return false;
+        }
+
+        return detect(obj);
+      }
+      // 示例 1：无循环引用
+      const obj1 = { a: 1, b: { c: 2 } };
+      console.log(hasCircularReference(obj1)); // false
+
+      // 示例 2：直接循环引用
+      const obj2 = {};
+      obj2.self = obj2;
+      console.log(hasCircularReference(obj2)); // true
+
+      // 示例 3：间接循环引用
+      const obj3 = { x: {} };
+      obj3.x.y = obj3;
+      console.log(hasCircularReference(obj3)); // true
+
+      // 示例 4：数组循环引用
+      const arr = [];
+      arr.push(arr);
+      console.log(hasCircularReference(arr)); // true
+
+      // JS 深克隆时如何处理循环引用
+      function deepClone(obj, hash = new WeakMap()) {
+        // 处理基本类型和 null/undefined
+        if (obj === null || typeof obj !== "object") {
+          return obj;
+        }
+
+        // 处理循环引用：若已克隆过，直接返回克隆副本
+        if (hash.has(obj)) {
+          return hash.get(obj);
+        }
+
+        // 处理特殊对象类型
+        let clone;
+        if (obj instanceof Date) {
+          clone = new Date(obj);
+        } else if (obj instanceof RegExp) {
+          clone = new RegExp(obj);
+        } else if (obj instanceof Map) {
+          clone = new Map([...obj]);
+        } else if (obj instanceof Set) {
+          clone = new Set([...obj]);
+        } else if (Array.isArray(obj)) {
+          clone = [];
+        } else {
+          clone = Object.create(Object.getPrototypeOf(obj));
+        }
+
+        // 记录当前对象和克隆对象的映射关系
+        hash.set(obj, clone);
+
+        // 递归克隆所有属性
+        for (const key of Reflect.ownKeys(obj)) {
+          // 包含 Symbol 属性
+          const value = obj[key];
+          clone[key] = deepClone(value, hash);
+        }
+
+        return clone;
+      }
+
+      // 创建循环引用对象
+      const original = { name: "Original" };
+      original.self = original; // 直接循环引用
+      original.child = { parent: original }; // 间接循环引用
+
+      // 深克隆
+      const cloned = deepClone(original);
+
+      console.log(cloned !== original); // true（克隆成功）
+      console.log(cloned.self === cloned); // true（循环引用被正确克隆）
+      console.log(cloned.child.parent === cloned); // true（间接引用正确）
     </script>
   </body>
 </html>
