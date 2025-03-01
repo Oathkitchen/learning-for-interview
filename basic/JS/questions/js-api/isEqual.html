@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function isEqual(x, y) {
+        if (x === y) return true;
+        if (
+          x !== null &&
+          typeof x === "object" &&
+          y !== null &&
+          typeof y === "object"
+        ) {
+          if (x.constructor !== y.constructor) return false;
+
+          if (x instanceof Date) {
+            return x.getTime() === y.getTime();
+          }
+
+          if (x instanceof Map) {
+            if (x.size !== y.size) return false;
+            for (const [key, val] of x) {
+              if (!y.has(key) || !isEqual(val, y.get(key))) return false;
+            }
+            return true;
+          }
+
+          const xkeys = Reflect.ownKeys(x);
+          const ykeys = Reflect.ownKeys(y);
+          if (xkeys.length !== ykeys.length) return false;
+          for (const xkey of xkeys) {
+            if (!isEqual(x[xkey], y[xkey])) return false;
+          }
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      const a = { x: 1 };
+      const b = { x: 1 };
+      console.log(a === b); // false
+      console.log(isEqual(a, b)); // true
+
+      console.log(isEqual(new Date("2023-01-02"), new Date("2023-01-01"))); // false
+
+      const map1 = new Map().set("key", { a: 2 });
+      const map2 = new Map().set("key", { a: 3 });
+      console.log(isEqual(map1, map2)); // false
+
+      console.log(isEqual([1, 42, 3, { a: 1 }], [1, 42, 3, { a: 2 }])); // false
+      console.log(isEqual([1, 42, 3, { a: 1 }], [1, 42, 3, { a: 1 }])); // true
+    </script>
+  </body>
+</html>

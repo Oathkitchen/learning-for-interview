@@ -208,58 +208,6 @@
       arr.push(arr);
       console.log(hasCircularReference(arr)); // true
 
-      // JS 深克隆时如何处理循环引用
-      function deepClone(obj, hash = new WeakMap()) {
-        // 处理基本类型和 null/undefined
-        if (obj === null || typeof obj !== "object") {
-          return obj;
-        }
-
-        // 处理循环引用：若已克隆过，直接返回克隆副本
-        if (hash.has(obj)) {
-          return hash.get(obj);
-        }
-
-        // 处理特殊对象类型
-        let clone;
-        if (obj instanceof Date) {
-          clone = new Date(obj);
-        } else if (obj instanceof RegExp) {
-          clone = new RegExp(obj);
-        } else if (obj instanceof Map) {
-          clone = new Map([...obj]);
-        } else if (obj instanceof Set) {
-          clone = new Set([...obj]);
-        } else if (Array.isArray(obj)) {
-          clone = [];
-        } else {
-          clone = Object.create(Object.getPrototypeOf(obj));
-        }
-
-        // 记录当前对象和克隆对象的映射关系
-        hash.set(obj, clone);
-
-        // 递归克隆所有属性
-        for (const key of Reflect.ownKeys(obj)) {
-          // 包含 Symbol 属性
-          const value = obj[key];
-          clone[key] = deepClone(value, hash);
-        }
-
-        return clone;
-      }
-
-      // 创建循环引用对象
-      const original = { name: "Original" };
-      original.self = original; // 直接循环引用
-      original.child = { parent: original }; // 间接循环引用
-
-      // 深克隆
-      const cloned = deepClone(original);
-
-      console.log(cloned !== original); // true（克隆成功）
-      console.log(cloned.self === cloned); // true（循环引用被正确克隆）
-      console.log(cloned.child.parent === cloned); // true（间接引用正确）
     </script>
   </body>
 </html>

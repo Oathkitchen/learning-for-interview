@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="./throttle.js" type="module"></script>
+  </head>
+  <body>
+    <button id="btn">throttle</button>
+    <script type="module">
+      import { throttle } from "./throttle.js";
+
+      // 定义一个按钮对象
+      const button = {
+        count: 0,
+
+        // 原始点击处理方法
+        handleClick() {
+          this.count++; // 这里的 this 应该指向 button 对象
+          console.log("Clicked! Count:", this.count);
+        },
+
+        // 防抖后的点击处理方法
+        throttleClick: throttle(function () {
+          this.handleClick(); // 这里也需要正确指向 button 对象
+        }, 1000),
+      };
+
+      // 绑定点击事件（假设这是一个按钮的点击回调）
+      document.getElementById("btn").addEventListener("click", () => {
+        button.throttleClick();
+      });
+    </script>
+  </body>
+</html>

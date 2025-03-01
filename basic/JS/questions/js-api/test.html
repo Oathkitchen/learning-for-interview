@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <!-- <script src="./deepclone.js" type="module"></script> -->
+    <script type="module">
+      import deepClone from "./deepclone.js";
+      // 创建循环引用对象
+      const original = { name: "Original" };
+      original.self = original; // 直接循环引用
+      original.child = { parent: original }; // 间接循环引用
+
+      // 深克隆
+      const cloned = deepClone(original);
+
+      console.log(cloned !== original); // true（克隆成功）
+      console.log(cloned.self === cloned); // true（循环引用被正确克隆）
+      console.log(cloned.child.parent === cloned); // true（间接引用正确）
+
+      const obj = {
+        re: /hello/,
+        f() {},
+        date: new Date(),
+        map: new Map(),
+        list: [1, 2, 3],
+        a: 3,
+        b: 4,
+      };
+
+      const dc = deepClone(obj);
+
+      console.log(dc !== obj); // true（克隆成功）
+      console.log(dc)
+    </script>
+  </body>
+</html>

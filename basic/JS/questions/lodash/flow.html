@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const flow = (fns) => {
+        return fns.reduce((f, g) => {
+          return (...args) => g(f(...args));
+        });
+      };
+
+      function add(a, b) {
+        return a + b;
+      }
+
+      function square(n) {
+        return n * n;
+      }
+
+      function double(n) {
+        return n * 2;
+      }
+
+      const addSquareDouble = flow([add, square, double]);
+      console.log(addSquareDouble(1, 2));
+    </script>
+  </body>
+</html>
