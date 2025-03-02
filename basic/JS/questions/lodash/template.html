@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function get(source, path, defaultValue = undefined) {
+        const paths = path
+          .replace(/\[(\w+)\]/g, ".$1")
+          .replace(/\[("\w+")\]/g, ".$1")
+          .replace(/\['(\w+)'\]/g, ".$1")
+          .split(".");
+
+        let result = source;
+        for (const prot of paths) {
+          result = result?.[prot];
+        }
+
+        return result === undefined ? defaultValue : result;
+      }
+
+      function render(template, data) {
+        return template.replace(/{{\s+([^\s]+)\s+}}/g, (match, key) => {
+          return get(data, key)
+        })
+      }
+
+      const template =
+        '{{ user["name"] }}，今天你又学习了吗 - 用户ID: {{ user.id }}';
+
+      const data = {
+        user: {
+          id: 10086,
+          name: "山月",
+        },
+      };
+
+      //=> "山月，今天你又学习了吗 - 用户ID: 10086"
+      console.log(render(template, data));
+    </script>
+  </body>
+</html>

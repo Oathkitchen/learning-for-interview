@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="add-btn">add</button>
+    <script>
+      const _ = {
+        once: function (fn) {
+          let called = false;
+          let result = null;
+          return function (...args) {
+            if (called) return result;
+            result = fn.apply(this, args);
+            called = true;
+            return result;
+          };
+        },
+      };
+
+      let num = 2;
+      function add(plus) {
+        return num + plus;
+      }
+
+      const addOnce = _.once(add);
+      console.log(addOnce(5));
+      console.log(addOnce(9));
+
+      const btn = document.getElementById("add-btn");
+      btn.addEventListener("click", () => {
+        console.log(addOnce(Math.random() * 10));
+      });
+    </script>
+  </body>
+</html>

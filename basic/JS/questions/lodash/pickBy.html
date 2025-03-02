@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const _ = {
+        pickBy: function(object, pickByFn) {
+          const result = {}
+          for(const key in object){
+            const value = object[key]
+            if(pickByFn(value)) {
+              result[key] = value
+            }
+          }
+          return result
+        }
+      }
+
+      var object = { a: 1, b: "2", c: 3 };
+
+      console.log(_.pickBy(object, Number.isInteger));
+      // => { 'a': 1, 'c': 3 }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      class MyEvent {
+        events = {};
+
+        getListenerList(type) {
+          return this.events[type] || [];
+        }
+
+        emit(type, ...args) {
+          this.events[type] = this.getListenerList(type);
+          for (const listener of this.events[type]) {
+            listener(...args);
+          }
+        }
+
+        on(type, listener) {
+          this.events[type] = this.getListenerList(type);
+          this.events[type].push(listener);
+        }
+
+        off(type, listener) {
+          this.events[type] = this.getListenerList(type);
+          this.events[type] = this.events[type].filter(
+            (callback) => callback !== listener
+          );
+        }
+
+        once(type, listener) {
+          const callback = (...args) => {
+            this.off(type, callback);
+            listener(...args);
+          };
+          this.on(type, callback);
+        }
+      }
+
+      const e = new MyEvent();
+
+      const callback = (x) => {
+        console.log("Click", x.id);
+      };
+      e.on("click", callback);
+      e.on("click", callback);
+
+      // 只打印一次
+      const onceCallback = (x) => console.log("Once Click", x.id);
+      e.once("click", onceCallback);
+
+      //=> 3
+      e.emit("click", { id: 3 });
+
+      //=> 4
+      e.emit("click", { id: 4 });
+    </script>
+  </body>
+</html>

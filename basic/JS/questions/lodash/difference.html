@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const _ = {
+        difference(array, excludeArray) {
+          const result = [];
+          for (let item of array) {
+            if (!excludeArray.includes(item)) {
+              result.push(item);
+            }
+          }
+          return result;
+        },
+        intersection(...arrays) {
+          const result = arrays.reduce((x, y) =>
+            x.filter((i) => y.includes(i))
+          );
+          return [...new Set(result)];
+        },
+      };
+      console.log(_.difference([3, 2, 1], [4, 2]));
+      // => [3, 1]
+
+      console.log(_.intersection([2, 1], [4, 2], [1, 2]));
+      // => [2]
+    </script>
+  </body>
+</html>

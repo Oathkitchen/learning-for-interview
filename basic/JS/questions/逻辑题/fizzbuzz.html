@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function fizzbuzz(num) {
+        let result = num;
+        if (num % 3 === 0) result = "fizz";
+        if (num % 5 === 0) {
+          if (typeof result === "string") {
+            result += "buzz";
+          } else {
+            result = "buzz";
+          }
+        }
+        return result;
+      }
+      //=> 'fizz'
+      console.log(fizzbuzz(3));
+
+      //=> 'buzz'
+      console.log(fizzbuzz(5));
+
+      //=> 'fizzbuzz'
+      console.log(fizzbuzz(15));
+
+      //=> 7
+      console.log(fizzbuzz(7));
+    </script>
+  </body>
+</html>

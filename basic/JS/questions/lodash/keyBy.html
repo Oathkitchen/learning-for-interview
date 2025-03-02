@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const _ = {
+        keyBy: function (array, fn) {
+          let keyByFn = fn
+          if (typeof fn === "string") {
+            keyByFn = (item) => {
+              return item[fn];
+            };
+          }
+
+          return array.reduce((acc, cur) => {
+            const key = keyByFn(cur);
+            acc[key] = cur;
+            return acc;
+          }, {});
+        },
+      };
+
+      const array = [
+        { dir: "left", code: 97 },
+        { dir: "right", code: 100 },
+      ];
+
+      console.log(
+        _.keyBy(array, function (o) {
+          return String.fromCharCode(o.code);
+        })
+      );
+      // => { 'a': { 'dir': 'left', 'code': 97 }, 'd': { 'dir': 'right', 'code': 100 } }
+
+      console.log(_.keyBy(array, "dir"));
+      // => { 'left': { 'dir': 'left', 'code': 97 }, 'right': { 'dir': 'right', 'code': 100 } }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const _ = {
+        groupBy: function (colletion, fn) {
+          let groupByFn = fn;
+          if (typeof fn === "string") {
+            groupByFn = (item) => item[fn];
+          }
+
+          return colletion.reduce((acc, cur) => {
+            const key = groupByFn(cur);
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(cur);
+            return acc;
+          }, {});
+        },
+      };
+      console.log(_.groupBy([6.1, 4.2, 6.3], Math.floor));
+      // => { '4': [4.2], '6': [6.1, 6.3] }
+
+      // The `_.property` iteratee shorthand.
+      console.log(_.groupBy(["one", "two", "three"], "length"));
+      // => { '3': ['one', 'two'], '5': ['three'] }
+    </script>
+  </body>
+</html>
