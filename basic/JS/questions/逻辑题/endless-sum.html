@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function sum(...args) {
+        const f = (...rest) => sum(...args, ...rest);
+        f.valueOf = () => args.reduce((x, y) => x + y, 0);
+        return f;
+      }
+
+      console.log(sum(1, 2, 3).valueOf()); //6
+      console.log(sum(2, 3)(2).valueOf()); //7
+      console.log(sum(1)(2)(3)(4).valueOf()); //10
+      console.log(sum(2)(4, 1)(2).valueOf()); //9
+      console.log(sum(1)(2)(3)(4)(5)(6).valueOf()); // 21
+
+      function sumD(...args) {
+        const foo = (...rest) => sumD(...args, ...rest);
+        foo.toString = () => args.reduce((x, y) => x + y, 0);
+        return foo;
+      }
+
+      console.log(sumD(1)(2, 3) + sumD(1)); // 7
+      console.log(sumD(10) * sumD(10)); // 100
+    </script>
+  </body>
+</html>

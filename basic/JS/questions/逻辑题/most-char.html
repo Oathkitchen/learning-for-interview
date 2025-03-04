@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function getFrequentChar(str) {
+        const map = {};
+        const result = [str[0], 0];
+        for (const char of str) {
+          map[char] ? map[char]++ : (map[char] = 1);
+          if (map[char] > result[1]) {
+            result[0] = char;
+            result[1] = map[char];
+          }
+        }
+        return result;
+      }
+      //=> ['a', 6]
+      console.log(getFrequentChar("aaabbaaacc"));
+
+      //=> ['a', 3]
+      console.log(getFrequentChar("aaa"));
+    </script>
+  </body>
+</html>
