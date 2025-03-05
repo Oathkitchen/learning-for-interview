@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      //  map keys 顺序测试
+      const testmap = new Map();
+      testmap.set("1", "1");
+      testmap.set("2", "1");
+      testmap.set("3", "1");
+      for (const key of testmap.keys()) {
+        console.log(key);
+      }
+      testmap.delete("1");
+      testmap.set("1", "1");
+      for (const key of testmap.keys()) {
+        console.log(key);
+      }
+
+      class LRUCache {
+        constructor(capacity) {
+          this.capacity = capacity;
+          this.map = new Map();
+        }
+
+        get(key) {
+          if (!this.map.has(key)) return undefined;
+          // 设置成最新的
+          const value = this.map.get(key);
+          this.map.delete(key);
+          this.map.set(key, value);
+          return value;
+        }
+
+        put(key, value) {
+          if (this.map.has(key)) {
+            this.map.delete(key);
+          }
+          this.map.set(key, value);
+          if (this.map.size > this.capacity) {
+            this.map.delete(this.map.keys().next().value);
+          }
+        }
+      }
+
+      // ["LRUCache","put","put","get","put","get","put","get","get","get"]
+      // [[2],[1,1],[2,2],[1],[3,3],[2],[4,4],[1],[3],[4]]
+      const lruCache = new LRUCache(2);
+      lruCache.put(1, 1);
+      lruCache.put(2, 2);
+      const res1 = lruCache.get(1);
+      lruCache.put(3, 3);
+      const res2 = lruCache.get(2);
+      lruCache.put(4, 4);
+      const res3 = lruCache.get(1);
+      const res4 = lruCache.get(3);
+      const res5 = lruCache.get(4);
+
+      console.log(res1, res2, res3, res4, res5);
+      // 1 undefined undefined 3 4
+    </script>
+  </body>
+</html>
