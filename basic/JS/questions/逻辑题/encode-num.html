@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function encode(str) {
+        let result = "";
+        let current = { char: str.charAt(0), count: 1 };
+        for (let i = 1; i < str.length; i++) {
+          const curChar = str.charAt(i);
+          if (curChar === current.char) {
+            current.count++;
+          } else {
+            result = connect(result, current);
+            current.char = curChar;
+            current.count = 1;
+          }
+        }
+        result = connect(result, current);
+        console.log(result);
+        return result;
+      }
+
+      // 如果只出现一次，不编码数字，如 aaab -> a3b
+      // 如果只出现两次，不进行编码，如 aabbb -> aab3
+      function connect(result, {char, count}) {
+        if(count === 1) result = result + char
+        else if(count === 2) result = result + char + char
+        else result = result + char + count
+        return result
+      }
+
+      //=> a4b3c2
+      encode("aaaabbbcc");
+
+      //=> a4b3a4
+      encode("aaaabbbaaaa");
+
+      //=> a2b2c2
+      encode("aabbcc");
+
+      //=> a3b
+      encode('aaab')
+
+      //=> aab3
+      encode('aabbb')
+    </script>
+  </body>
+</html>
