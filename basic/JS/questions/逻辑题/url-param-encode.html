@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // function stringify(data) {
+      //   let result = "";
+      //   for (const key in data) {
+      //     if (result !== "") result = result + "&";
+
+      //     let value = data[key];
+      //     if (value === null || value === undefined) value = "";
+
+      //     const keyStr = encodeURIComponent(key);
+      //     value = encodeURIComponent(value);
+
+      //     result = result + keyStr + "=" + value;
+      //   }
+      //   console.log(result);
+      //   return result;
+      // }
+      function stringify(data) {
+        const pairs = Object.entries(data);
+        const qs = pairs
+          .map(([k, v]) => {
+            let noValue = false;
+            if (v === null || v === undefined || typeof v === "object") {
+              noValue = true;
+            }
+            return `${encodeURIComponent(k)}=${
+              noValue ? "" : encodeURIComponent(v)
+            }`;
+          })
+          .join("&");
+        console.log(qs);
+        return qs;
+      }
+
+      const data = {
+        a: 3,
+        b: 4,
+        c: 5,
+      };
+
+      // 对 data 编码后得到 querystring 如下
+      //=> 'a=3&b=4&c=5'
+      stringify(data);
+
+      // a=3&b=
+      stringify({ a: 3, b: null });
+
+      // a=3&%E5%B1%B1=%E6%9C%88
+      stringify({ a: 3, 山: "月" });
+    </script>
+  </body>
+</html>
