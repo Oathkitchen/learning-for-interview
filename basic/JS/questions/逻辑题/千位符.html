@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      //=> '123'
+      numberThousands(123);
+
+      //=> '1,234,567'
+      numberThousands(1234567);
+
+      // 可以处理正负数
+      // => '-123,456'
+      numberThousands(-123456);
+
+      // 可以处理小数
+      // => '-123,456.123456789'
+      numberThousands(-123456.123456789);
+
+      /**
+       * 千位分隔符
+       *
+       * 1. 可以处理正负数
+       * 2. 可以处理小数
+       * @param {number} number
+       * @returns {string}
+       */
+      function numberThousands(number) {
+        const [integer, decimal] = String(number).split(".");
+        const negative = integer[0] === "-" ? true : false;
+        const integerStr = integer.replace("-", "").split("");
+
+        let result = "";
+        let count = 0;
+        for (let i = integerStr.length - 1; i >= 0; i--) {
+          count++;
+          result = integerStr[i] + result;
+          if (count % 3 === 0 && i !== 0) {
+            result = "," + result;
+          }
+        }
+
+        const finalRes =
+          (negative ? "-" : "") + (decimal ? `${result}.${decimal}` : result);
+        console.log(finalRes);
+        return finalRes;
+      }
+    </script>
+  </body>
+</html>

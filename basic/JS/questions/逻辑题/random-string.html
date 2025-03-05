@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // ASCII：
+      // 数字：48-57
+      // 大写字母：65~90
+      // 小写字母：97~122
+      function generateAcsii() {
+        const random = Math.floor(Math.random() * 3)
+        let start = 0
+        let end = 0
+        if(random === 0){
+          start = 48
+          end = 57
+        } else if(random === 1){
+          start = 65
+          end = 90
+        } else {
+          start = 97
+          end = 122
+        }
+        return String.fromCharCode(Math.floor(start + Math.random() * (end - start) + 1))
+      }
+
+      function randomStr(num) {
+        const result =  new Array(num).fill(0).map(() => {
+          return generateAcsii()
+        }).join('')
+        console.log(result)
+
+        return result
+      }
+
+      randomStr(3)
+      randomStr(5)
+      randomStr(9)
+
+      
+    </script>
+  </body>
+</html>
