@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function stringify(params) {
+        const entries = Object.entries(params)
+        let result = ''
+        return entries.map(([k, v]) => {
+          let noValue = false
+          if(v === null || v === undefined || v === '') {
+            noValue = true
+          }
+          return `${encodeURIComponent(k)}=${noValue ? '' : encodeURIComponent(v)}`
+        }).join('&')
+      }
+
+      function jsonp({ url, onData, params }) {
+        const callbackName = 'JSON_CALLBACK_' + Math.floor(Math.random() *  1000)
+
+        window[callbackName] = function (data){
+          onData(data)
+          delete window[callbackName]
+        }
+
+        const script = document.createElement('script')
+
+        script.src = `${url}?${stringify({callback: callbackName, ...params})}`
+
+        document.body.appendChild(script)
+      }
+
+      // 发送 JSONP 请求
+      jsonp({
+        url: "http://127.0.0.1:4523/m1/5845581-5531392-default/learning/jsonp",
+        params: { id: 12300 },
+        onData(data) {
+          console.log("Data:", data);
+        },
+      });
+    </script>
+  </body>
+</html>
