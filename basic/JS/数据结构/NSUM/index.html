@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function getSumList(arr, count, n) {
+        // 先排序
+        arr = arr.sort((a, b) => a - b);
+        const result = [];
+        function backTrace(startIndex, path, currentSum) {
+          if (path.length === count) {
+            if (currentSum === n) {
+              result.push(path);
+            }
+            return;
+          }
+
+          for (let i = startIndex; i < arr.length; i++) {
+            // 同一层级不选同一个数
+            if (i > startIndex && arr[i] === arr[i - 1]) continue;
+            if (currentSum + arr[i] > n) break;
+            const remain = count - path.length; // 比如 count = 5, remain = 3
+            if (arr.length - 1 - startIndex < remain) break;
+
+            backTrace(i + 1, [...path, arr[i]], currentSum + arr[i]);
+          }
+        }
+        backTrace(0, [], 0);
+        return result;
+      }
+
+      console.log(getSumList([1, 2, 3, 4, 5, 5, 5, 6, 7, 8, 9, 10], 3, 15));
+
+      console.log(getSumList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 2, 150));
+      // 输出: null
+
+      console.log(getSumList([1, 1, 2, 3], 2, 3));
+    </script>
+  </body>
+</html>
