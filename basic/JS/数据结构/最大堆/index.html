@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      class MaxHeap {
+        constructor(arr) {
+          this.heap = [];
+          arr.forEach(item => this.push(item))
+        }
+
+        size() {
+          return this.heap.length;
+        }
+
+        peek() {
+          return this.heap[0];
+        }
+
+        push(num) {
+          this.heap.push(num);
+          this.#heapifyUp(this.size() - 1);
+        }
+
+        pop() {
+          const maxValue = this.heap[0];
+          this.#swap(0, this.size() - 1);
+          this.heap.pop();
+          this.#heapifyDown(0);
+          return maxValue;
+        }
+
+        #parentIndex(index) {
+          return Math.floor((index - 1) / 2);
+        }
+
+        #rightChildIndex(index) {
+          return index * 2 + 2;
+        }
+
+        #leftChildIndex(index) {
+          return index * 2 + 1;
+        }
+
+        #swap(a, b) {
+          [this.heap[a], this.heap[b]] = [this.heap[b], this.heap[a]];
+        }
+
+        #heapifyUp(index) {
+          let parentIndex = this.#parentIndex(index);
+
+          while (index > 0 && this.heap[index] > this.heap[parentIndex]) {
+            this.#swap(index, parentIndex);
+            index = parentIndex;
+            parentIndex = this.#parentIndex(index);
+          }
+        }
+
+        #heapifyDown(index) {
+          let rightChildIndex = this.#rightChildIndex(index);
+          let leftChildIndex = this.#leftChildIndex(index);
+          let maxIndex = index;
+          const size = this.size();
+
+          if (
+            rightChildIndex < size &&
+            this.heap[rightChildIndex] > this.heap[maxIndex]
+          )
+            maxIndex = rightChildIndex;
+          if (
+            leftChildIndex < size &&
+            this.heap[leftChildIndex] > this.heap[maxIndex]
+          )
+            maxIndex = leftChildIndex;
+          if (maxIndex !== index) {
+            this.#swap(index, maxIndex);
+            this.#heapifyDown(maxIndex);
+          }
+        }
+      }
+
+      const priorityQueue = new MaxHeap([2, 5, 3]);
+      console.log(priorityQueue.peek()); // 5
+      priorityQueue.push(7);
+      console.log(priorityQueue.peek()); // 7
+      priorityQueue.pop();
+      priorityQueue.push(1);
+      console.log(priorityQueue.peek()); // 5
+    </script>
+  </body>
+</html>

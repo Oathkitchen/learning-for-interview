@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script type="module">
+      import { LRUCache } from "./LRUCache.js";
+
+      debugger
+      const lru = new LRUCache(2);
+      lru.put(1, 1); // 缓存: {1=1}
+      lru.put(2, 2); // 缓存: {2=2, 1=1}
+      console.log(lru.get(1)); // 输出 1 → 缓存顺序变为 {1=1, 2=2}
+      lru.put(3, 3); // 淘汰2 → 缓存: {3=3, 1=1}
+      console.log(lru.get(2)); // 输出 -1
+      lru.put(4, 4); // 淘汰1 → 缓存: {4=4, 3=3}
+      console.log(lru.get(1)); // 输出 -1
+      console.log(lru.get(3)); // 输出 3
+      console.log(lru.get(4)); // 输出 4
+    </script>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script type="module">
+      import { getIntersectionNode } from "./getIntersectionNode.js";
+
+      // 构造相交链表示例：
+      // 链表A: 1 -> 2 -> 3 ↘
+      //                     6 -> 7 -> null   a 1 2 3 6 7 4 5 6
+      // b 4 5 6 7 1 2 3 6
+      // 链表B:     4 -> 5 ↗
+      const node6 = { val: 6, next: { val: 7, next: null } };
+      const headA = { val: 1, next: { val: 2, next: { val: 3, next: node6 } } };
+      const headB = { val: 4, next: { val: 5, next: node6 } };
+
+      console.log(getIntersectionNode(headA, headB)); // 输出节点6
+      console.log(
+        getIntersectionNode({ val: 1, next: null }, { val: 2, next: null })
+      ); // 输出null
+
+      // 链表A: 1 -> 2 -> 3
+      // 链表B:     4 -> 5
+      const headA2 = { val: 1, next: { val: 2, next: { val: 3, next: null } } };
+      const headB2 = { val: 4, next: { val: 5, next: null } };
+      console.log(getIntersectionNode(headA2, headB2)); // 输出null
+    </script>
+  </body>
+</html>
