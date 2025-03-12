@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    // 100层楼，两个玻璃球，求最少多少次测出能摔碎玻璃球的楼层
+    function findMinTests(n){
+      let k = 1
+      while(k*(k+1)/2 < n){
+        k++
+      }
+      console.log(k)
+      return k
+    }
+
+    findMinTests(100)
+  </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  如何根据 random5 随机生成 [0, 5]，生成一个函数 random7？
+  
+  思路：random5生成 [0, 5]每个数的概率是 1/6， 使用两次 random 函数，相乘，找到等概率出现的 8 个数就可以，不满足的数据排除掉
+
+  <img src="./frac.png">
+
+  根据上图可知，我们只需要取 [1,2, 3, 5, 6, 8, 12, 15,9],这几个数，对8取余后可得到：
+
+  1,2,3,5,6,0,4,7
+  <script>
+    function random5(){
+      return Math.floor(Math.random() * 5) + 1
+    }
+
+    function random7(){
+      const target = [1,2, 3, 5, 6, 8, 12, 15,9]
+      let m = null
+      do{
+        m = random5() * random5()
+      } while(!target.includes(m))
+      
+      return m % 8
+    }
+
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+    console.log(random7())
+
+  </script>
+</body>
+</html>

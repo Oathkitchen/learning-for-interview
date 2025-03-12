@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      //=> a4b3cc
+      encode("aaaabbbcc");
+
+      //=> a4b3a4
+      encode("aaaabbbaaaa");
+
+      //=> aabbcc
+      encode("aabbcc");
+
+      //=> a3b
+      encode("aaab")
+
+      //=> aab3
+      encode("aabbb")
+
+      // 如果只出现一次，不编码数字，如 aaab -> a3b
+      // 如果只出现两次，不进行编码，如 aabbb -> aab3
+      // 如果进行解码数字冲突如何解决
+      function encode(str){
+        const strlist = str.split('')
+        const resultList = strlist.reduce((acc, cur) => {
+          const length = acc.length
+          let targetIndex = length - 2
+          if(acc[targetIndex] === cur) {
+            acc[length - 1]++
+          } else {
+            acc.push(cur, 1)
+          }
+          return acc
+        }, [strlist[0], 0])
+
+        const result = resultList.join('').replace('1', '').replace(/(\D)2/g, '$1$1')
+        console.log(result)
+        return result
+      }
+    </script>
+  </body>
+</html>
