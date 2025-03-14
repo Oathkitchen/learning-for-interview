@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="cube">
+      <div class="layer"></div>
+      <div class="layer"></div>
+      <div class="layer"></div>
+      <div class="layer"></div>
+      <div class="layer"></div>
+      <div class="layer"></div>
+    </div>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .cube {
+        height: 150px;
+        width: 150px;
+        position: relative;
+        perspective: 10000px;
+        transform-style: preserve-3d;
+        transform-origin: center;
+        transform: rotate3d(1, 1, 1, 45deg);
+      }
+
+      .layer {
+        position: absolute;
+        border: 2px solid black;
+        height: 150px;
+        width: 150px;
+      }
+
+      .layer:nth-child(1) {
+        background-color: rgba(100, 0, 0, 0.3);
+      }
+
+      .layer:nth-child(2) {
+        background-color: rgba(0, 100, 0, 0.5);
+        transform: rotateX(90deg) translate3d(0px, -75px, -75px);
+      }
+
+      .layer:nth-child(3) {
+        background-color: rgba(0, 0, 100, 0.5);
+        transform: rotateX(90deg) translate3d(0px, -75px, 75px);
+      }
+
+      .layer:nth-child(4) {
+        background-color: rgba(0, 0, 100, 0.5);
+        transform: rotateY(-90deg) translate3d(-75px, 0px, 75px);
+      }
+
+      .layer:nth-child(5) {
+        background-color: rgba(150, 0, 100, 0.7);
+        transform: rotateY(-90deg) translate3d(-75px, 0px, -75px);
+      }
+
+      .layer:nth-child(5) {
+        background-color: rgba(0, 150, 100, 0.3);
+        transform: translate3d(0px, 0px, -150px);
+      }
+    </style>
+  </body>
+</html>
