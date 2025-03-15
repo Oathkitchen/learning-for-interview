@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="btn">add item</button>
+    <div class="container" id="container">
+      <div class="item">1</div>
+    </div>
+    <script>
+      const btn = document.getElementById('btn')
+      btn.addEventListener('click', () => {
+        const container = document.getElementById('container')
+        const itemlist = container.querySelectorAll('.item')
+        const item = document.createElement('div')
+        item.className = 'item'
+        item.textContent = `${itemlist.length + 1}`
+        container.appendChild(item)
+      })
+    </script>
+    <style>
+      .container {
+        display: grid;
+        gap: 10px;
+        /* 默认两列布局 */
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      /* 当存在第三个子元素时切换三列 */
+      .container:has(> :nth-child(3)) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .container:has(> :nth-child(5)) {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .item {
+        background: #1939b8;
+        padding: 20px;
+        text-align: center;
+      }
+    </style>
+  </body>
+</html>

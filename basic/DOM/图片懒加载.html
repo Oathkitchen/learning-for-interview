@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <img
+      class="lazy"
+      data-src="./asset/su7.jpg"
+      alt="su7"
+      loading="lazy"
+      width="2560"
+      height="1800"
+    />
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+    <div>some raondom input message</div>
+
+    <script>
+      const observer = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const img = entry.target;
+              img.src = img.dataset.src;
+              img.classList.add("loaded");
+              observer.unobserve(img);
+            }
+          });
+        },
+        { rootMargin: "50px" }
+      );
+
+      document.querySelectorAll(".lazy").forEach((img) => {
+        observer.observe(img);
+      });
+    </script>
+
+    <style>
+      .lazy {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .lazy.loaded {
+        opacity: 1;
+      }
+      div {
+        margin-bottom: 20px;
+        text-align: center;
+        line-height: 300px;
+        height: 300px;
+        width: 300px;
+        background-color: antiquewhite;
+      }
+    </style>
+  </body>
+</html>

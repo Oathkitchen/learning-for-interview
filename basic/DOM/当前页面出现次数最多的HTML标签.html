@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <span></span><span></span><span></span><span></span><span></span
+    ><span></span><span></span><span></span><span></span><span></span
+    ><span></span><span></span><span></span><span></span><span></span
+    ><span></span><span></span><span></span><span></span><span></span>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+
+    <script>
+      function getMostEle() {
+        const el = document.querySelectorAll("*");
+        const els = [...el];
+        const mostEle = { tagName: "", count: 0 };
+        const elResult = {};
+        for (let i = 0; i < els.length; i++) {
+          elResult[els[i].tagName] = elResult[els[i].tagName]
+            ? elResult[els[i].tagName] + 1
+            : 1;
+          if (elResult[els[i].tagName] > mostEle.count) {
+            mostEle.tagName = els[i].tagName;
+            mostEle.count = elResult[els[i].tagName];
+          }
+        }
+        return mostEle.tagName;
+      }
+
+      alert(getMostEle())
+    </script>
+  </body>
+</html>

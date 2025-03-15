@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="./base.css" />
+  </head>
+  <body>
+    <div class="parent">
+      <div class="color">1</div>
+      <div class="color">2</div>
+      <div class="color">3</div>
+      <div class="color">4</div>
+      <div class="color">5</div>
+      <div class="color">6</div>
+      <div class="color">7</div>
+      <div class="color">8</div>
+      <div class="color">9</div>
+      <div class="color">10</div>
+      <ul>
+        <li></li>
+      </ul>
+    </div>
+    <style>
+      .color {
+        width: 100px;
+        height: 100px;
+        background-color: blueviolet;
+        margin-top: 20px;
+      }
+      .color:nth-child(-n + 3) {
+        background-color: yellow;
+      }
+
+      /* 注意这里的 nth-child 系列选择器计算的是所有子元素（包括文本节点）。 */
+      /* .color:nth-last-child(-n + 3) {
+        background-color: violet;
+      } */
+
+      /* :nth-last-of-type() CSS 伪类基于元素在相同类型（标签名）的兄弟元素中相对最后一个元素的位置来匹配元素。 */
+      .color:nth-last-of-type(-n + 3){
+        background-color: violet;
+      }
+    </style>
+  </body>
+</html>

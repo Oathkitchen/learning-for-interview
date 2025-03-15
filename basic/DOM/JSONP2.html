@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button>jsonp test</button>
+    <script>
+      const btn = document.querySelector("button");
+      btn.addEventListener("click", () => {
+        jsonp({
+          url: 'http://127.0.0.1:4523/m1/5845581-5531392-default/learning/jsonp',
+          paramObj: { id: '123' },
+          callback: (data) => {
+            alert(JSON.stringify(data))
+          }
+        })
+      });
+
+      function urlParam(obj) {
+        return Object.entries(obj)
+          .map(([key, value]) => {
+            return `${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+          })
+          .join("&");
+      }
+
+      function jsonp({url, paramObj, callback}) {
+        const script = document.createElement("script");
+        const callbackName = `JSONP_CALLBACK_${Math.floor(Math.random() * 5)}`;
+         
+        window[callbackName] = (data) => {
+          callback(data)
+          delete window[callbackName]
+          document.body.removeChild(script)
+        }
+        script.src = `${url}?${urlParam({callback: callbackName, ...paramObj})}`
+        document.body.appendChild(script)
+      }
+    </script>
+  </body>
+</html>
