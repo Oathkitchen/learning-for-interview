@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="setBtn">set message</button>
+    <button id="getBtn">get message</button>
+
+    <script>
+      localStorage.setItem = function (key, value, expireTime) {
+        const payload = {
+          data: value,
+          expireTime: Date.now() + expireTime,
+        };
+        Storage.prototype.setItem.call(
+          localStorage,
+          key,
+          JSON.stringify(payload)
+        );
+      };
+
+      localStorage.getItem = function (key) {
+        const result = Storage.prototype.getItem.call(localStorage, key);
+        if (result) {
+          const resObj = JSON.parse(result);
+          if (Date.now() > resObj.expireTime) {
+            localStorage.removeItem(key);
+            return null;
+          }
+          return resObj.data;
+        }
+        return null;
+      };
+      document.getElementById("setBtn").addEventListener("click", () => {
+        localStorage.setItem("key", "nihao", 2000);
+      });
+      document.getElementById("getBtn").addEventListener("click", () => {
+        console.log(localStorage.getItem("key"));
+      });
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
 ### `history.scrollRestoration` 作用和用法解析  
 
-`history.scrollRestoration` 是 **`History API`** 的一个属性，用于控制当用户**导航（前进/后退）**时，页面的滚动位置是否应该恢复到之前的状态。
+`history.scrollRestoration` 是 **`History API`** 的一个属性，用于控制当用户 **导航（前进/后退）** 时，页面的滚动位置是否应该恢复到之前的状态。
 
 ---
 

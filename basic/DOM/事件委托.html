@@ -13,18 +13,11 @@
     </ul>
 
     <script>
-      document.getElementById("parent").addEventListener("click", function (e) {
-        // e.currentTarget 始终是父元素 ul
-        console.log("currentTarget:", e.currentTarget.tagName); // 输出: UL
-
-        // e.target 是实际被点击的子元素（如 li）
-        console.log("target:", e.target.tagName); // 输出: LI（如果点击的是 li）
-
-        // 判断是否点击的是 li 元素
-        if (e.target.tagName === "LI") {
-          console.log("你点击了:", e.target.textContent);
-        }
-      });
+      document.getElementById('parent').addEventListener('click', (e) => {
+        console.log(`e.currentTarget.tagName: ${e.currentTarget.tagName}`)
+        console.log(`e.target.tagName: ${e.target.tagName}`)
+        console.log(`e.target.textContent: ${e.target.textContent}`)
+      })
     </script>
   </body>
 </html>
