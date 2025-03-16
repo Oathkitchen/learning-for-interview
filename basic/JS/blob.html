@@ -17,6 +17,8 @@
     <script>
       // 下载文件
       let blob = new Blob(["Hello, world!"], { type: "text/plain" });
+      
+      const link = document.getElementById('link')
 
       link.href = URL.createObjectURL(blob);
 

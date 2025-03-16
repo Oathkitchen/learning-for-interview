@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <script src="./debounce.js" type="module"></script>
   </head>
   <body>
     <button id="btn">debounce</button>
@@ -25,7 +24,7 @@
         // 防抖后的点击处理方法
         debouncedClick: debounce(function () {
           this.handleClick(); // 这里也需要正确指向 button 对象
-        }, 1000),
+        }, 2000),
       };
 
       // 绑定点击事件（假设这是一个按钮的点击回调）
@@ -45,7 +44,7 @@
         // 防抖后的点击处理方法
         debouncedClick: debounce(function () {
           this.handleClick(); // 这里也需要正确指向 button 对象
-        }, 1000, true),
+        }, 2000, true),
       };
 
       document.getElementById("btn-im").addEventListener("click", () => {
