@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script type="module">
+      import { VPromise } from "./promise-v3.js";
+      import { MyPromise } from './my-promise.js'
+
+      function testPromise(construc) {
+        console.log(1)
+        const promise = new construc((resolve) => {
+          console.log(2)
+          setTimeout(() => {
+            resolve('这次一定')
+            console.log(4);
+          });
+        })
+
+        console.log(`promise instanceof VPromise: ${promise instanceof VPromise}`);
+        console.log(`promise instanceof Promise: ${promise instanceof Promise}`);
+        console.log(`promise instanceof MyPromise: ${promise instanceof MyPromise}`);
+
+        promise.then((result) => {
+          console.log(result);
+        })
+        console.log(3);
+      }
+      // testPromise(Promise)
+      // testPromise(VPromise)
+      testPromise(MyPromise)
+    </script>
+  </body>
+</html>

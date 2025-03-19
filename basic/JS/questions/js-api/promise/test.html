@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script type="module">
+      import { MyPromise } from './my-promise.js'
+      // 同步 resolve
+      // MyPromise
+      new MyPromise((resolve) => resolve(42)).then((val) =>
+        console.log("MyPromise 同步结果:", val)
+      ); // 应输出 42
+
+      // 原生 Promise
+      new Promise((resolve) => resolve(42)).then((val) =>
+        console.log("原生 Promise 同步结果:", val)
+      ); // 应输出 42
+
+      // 异步 resolve
+      // MyPromise
+      new MyPromise((resolve) => setTimeout(() => resolve(100), 100)).then(
+        (val) => console.log("MyPromise 异步结果:", val)
+      ); // 应输出 100
+
+      // 原生 Promise
+      new Promise((resolve) => setTimeout(() => resolve(100), 100)).then(
+        (val) => console.log("原生 Promise 异步结果:", val)
+      ); // 应输出 100
+
+      // 链式 then 传递值
+      // MyPromise
+      MyPromise.resolve(1)
+        .then((v) => v + 1)
+        .then((v) => v * 2)
+        .then((v) => console.log("MyPromise 链式调用结果:", v)); // 应输出 4
+
+      // 原生 Promise
+      Promise.resolve(1)
+        .then((v) => v + 1)
+        .then((v) => v * 2)
+        .then((v) => console.log("原生 Promise 链式调用结果:", v)); // 应输出 4
+
+      // 链式调用中返回新 Promise
+      // MyPromise
+      MyPromise.resolve(2)
+        .then((v) => new MyPromise((resolve) => resolve(v * 3)))
+        .then((v) => console.log("MyPromise 链式返回新 Promise:", v)); // 应输出 6
+
+      // 原生 Promise
+      Promise.resolve(2)
+        .then((v) => new Promise((resolve) => resolve(v * 3)))
+        .then((v) => console.log("原生 Promise 链式返回新 Promise:", v)); // 应输出 6
+
+      // 同步 reject 和 catch
+      // MyPromise
+      new MyPromise((_, reject) => reject("error")).catch((err) =>
+        console.log("MyPromise catch 捕获:", err)
+      ); // 应输出 "error"
+
+      // 原生 Promise
+      new Promise((_, reject) => reject("error")).catch((err) =>
+        console.log("原生 Promise catch 捕获:", err)
+      ); // 应输出 "error"
+
+      // 链式调用中的错误冒泡
+      // MyPromise
+      MyPromise.resolve()
+        .then(() => {
+          throw "链式错误";
+        })
+        .then(
+          () => {},
+          (err) => console.log("MyPromise 错误冒泡:", err)
+        ); // 应输出 "链式错误"
+
+      // 原生 Promise
+      Promise.resolve()
+        .then(() => {
+          throw "链式错误";
+        })
+        .then(
+          () => {},
+          (err) => console.log("原生 Promise 错误冒泡:", err)
+        ); // 应输出 "链式错误"
+
+      // MyPromise.all 基本功能
+      // MyPromise
+      MyPromise.all([
+        MyPromise.resolve(1),
+        MyPromise.resolve(2),
+        new MyPromise((resolve) => setTimeout(() => resolve(3), 100)),
+      ]).then((arr) => console.log("MyPromise.all 结果:", arr)); // 应输出 [1, 2, 3]
+
+      // 原生 Promise
+      Promise.all([
+        Promise.resolve(1),
+        Promise.resolve(2),
+        new Promise((resolve) => setTimeout(() => resolve(3), 100)),
+      ]).then((arr) => console.log("原生 Promise.all 结果:", arr)); // 应输出 [1, 2, 3]
+
+      // MyPromise.race 竞速逻辑
+      // MyPromise
+      const p1 = new MyPromise((resolve) =>
+        setTimeout(() => resolve("slow"), 200)
+      );
+      const p2 = new MyPromise((resolve) =>
+        setTimeout(() => resolve("fast"), 100)
+      );
+      MyPromise.race([p1, p2]).then((v) =>
+        console.log("MyPromise.race 结果:", v)
+      ); // 应输出 "fast"
+
+      // 原生 Promise
+      const p3 = new Promise((resolve) =>
+        setTimeout(() => resolve("slow"), 200)
+      );
+      const p4 = new Promise((resolve) =>
+        setTimeout(() => resolve("fast"), 100)
+      );
+      Promise.race([p3, p4]).then((v) =>
+        console.log("原生 Promise.race 结果:", v)
+      ); // 应输出 "fast"
+
+      // 循环引用检测
+      // MyPromise
+      const pr = new MyPromise((resolve) => resolve());
+      const pr2 = pr.then(() => pr2); // 应抛出循环引用错误
+      pr2.catch((err) =>
+        console.log("MyPromise 循环引用:", err instanceof TypeError)
+      );
+
+      // 原生 Promise
+      const pNative = new Promise((resolve) => resolve());
+      const pNative2 = pNative.then(() => pNative2); // 应抛出循环引用错误
+      pNative2.catch((err) =>
+        console.log("原生 Promise 循环引用:", err instanceof TypeError)
+      );
+
+      // 穿透效果（值/错误传递）
+      // MyPromise
+      MyPromise.resolve("穿透值")
+        .then()
+        .then((v) => console.log("MyPromise 值穿透:", v)); // 应输出 "穿透值"
+
+      // 原生 Promise
+      Promise.resolve("穿透值")
+        .then()
+        .then((v) => console.log("原生 Promise 值穿透:", v)); // 应输出 "穿透值"
+    </script>
+  </body>
+</html>
