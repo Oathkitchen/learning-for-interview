@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const add10 = (x) => x + 10;
+      const mul10 = (x) => x * 10;
+      const add100 = (x) => x + 100;
+
+      // (10 + 100) * 10 + 10 = 1110
+      compose(add10, mul10, add100)(10);
+
+      function compose(...fns) {
+        fns = fns.reverse();
+        return function () {
+          const result = fns.reduce((acc, cur) => {
+            return cur(acc);
+          }, ...arguments);
+
+          console.log(result);
+          return result;
+        };
+      }
+    </script>
+  </body>
+</html>

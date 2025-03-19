@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // 原生 bind（硬绑定）
+      // 特性：一旦绑定 this，后续调用无法更改上下文。
+
+      // softBind（软绑定）
+      // 特性：允许在调用时动态选择上下文：
+      // 如果调用时的 this 是全局对象或 undefined，则使用默认绑定的 thisArg。
+      // 否则，使用调用时传入的 this。
+
+      Function.prototype.softBind = function (thisArgs, ...args) {
+        const originalFn = this;
+        function softbound() {
+          const combinedArgs = args.concat(Array.from(arguments));
+          if (this instanceof softbound) {
+            return new originalFn(combinedArgs);
+          } else {
+            const currentThis =
+              this === undefined || this === globalThis ? thisArgs : this;
+            return originalFn.apply(currentThis, combinedArgs);
+          }
+        }
+
+        softbound.prototype = Object.create(originalFn.prototype);
+        return softbound;
+      };
+
+      function foo() {
+        console.log(this.name);
+      }
+      const obj1 = { name: "Alice" };
+      const softBound = foo.softBind(obj1);
+      softBound(); // Alice（默认 thisArg）
+      softBound.call({ name: "Bob" }); // Bob（动态选择新 this）
+    </script>
+  </body>
+</html>

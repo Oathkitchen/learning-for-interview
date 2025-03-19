@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      Array.prototype.myFlatMap = function (mapper, thisArg) {
+        let thisObj = thisArg ? thisArg : this;
+        return this.reduce((acc, cur, index, array) => {
+          const result = mapper.call(thisObj, cur, index, array);
+          return acc.concat(result);
+        }, []);
+      };
+
+      const arr = ["hello", "world"];
+      const mapped = arr.myFlatMap((str) => str.split(""));
+      console.log(mapped); // ['h','e','l','l','o','w','o','r','l','d']
+
+      // 定义回调函数和上下文对象
+      const context = { multiplier: 2 };
+      function callback(x) {
+        return [x * this.multiplier];
+      }
+
+      // 测试数组
+      const arr2 = [1, 2, 3];
+      const result = arr2.flatMap(callback, context);
+
+      // 预期结果：[2, 4, 6]
+      console.log(result); // ✅
+    </script>
+  </body>
+</html>
