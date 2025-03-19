@@ -9,6 +9,7 @@
     <script type="module">
       import { VPromise } from "./promise-v3.js";
       import { MyPromise } from './my-promise.js'
+      import { XPromise } from "./x-promise.js";
 
       function testPromise(construc) {
         console.log(1)
@@ -20,9 +21,10 @@
           });
         })
 
-        console.log(`promise instanceof VPromise: ${promise instanceof VPromise}`);
+        // console.log(`promise instanceof VPromise: ${promise instanceof VPromise}`);
         console.log(`promise instanceof Promise: ${promise instanceof Promise}`);
-        console.log(`promise instanceof MyPromise: ${promise instanceof MyPromise}`);
+        // console.log(`promise instanceof MyPromise: ${promise instanceof MyPromise}`);
+        console.log(`promise instanceof XPromise: ${promise instanceof XPromise}`);
 
         promise.then((result) => {
           console.log(result);
@@ -31,7 +33,8 @@
       }
       // testPromise(Promise)
       // testPromise(VPromise)
-      testPromise(MyPromise)
+      // testPromise(MyPromise)
+      testPromise(XPromise)
     </script>
   </body>
 </html>
