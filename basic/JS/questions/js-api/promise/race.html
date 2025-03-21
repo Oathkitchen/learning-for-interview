@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function myRace(promises) {
+        return new Promise((resolve, reject) => {
+          promises.forEach((pro) => {
+            Promise.resolve(pro).then(resolve, reject);
+          });
+        });
+      }
+
+      const test1 = () => {
+        const fastPromise = new Promise((resolve) =>
+          setTimeout(resolve, 100, "fast")
+        );
+        const slowPromise = new Promise((resolve) =>
+          setTimeout(resolve, 200, "slow")
+        );
+
+        myRace([fastPromise, slowPromise]).then((result) => {
+          console.log(`myRace: ${result}`);
+        });
+        Promise.race([fastPromise, slowPromise]).then((result) => {
+          console.log(`Promise: ${result}`);
+        });
+      };
+
+      test1();
+
+      // 用例描述：第一个 Promise 是 reject
+      const test2 = () => {
+        const rejectPromise = new Promise((_, reject) =>
+          setTimeout(reject, 50, "error")
+        );
+        const resolvePromise = new Promise((resolve) =>
+          setTimeout(resolve, 100, "success")
+        );
+
+        Promise.race([rejectPromise, resolvePromise]).catch((error) => {
+          console.log(`Promise: ${error}`);
+        });
+
+        myRace([rejectPromise, resolvePromise]).catch((error) => {
+          console.log(`myRace: ${error}`);
+        });
+      };
+
+      test2();
+
+      // 用例描述：数组中包含非 Promise 值（数字、字符串等）
+      const test4 = () => {
+        const promise = new Promise((resolve) =>
+          setTimeout(resolve, 200, "slow")
+        );
+        const nonPromise = 123; // 非 Promise 值会被 Promise.resolve 包装
+
+        Promise.race([nonPromise, promise]).then((result) => {
+          console.log(`Promise: ${result}`);
+        });
+
+        myRace([nonPromise, promise]).then((result) => {
+          console.log(`myRace: ${result}`);
+        });
+      };
+
+      test4()
+    </script>
+  </body>
+</html>

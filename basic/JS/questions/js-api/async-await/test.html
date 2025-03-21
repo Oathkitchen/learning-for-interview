@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script type="module">
+    import run from './run.js'
+
+    // 目的其实是想用 generator ，yield 实现类似 async await 的效果
+    function* test(str0) {
+      const strResult = yield str()
+
+      console.log(strResult)
+
+      const str2Result = yield str2()
+
+      return `${str0} - ${strResult} - ${str2Result}`
+    }
+
+    function str() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve('str')
+        }, 1000)
+      })
+    }
+
+    function str2() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve('str2')
+        }, 1000)
+      })
+    }
+
+    // run(test, 'str0').then(value => console.log(value))
+
+    function* errorTest() {
+      try {
+        const strr = yield str()
+        console.log(strr)
+        const erstr = yield errorStr()
+        console.log('pass by')
+        return 'Return'
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    function errorStr() {
+      return new Promise((res, rej) => {
+        setTimeout(() => {
+          rej('damn!')
+        }, 1000)
+      })
+    }
+
+    run(errorTest).then(value => console.log(value))
+  </script>
+</body>
+</html>
