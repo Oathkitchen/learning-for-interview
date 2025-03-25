@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const _ = {
+        merge: function (object, source) {
+          Object.keys(source).forEach((key) => {
+            const value = source[key];
+            if (!object[key] || typeof value !== "object") {
+              object[key] = source[key];
+            } else {
+              _.merge(object[key], value);
+            }
+          });
+        },
+      };
+
+      var object = {
+        a: [{ b: 2 }, { d: 4 }],
+      };
+
+      var other = {
+        a: [{ c: 3 }, { e: 5 }],
+      };
+
+      _.merge(object, other);
+      console.log(object);
+      // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
+    </script>
+  </body>
+</html>

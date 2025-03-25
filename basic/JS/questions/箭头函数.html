@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const obj = {
+        num: 100,
+        a: {
+          num: 200,
+          getNum: () => {
+            return function() {
+              console.log(this.num)
+            }
+          }
+        },
+        getNum(){
+          console.log(this.num)
+        }
+      }
+      const b = { num: 300 }
+      b.getNum = obj.a.getNum()
+      b.getNum()
+    </script>
+  </body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    Promise.any() 静态方法将一个 Promise 可迭代对象作为输入，并返回一个
+    Promise。 当输入的任何一个 Promise 兑现时，这个返回的 Promise
+    将会兑现，并返回第一个兑现的值。 当所有输入 Promise
+    都被拒绝（包括传递了空的可迭代对象）时，它会以一个包含拒绝原因数组的
+    AggregateError 拒绝。
+
+    <script>
+      Promise.myAny = function (promises) {
+        return new Promise((resolve, reject) => {
+          const rejectedReasons = [];
+          let rrCount = 0;
+          for (let i = 0; i < promises.length; i++) {
+            const pro = promises[i];
+            if (!pro) {
+              rejectedReasons[i] = "null";
+            }
+            pro.then(
+              (value) => {
+                resolve(value);
+              },
+              (reason) => {
+                rejectedReasons[i] = reason;
+                rrCount++;
+                if (rrCount === promises.length) {
+                  reject(new AggregateError(rejectedReasons, 'All promises were rejected'));
+                }
+              }
+            );
+          }
+        });
+      };
+
+      // ------------------test 1------------------
+
+      const promise1 = Promise.reject(0);
+      const promise2 = new Promise((resolve) =>
+        setTimeout(resolve, 100, "quick")
+      );
+      const promise3 = new Promise((resolve) =>
+        setTimeout(resolve, 500, "slow")
+      );
+
+      const promises = [promise1, promise2, promise3];
+
+      Promise.any(promises).then((value) => console.log(`promise: ${value}`));
+      Promise.myAny(promises).then((value) => console.log(`myAny: ${value}`));
+
+      // Expected output: "quick"
+
+      // ------------------------test 2-------------------
+      const pErr = new Promise((resolve, reject) => {
+        reject("总是失败");
+      });
+
+      const pSlow = new Promise((resolve, reject) => {
+        setTimeout(resolve, 500, "最终完成");
+      });
+
+      const pFast = new Promise((resolve, reject) => {
+        setTimeout(resolve, 100, "很快完成");
+      });
+
+      Promise.any([pErr, pSlow, pFast]).then((value) => {
+        console.log(`promise: ${value}`);
+        // pFast 第一个兑现
+      });
+      Promise.myAny([pErr, pSlow, pFast]).then((value) => {
+        console.log(`myAny: ${value}`);
+        // pFast 第一个兑现
+      });
+      // 打印：
+      // 很快完成
+
+      // -----------------test 3----------------
+      const failure = new Promise((resolve, reject) => {
+        reject("总是失败");
+      });
+
+      Promise.any([failure]).catch((err) => {
+        console.log(`promise: ${err}`);
+        console.log(`promise: ${err.errors}`);
+        console.log(`promise: ${err.message}`);
+      });
+      Promise.myAny([failure]).catch((err) => {
+        console.log(`myAny: ${err}`);
+        console.log(`myAny: ${err.errors}`);
+        console.log(`myAny: ${err.message}`);
+      });
+      // AggregateError: No Promise in Promise.any was resolved
+    </script>
+  </body>
+</html>
