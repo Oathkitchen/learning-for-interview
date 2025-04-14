@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      /**
+       * 实现子类继承父类
+       * @param {Function} Child 子类构造函数
+       * @param {Function} Parent 父类构造函数
+       */
+      function inherits(Child, Parent) {
+        // 1. 继承父类原型上的方法
+        Child.prototype = Object.create(Parent.prototype);
+
+        // 2. 修复子类的 constructor 指向
+        Child.prototype.constructor = Child;
+
+        // 3. 可选：保存父类的引用，便于子类调用父类方法
+        Child.super_ = Parent;
+      }
+
+      // 使用示例
+      function Animal(name) {
+        this.name = name;
+      }
+
+      Animal.prototype.sayName = function () {
+        console.log("My name is " + this.name);
+      };
+
+      function Dog(name, breed) {
+        // 调用父类构造函数（需手动调用）
+        Dog.super_.call(this, name);
+        this.breed = breed;
+      }
+
+      // 继承 Animal
+      inherits(Dog, Animal);
+
+      Dog.prototype.bark = function () {
+        console.log("Woof!");
+      };
+
+      // 测试
+      const myDog = new Dog("Buddy", "Golden Retriever");
+      myDog.sayName(); // "My name is Buddy"
+      myDog.bark(); // "Woof!"
+      console.log(myDog instanceof Animal); // true
+    </script>
+  </body>
+</html>
