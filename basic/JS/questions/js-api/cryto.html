@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <script>
+    function secureRandomString(length){
+      const source = 'QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklxzxcvbnm1234567890'
+      const unitedTypeArray = new Uint32Array(length)
+      window.crypto.getRandomValues(unitedTypeArray)
+      return Array.from(unitedTypeArray).map((randomNumber) => {
+        return source[randomNumber % source.length]
+      }).join('')
+    }
+
+    console.log(secureRandomString(4))
+    console.log(secureRandomString(6))
+    console.log(secureRandomString(18))
+  </script>
+</body>
+</html>

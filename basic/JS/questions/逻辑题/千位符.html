@@ -30,24 +30,26 @@
        * @returns {string}
        */
       function numberThousands(number) {
-        const [integer, decimal] = String(number).split(".");
-        const negative = integer[0] === "-" ? true : false;
-        const integerStr = integer.replace("-", "").split("");
+        debugger
+        const [integer, decimal] = number.toString().split(".");
+        const negative = integer.startsWith("-");
+        const unsiginedInterger = integer.replace("-", "");
 
-        let result = "";
         let count = 0;
-        for (let i = integerStr.length - 1; i >= 0; i--) {
+        let result = "";
+
+        for (let i = unsiginedInterger.length - 1; i >= 0; i--) {
           count++;
-          result = integerStr[i] + result;
+          result = unsiginedInterger[i] + result;
           if (count % 3 === 0 && i !== 0) {
             result = "," + result;
           }
         }
 
-        const finalRes =
-          (negative ? "-" : "") + (decimal ? `${result}.${decimal}` : result);
-        console.log(finalRes);
-        return finalRes;
+        if(negative) result = '-' + result
+        if(decimal) result = result + `.${decimal}`
+        console.log(result)
+        return result
       }
     </script>
   </body>
