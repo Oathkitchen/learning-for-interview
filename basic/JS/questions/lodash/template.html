@@ -10,19 +10,19 @@
       function get(source, path, defaultValue = undefined) {
         const paths = path
           .replace(/\[(\w+)\]/g, ".$1")
-          .replace(/\[("\w+")\]/g, ".$1")
+          .replace(/\["(\w+)"\]/g, ".$1")
           .replace(/\['(\w+)'\]/g, ".$1")
           .split(".");
 
-        let result = source;
-        for (const prot of paths) {
-          result = result?.[prot];
+        let result = source
+        for(const p of paths){
+          result = result?.[p]
         }
 
-        return result === undefined ? defaultValue : result;
+        return result ? result : defaultValue
       }
 
-      function render(template, data) {
+      function render(template, data){
         return template.replace(/{{\s+([^\s]+)\s+}}/g, (match, key) => {
           return get(data, key)
         })
