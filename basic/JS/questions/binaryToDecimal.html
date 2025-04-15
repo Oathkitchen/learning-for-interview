@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function binaryToDecimal(str) {
+        if (typeof str !== "string" || !/^[01]+$/.test(str)) {
+          throw new Error("not valid binary string");
+        }
+
+        let decimal = 0;
+        let len = str.length;
+        for (let i = 0; i < len; i++) {
+          const char = str.charAt(len - 1 - i);
+          decimal = decimal + parseInt(char) * Math.pow(2, i);
+        }
+
+        return decimal;
+      }
+
+      // 测试用例
+      console.log(binaryToDecimal("1010")); // 10
+      console.log(binaryToDecimal("1111")); // 15
+      console.log(binaryToDecimal("0")); // 0
+
+      function decimalToBinary(decimal) {
+        if (typeof decimal !== "number" || !Number.isInteger(decimal)) {
+          throw new Error("not a valid decimal");
+        }
+
+        if (decimal === 0) return 0;
+
+        let num = decimal;
+        let binary = "";
+        while (num > 0) {
+          binary = (num % 2) + binary;
+          num = Math.floor(num / 2);
+        }
+
+        return binary;
+      }
+
+      // 测试用例
+      console.log(decimalToBinary(10)); // "1010"
+      console.log(decimalToBinary(15)); // "1111"
+      console.log(decimalToBinary(0)); // "0"
+    </script>
+  </body>
+</html>

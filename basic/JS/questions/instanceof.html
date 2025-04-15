@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function myInstanceOf(instance, constructor) {
+        if (typeof instance !== "object" && typeof instance !== "function")
+          return false;
+
+        let proto = instance.__proto__;
+
+        while (true) {
+          if (proto === null) return false;
+          if (proto === constructor.prototype) return true;
+          proto = proto.__proto__;
+        }
+      }
+
+      //=> true
+      console.log(myInstanceOf([], Array));
+
+      //=> true
+      console.log(myInstanceOf([], Object));
+
+      //=> true
+      console.log(myInstanceOf((x) => x, Object));
+
+      //=> false
+      console.log(myInstanceOf("hello", Object));
+    </script>
+  </body>
+</html>

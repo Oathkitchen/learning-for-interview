@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      function hasCircularReference(obj) {
+        const weakmap = new WeakMap();
+        function detect(val) {
+          if (val === null || typeof val !== "object") return false;
+
+          if (weakmap.has(val)) {
+            return true;
+          } else {
+            weakmap.set(val, true);
+          }
+
+          const keys = Reflect.ownKeys(val);
+          for (const key of keys) {
+            if (detect(val[key])) return true;
+          }
+
+          return false;
+        }
+        return detect(obj);
+      }
+
+      // 用例1：无循环引用
+      const obj1 = { a: 1, b: { c: 2 } };
+      console.log(hasCircularReference(obj1)); // false
+
+      // 用例2：直接循环引用
+      const obj2 = {};
+      obj2.self = obj2;
+      console.log(hasCircularReference(obj2)); // true
+
+      // 用例3：间接循环引用
+      const obj3 = { a: {} };
+      obj3.a.circular = obj3;
+      console.log(hasCircularReference(obj3)); // true
+
+      // 用例4：数组循环引用
+      const arr = [];
+      arr.push(arr);
+      console.log(hasCircularReference(arr)); // true
+
+      // 用例5：内置对象（无循环）
+      const date = new Date();
+      console.log(hasCircularReference(date)); // false
+    </script>
+  </body>
+</html>
