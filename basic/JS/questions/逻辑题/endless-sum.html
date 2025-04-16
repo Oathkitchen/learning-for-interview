@@ -7,17 +7,30 @@
   </head>
   <body>
     <script>
-      function sum(...args) {
-        const f = (...rest) => sum(...args, ...rest);
-        f.valueOf = () => args.reduce((acc, cur) => acc + cur, 0);
-        return f;
-      }
+      // function sum(...args) {
+      //   const f = (...rest) => sum(...args, ...rest);
+      //   f.valueOf = () => args.reduce((acc, cur) => acc + cur, 0);
+      //   return f;
+      // }
       
       console.log(sum(1, 2, 3).valueOf()); //6
       console.log(sum(2, 3)(2).valueOf()); //7
       console.log(sum(1)(2)(3)(4).valueOf()); //10
       console.log(sum(2)(4, 1)(2).valueOf()); //9
       console.log(sum(1)(2)(3)(4)(5)(6).valueOf()); // 21
+
+      function sum(...args){
+        const fn = (...args2) => {
+          const combinedArgs = args.concat(args2)
+          return sum(...combinedArgs)
+        }
+        fn.valueOf = () => {
+          return args.reduce((acc, cur) => {
+            return acc + cur
+          }, 0)
+        }
+        return fn
+      }
     </script>
   </body>
 </html>

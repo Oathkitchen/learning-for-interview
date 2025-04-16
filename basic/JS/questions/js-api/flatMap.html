@@ -7,6 +7,14 @@
   </head>
   <body>
     <script>
+      // Array.prototype.myFlatMap = function (mapper, thisArg) {
+      //   let thisObj = thisArg ? thisArg : this;
+      //   return this.reduce((acc, cur, index, array) => {
+      //     const result = mapper.call(thisObj, cur, index, array);
+      //     return acc.concat(result);
+      //   }, []);
+      // };
+
       Array.prototype.myFlatMap = function (mapper, thisArg) {
         let thisObj = thisArg ? thisArg : this;
         return this.reduce((acc, cur, index, array) => {

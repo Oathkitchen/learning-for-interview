@@ -21,33 +21,33 @@
         console.log(key);
       }
 
-      class LRUCache{
-        constructor(limit){
-          this.limit = limit
-          this.container = new Map()
+      class LRUCache {
+        constructor(limit) {
+          this.map = new Map();
+          this.limit = limit;
         }
 
-        put(key, value){
-          if(this.container.has(key)) {
-            this.container.delete(key)
-            this.container.set(key, value)
-          } else if(this.container.size >= this.limit){
-            const delkey = this.container.keys().next().value
-            this.container.delete(delkey)
-            this.container.set(key, value)
+        get(key) {
+          if (this.map.has(key)) {
+            const result = this.map.get(key);
+            this.map.delete(key);
+            this.map.set(key, result);
+            return result;
           } else {
-            this.container.set(key, value)
+            return null;
           }
         }
 
-        get(key){
-          if(this.container.has(key)){
-            const value = this.container.get(key)
-            this.container.delete(key)
-            this.container.set(key, value)
-            return value
+        put(key, value){
+          if(this.map.has(key)){
+            this.map.delete(key)
+            this.map.set(key, value)
           } else {
-            return null
+            this.map.set(key, value)
+            if(this.map.size > this.limit){
+              const delkey = this.map.keys().next().value
+              this.map.delete(delkey)
+            }
           }
         }
       }
