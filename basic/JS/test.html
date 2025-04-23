@@ -6,18 +6,16 @@
     <title>Document</title>
   </head>
   <body>
+    使用迭代的方式实现 flatten 函数
     <script>
-      const promise1 = Promise.reject(0);
-      const promise2 = new Promise((resolve) =>
-        setTimeout(resolve, 100, "quick")
-      );
-      const promise3 = new Promise((resolve) =>
-        setTimeout(resolve, 500, "slow")
-      );
-
-      const promises = [promise1, promise2, promise3];
-
-      Promise.any(promises).then((value) => console.log(value));
+      var a = 10;
+      (function () {
+        console.log(a);
+        a = 5;
+        console.log(window.a);
+        var a = 20;
+        console.log(a);
+      })();
     </script>
   </body>
 </html>

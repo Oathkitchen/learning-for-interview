@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/axios/0.26.0/axios.min.js"></script>
   </head>
   <body>
     <button id="fetchCancel">fetch cancel</button>
@@ -23,17 +23,28 @@
 
     <button id="axiosCancel">axios cancel</button>
     <script>
-      const source = axios.CancelToken.source();
-      const acBtn = document.getElementById("axiosCancel");
-      acBtn.addEventListener("click", () => {
-        axios
-          .get("https://jsonplaceholder.typicode.com/posts", {
-            cancelToken: source.token,
-          })
-          .then((res) => console.log(res.data))
-          .catch((error) => console.log(error));
-          source.cancel('Operation canceled by the user.')
-      });
+      // const source = axios.CancelToken.source();
+      // const acBtn = document.getElementById("axiosCancel");
+      // acBtn.addEventListener("click", () => {
+      //   axios
+      //     .get("https://jsonplaceholder.typicode.com/posts", {
+      //       cancelToken: source.token,
+      //     })
+      //     .then((res) => console.log(res.data))
+      //     .catch((error) => console.log(error));
+      //     source.cancel('Operation canceled by the user.')
+      // });
+
+
+      const cancelSource = axios.CancelToken.source()
+      const axiosBtn = document.getElementById('axiosCancel')
+      axiosBtn.addEventListener('click', () => {
+        axios.get('https://jsonplaceholder.typicode.com/posts', {
+          cancelToken: cancelSource.token
+        })
+        cancelSource.cancel('Operation canceled by the script')
+      })
+
     </script>
     <button id="XHRAbort">XHR abort</button>
     <script>
