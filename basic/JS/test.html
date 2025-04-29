@@ -6,16 +6,18 @@
     <title>Document</title>
   </head>
   <body>
-    使用迭代的方式实现 flatten 函数
     <script>
-      var a = 10;
-      (function () {
-        console.log(a);
-        a = 5;
-        console.log(window.a);
-        var a = 20;
-        console.log(a);
-      })();
+      // 给定一个字符串，识别出其中的第一个和第二个参数, 字符串就是后面的 test("testdome","TD")，不要双引号，只要里面的内容
+      function getArguments(str) {
+        // 使用正则表达式匹配括号内的内容
+        const regex = /"([^"]+)"\s*,\s*"([^"]+)"/;
+        const match = str.match(regex);
+        if (match) {
+          return [match[1], match[2]];
+        }
+        return [];
+      }
+      console.log(getArguments('test("testdome","TD")')); // ["testdome", "TD"]
     </script>
   </body>
 </html>
