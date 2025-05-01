@@ -7,17 +7,39 @@
   </head>
   <body>
     <script>
-      // 给定一个字符串，识别出其中的第一个和第二个参数, 字符串就是后面的 test("testdome","TD")，不要双引号，只要里面的内容
-      function getArguments(str) {
-        // 使用正则表达式匹配括号内的内容
-        const regex = /"([^"]+)"\s*,\s*"([^"]+)"/;
-        const match = str.match(regex);
-        if (match) {
-          return [match[1], match[2]];
+      var romanToInt = function (s) {
+        debugger;
+        const numMap = new Map();
+        numMap.set("I", 1);
+        numMap.set("V", 5);
+        numMap.set("X", 10);
+        numMap.set("L", 50);
+        numMap.set("C", 100);
+        numMap.set("D", 500);
+        numMap.set("M", 1000);
+        numMap.set("IV", 4);
+        numMap.set("IX", 9);
+        numMap.set("XL", 40);
+        numMap.set("XC", 90);
+        numMap.set("CD", 400);
+        numMap.set("CM", 900);
+
+        let index = s.length;
+        let answer = 0;
+        while (index > 0) {
+          const targetStr = s.substring(index - 2, index);
+          if (numMap.has(targetStr)) {
+            answer += numMap.get(targetStr);
+            index -= 2;
+          } else {
+            answer += numMap.get(s[index - 1]);
+            index -= 1;
+          }
         }
-        return [];
-      }
-      console.log(getArguments('test("testdome","TD")')); // ["testdome", "TD"]
+        return answer;
+      };
+
+      console.log(romanToInt("MCDLXXVI")); // 3
     </script>
   </body>
 </html>
