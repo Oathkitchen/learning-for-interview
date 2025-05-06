@@ -1,0 +1,8 @@
+{
+  "eslint.options": {
+    "env": {
+      "NODE_ENV": "development",
+      "BABEL_ENV": "development"
+    }
+  }
+}
