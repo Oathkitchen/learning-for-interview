@@ -7,6 +7,7 @@ import "@/index.less";
 import { Count } from "@/components/count.jsx";
 import { BooleanTest } from "@/components/boolean.jsx";
 import { List } from "./components/list.jsx";
+import { FDemo } from "./components/functional/FDemo.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -27,6 +28,13 @@ root.render(
       <BooleanTest />
 
       <List />
+      <FDemo
+        title="我是标题"
+        num={10}
+        className="test-box"
+        style={{ fontSize: "20px" }}
+        data={[1, 2, 3, 4, 5]}
+      />
     </>
   </React.StrictMode>
 );
