@@ -13,6 +13,8 @@ graph LR
     A --> N(Common Anti-patterns)
     N --> O(a blanket CSP policy for the entire enterprise)
     N --> P(Reliance on HTTP Interceptors)
+    O --> Q(Assumption Browser Versions Support CSP Equally)
+    O --> R(Issues Supporting Legacy Applications)
 ```
 
 ## XSS Defense Philosophy¶
@@ -173,6 +175,7 @@ There usually is an implicit assumption that all the customer browsers support a
 
 ##### Problem 2 - Issues Supporting Legacy Applications¶
 Mandatory universal enterprise-wide CSP response headers are inevitably going to break some web applications, especially legacy ones. This causes the business to push-back against AppSec guidelines and inevitably results in AppSec issuing waivers and/or security exceptions until the application code can be patched up. But these security exceptions allow cracks in your XSS armor, and even if the cracks are temporary they still can impact your business, at least on a reputational basis.
+
 ---
 
 XSS（跨站脚本攻击）根据攻击方式和恶意脚本的存储位置，主要分为以下三种类型，每种类型的攻击原理和防御措施如下：
