@@ -34,7 +34,10 @@ root.render(
         className="test-box"
         style={{ fontSize: "20px" }}
         data={[1, 2, 3, 4, 5]}
-      />
+      >
+        <div>我是子组件</div>
+        <div>我是子组件</div>
+      </FDemo>
     </>
   </React.StrictMode>
 );
