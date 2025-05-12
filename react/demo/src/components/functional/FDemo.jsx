@@ -1,12 +1,10 @@
-export function FDemo(props) {
-  console.log(`FDemo props is Frozen: ${Object.isFrozen(props)}`);
-  
+const FDemo = function({ title = 'default titles', num, className, style, data = [] }) {  
   return (
-    <div className={`orinigial ${props.className}`} style={props.style}>
-      <h1>{props.title}</h1>
-      <p>nun is {props.num}</p>
+    <div className={`orinigial ${className}`} style={style}>
+      <h1>{title}</h1>
+      <p>nun is {num}</p>
       <ul>
-        {props.data.map((item) => {
+        {data.map((item) => {
           return (
             <li key={item}>
               <p>item is {item}</p>
@@ -17,3 +15,6 @@ export function FDemo(props) {
     </div>
   );
 }
+
+
+export default FDemo;

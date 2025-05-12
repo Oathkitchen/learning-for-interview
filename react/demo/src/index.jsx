@@ -7,7 +7,7 @@ import "@/index.less";
 import { Count } from "@/components/count.jsx";
 import { BooleanTest } from "@/components/boolean.jsx";
 import { List } from "./components/list.jsx";
-import { FDemo } from "./components/functional/FDemo.jsx";
+import FDemo from "./components/functional/FDemo.jsx";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -38,6 +38,8 @@ root.render(
         <div>我是子组件</div>
         <div>我是子组件</div>
       </FDemo>
+
+      <FDemo />
     </>
   </React.StrictMode>
 );
