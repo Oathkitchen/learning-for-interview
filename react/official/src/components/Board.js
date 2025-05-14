@@ -1,6 +1,13 @@
-function Square({ value, onSquareClick }) {
+function Square({ value, onSquareClick, isWinner }) {
   return (
-    <button className="square" onClick={onSquareClick}>
+    <button
+      className="square"
+      onClick={onSquareClick}
+      style={{
+        backgroundColor: isWinner ? "yellow" : "white",
+        color: isWinner ? "red" : "black",
+      }}
+    >
       {value}
     </button>
   );
@@ -17,27 +24,20 @@ export default function Board({ xIsNext, squares, onPlay, winner }) {
     } else {
       nextSquares[i] = "O";
     }
-    onPlay(nextSquares);
-  }
-
-  let status;
-  if (winner) {
-    status = "Winner: " + winner;
-  } else {
-    status = "Next player: " + (xIsNext ? "X" : "O");
+    onPlay(nextSquares, i);
   }
 
   return (
     <>
-      <div className="status">{status}</div>
       {[0, 1, 2].map((num) => {
         const start = num * 3;
         return (
-          <div className="board-row">
+          <div className="board-row" key={num}>
             {Array.from({ length: 3 }, (_, i) => {
               const index = start + i;
               return (
                 <Square
+                  isWinner={winner && winner[1].includes(index)}
                   key={index}
                   value={squares[index]}
                   onSquareClick={() => handleClick(index)}
