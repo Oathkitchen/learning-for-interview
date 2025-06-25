@@ -7,39 +7,25 @@
   </head>
   <body>
     <script>
-      var romanToInt = function (s) {
+      var reverseWords = function (s) {
         debugger;
-        const numMap = new Map();
-        numMap.set("I", 1);
-        numMap.set("V", 5);
-        numMap.set("X", 10);
-        numMap.set("L", 50);
-        numMap.set("C", 100);
-        numMap.set("D", 500);
-        numMap.set("M", 1000);
-        numMap.set("IV", 4);
-        numMap.set("IX", 9);
-        numMap.set("XL", 40);
-        numMap.set("XC", 90);
-        numMap.set("CD", 400);
-        numMap.set("CM", 900);
-
-        let index = s.length;
-        let answer = 0;
-        while (index > 0) {
-          const targetStr = s.substring(index - 2, index);
-          if (numMap.has(targetStr)) {
-            answer += numMap.get(targetStr);
-            index -= 2;
-          } else {
-            answer += numMap.get(s[index - 1]);
-            index -= 1;
+        const arr = s.split(" ");
+        while (!arr[0]) {
+          arr.shift();
+        }
+        arr.reverse()
+        while (!arr[0]) {
+          arr.shift();
+        }
+        let result = ''
+        for (let i = 0; i < arr.length; i++) {
+          if (arr[i]) {
+              result += ' ' + arr[i];
           }
         }
-        return answer;
+        return result.trim();
       };
-
-      console.log(romanToInt("MCDLXXVI")); // 3
+      console.log(reverseWords("a good   example"));
     </script>
   </body>
 </html>

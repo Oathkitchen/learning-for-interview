@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>DOMContentLoaded vs onload</title>
+    <script src="./async.js" async></script>
+    <script src="./defer.js" defer></script>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         console.log("DOMContentLoaded: DOM 已加载完成！");
@@ -15,9 +17,14 @@
   </head>
   <body>
     <h1>Hello, World!</h1>
-    <img src="https://images.unsplash.com/photo-1738584672973-f33b662c05d4?q=80&w=3003&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Large Image" id="img"/>
+    <img src="./loading-result.png"/>
+    <img
+      src="https://images.unsplash.com/photo-1738584672973-f33b662c05d4?q=80&w=3003&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+      alt="Large Image"
+      id="img"
+    />
     <script>
-      const img = document.getElementById("img")
+      const img = document.getElementById("img");
 
       // 监听图片加载完成事件
       img.addEventListener("load", function () {

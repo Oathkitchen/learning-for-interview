@@ -36,7 +36,6 @@
 ### 结论：
 - **`async` 脚本的执行时机不确定**，它取决于下载速度。
 - **`async` 脚本可能会在 `DOMContentLoaded` 之前或之后执行**，具体情况取决于脚本的加载时机。
-- **如果你希望确保脚本在 `DOMContentLoaded` 之后执行**，可以使用 `defer` 代替 `async`，因为 `defer` 让脚本在 HTML 解析完成后、`DOMContentLoaded` 之前执行。
 
 在 HTML 中，`<script>` 标签的 `defer` 和 `async` 属性用于控制外部 JavaScript 文件的加载和执行方式，以优化页面加载性能。
 
