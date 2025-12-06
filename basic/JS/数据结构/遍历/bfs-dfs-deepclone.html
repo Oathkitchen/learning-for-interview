@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深拷贝: DFS vs BFS</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    h1 { color: #333; }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      flex-wrap: wrap;
+    }
+
+    .code-section {
+      flex: 1;
+      min-width: 450px;
+      background: #282c34;
+      border-radius: 8px;
+      padding: 20px;
+      color: #abb2bf;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .code-section h3 {
+      color: #61dafb;
+      margin-top: 0;
+      border-bottom: 1px solid #3e4451;
+      padding-bottom: 10px;
+    }
+
+    pre {
+      margin: 0;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .test-area {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 1200px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #1890ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    button:hover { background-color: #40a9ff; }
+
+    #output {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      min-height: 100px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>深拷贝实现：DFS (递归) vs BFS (循环)</h1>
+
+  <div class="container">
+    <!-- DFS 代码展示 -->
+    <div class="code-section">
+      <h3>DFS Deep Clone (递归)</h3>
+      <pre>
+function deepCloneDFS(obj, hash = new WeakMap()) {
+  // 1. 处理 null 和非对象
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  // 2. 处理循环引用
+  if (hash.has(obj)) {
+    return hash.get(obj);
+  }
+
+  // 3. 初始化新对象 (支持数组和对象)
+  const cloneObj = Array.isArray(obj) ? [] : {};
+  
+  // 4. 记录哈希表
+  hash.set(obj, cloneObj);
+
+  // 5. 递归拷贝属性
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      cloneObj[key] = deepCloneDFS(obj[key], hash);
+    }
+  }
+
+  return cloneObj;
+}
+      </pre>
+    </div>
+
+    <!-- BFS 代码展示 -->
+    <div class="code-section">
+      <h3>BFS Deep Clone (队列)</h3>
+      <pre>
+function deepCloneBFS(obj) {
+  // 1. 处理 null 和非对象
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  const hash = new WeakMap();
+  const rootClone = Array.isArray(obj) ? [] : {};
+  
+  // 2. 初始化队列：[原对象, 新对象]
+  const queue = [[obj, rootClone]];
+  hash.set(obj, rootClone);
+
+  while (queue.length > 0) {
+    const [currentOrigin, currentClone] = queue.shift();
+
+    for (let key in currentOrigin) {
+      if (currentOrigin.hasOwnProperty(key)) {
+        const value = currentOrigin[key];
+
+        // 如果是对象，需要深拷贝
+        if (value && typeof value === 'object') {
+          // 处理循环引用
+          if (hash.has(value)) {
+            currentClone[key] = hash.get(value);
+          } else {
+            // 创建新对象并入队
+            const newChild = Array.isArray(value) ? [] : {};
+            hash.set(value, newChild);
+            currentClone[key] = newChild;
+            queue.push([value, newChild]);
+          }
+        } else {
+          // 基本类型直接赋值
+          currentClone[key] = value;
+        }
+      }
+    }
+  }
+
+  return rootClone;
+}
+      </pre>
+    </div>
+  </div>
+
+  <div class="test-area">
+    <h3>测试区域</h3>
+    <p>点击按钮运行测试用例（包含嵌套对象和循环引用），结果将显示在下方。</p>
+    <button onclick="runTest()">运行测试</button>
+    <div id="output">等待测试...</div>
+  </div>
+
+  <script>
+    // --- DFS 实现 ---
+    function deepCloneDFS(obj, hash = new WeakMap()) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (hash.has(obj)) return hash.get(obj);
+
+      const cloneObj = Array.isArray(obj) ? [] : {};
+      hash.set(obj, cloneObj);
+
+      for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          cloneObj[key] = deepCloneDFS(obj[key], hash);
+        }
+      }
+      return cloneObj;
+    }
+
+    // --- BFS 实现 ---
+    function deepCloneBFS(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+
+      const hash = new WeakMap();
+      const rootClone = Array.isArray(obj) ? [] : {};
+      
+      // 队列存储 [原对象, 新对象] 的映射对
+      const queue = [[obj, rootClone]];
+      hash.set(obj, rootClone);
+
+      while (queue.length > 0) {
+        const [currentOrigin, currentClone] = queue.shift();
+
+        for (let key in currentOrigin) {
+          if (currentOrigin.hasOwnProperty(key)) {
+            const value = currentOrigin[key];
+
+            if (value && typeof value === 'object') {
+              if (hash.has(value)) {
+                currentClone[key] = hash.get(value);
+              } else {
+                const newChild = Array.isArray(value) ? [] : {};
+                hash.set(value, newChild);
+                currentClone[key] = newChild;
+                queue.push([value, newChild]);
+              }
+            } else {
+              currentClone[key] = value;
+            }
+          }
+        }
+      }
+      return rootClone;
+    }
+
+    // --- 测试逻辑 ---
+    function runTest() {
+      const output = document.getElementById('output');
+      
+      // 构造复杂对象
+      const original = {
+        name: 'Test Object',
+        nums: [1, 2, 3],
+        child: {
+          age: 18,
+          data: { val: 'deep' }
+        }
+      };
+      // 添加循环引用
+      original.self = original;
+
+      let log = '原始对象:\n' + safeStringify(original) + '\n\n';
+
+      // 测试 DFS
+      const dfsResult = deepCloneDFS(original);
+      log += 'DFS 拷贝结果 (修改副本不影响原件):\n';
+      dfsResult.child.age = 999; // 修改副本
+      log += `原件 child.age: ${original.child.age} (应为 18)\n`;
+      log += `副本 child.age: ${dfsResult.child.age} (应为 999)\n`;
+      log += `循环引用检查: ${dfsResult.self === dfsResult ? '通过' : '失败'}\n\n`;
+
+      // 测试 BFS
+      const bfsResult = deepCloneBFS(original);
+      log += 'BFS 拷贝结果 (修改副本不影响原件):\n';
+      bfsResult.nums.push(4); // 修改副本
+      log += `原件 nums: ${JSON.stringify(original.nums)} (应为 [1,2,3])\n`;
+      log += `副本 nums: ${JSON.stringify(bfsResult.nums)} (应为 [1,2,3,4])\n`;
+      log += `循环引用检查: ${bfsResult.self === bfsResult ? '通过' : '失败'}`;
+
+      output.textContent = log;
+    }
+
+    // 辅助函数：处理循环引用的 stringify
+    function safeStringify(obj) {
+      const cache = new Set();
+      return JSON.stringify(obj, (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+          if (cache.has(value)) {
+            return '[Circular]';
+          }
+          cache.add(value);
+        }
+        return value;
+      }, 2);
+    }
+  </script>
+</body>
+</html>
