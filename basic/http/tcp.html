@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCP 三次握手与四次挥手可视化</title>
+    <style>
+        :root {
+            --client-color: #3498db;
+            --server-color: #2ecc71;
+            --packet-color: #e74c3c;
+            --bg-color: #f4f6f7;
+            --text-color: #2c3e50;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #fff;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #ecf0f1;
+            border-color: #95a5a6;
+        }
+        button.active {
+            background-color: var(--client-color);
+            color: white;
+            border-color: var(--client-color);
+        }
+
+        .diagram-container {
+            display: flex;
+            justify-content: space-between;
+            width: 800px;
+            height: 500px;
+            position: relative;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .host {
+            width: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .host-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 32px;
+            color: white;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .client .host-icon { background-color: var(--client-color); }
+        .server .host-icon { background-color: var(--server-color); }
+
+        .timeline {
+            width: 2px;
+            height: 100%;
+            background-color: #bdc3c7;
+            position: relative;
+        }
+
+        .state-label {
+            background: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .packet-area {
+            flex-grow: 1;
+            position: relative;
+            margin: 0 20px;
+        }
+
+        .packet {
+            position: absolute;
+            background-color: var(--packet-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        /* 箭头线条 */
+        .arrow-line {
+            position: absolute;
+            height: 2px;
+            background-color: var(--packet-color);
+            transform-origin: left center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 5;
+        }
+        .arrow-line::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            border-left: 8px solid var(--packet-color);
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .log-panel {
+            width: 800px;
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: #7f8c8d; font-size: 12px; margin-right: 10px; }
+        .log-desc { color: #2c3e50; font-weight: bold; }
+        .log-reason { 
+            display: block; 
+            margin-top: 4px; 
+            color: #7f8c8d; 
+            font-style: italic; 
+            font-size: 13px; 
+            padding-left: 20px;
+            border-left: 3px solid #3498db;
+        }
+
+        /* 动画类 */
+        .animating {
+            transition: all 1s linear;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>TCP 协议可视化：三次握手与四次挥手</h1>
+
+    <div class="controls">
+        <button id="btn-handshake" onclick="startHandshake()">开始三次握手</button>
+        <button id="btn-wave" onclick="startWave()">开始四次挥手</button>
+        <button onclick="reset()">重置</button>
+    </div>
+
+    <div class="diagram-container">
+        <div class="host client">
+            <div class="host-icon">C</div>
+            <h3>Client</h3>
+            <div class="timeline"></div>
+            <div class="state-label" id="client-state">CLOSED</div>
+        </div>
+
+        <div class="packet-area" id="packet-area">
+            <!-- 动态生成的数据包将在这里 -->
+        </div>
+
+        <div class="host server">
+            <div class="host-icon">S</div>
+            <h3>Server</h3>
+            <div class="timeline"></div>
+            <div class="state-label" id="server-state">LISTEN</div>
+        </div>
+    </div>
+
+    <div class="log-panel" id="log-panel">
+        <h3>交互日志</h3>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const clientStateEl = document.getElementById('client-state');
+        const serverStateEl = document.getElementById('server-state');
+        const packetArea = document.getElementById('packet-area');
+        const logsEl = document.getElementById('logs');
+        const btnHandshake = document.getElementById('btn-handshake');
+        const btnWave = document.getElementById('btn-wave');
+
+        let isAnimating = false;
+
+        function log(message, reason) {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            const time = new Date().toLocaleTimeString();
+            let html = `<span class="log-time">[${time}]</span><span class="log-desc">${message}</span>`;
+            if (reason) {
+                html += `<span class="log-reason">💡 设计目的：${reason}</span>`;
+            }
+            div.innerHTML = html;
+            logsEl.insertBefore(div, logsEl.firstChild);
+        }
+
+        function setClientState(state) {
+            clientStateEl.textContent = state;
+            clientStateEl.style.backgroundColor = '#f1c40f';
+            setTimeout(() => clientStateEl.style.backgroundColor = '#ecf0f1', 500);
+        }
+
+        function setServerState(state) {
+            serverStateEl.textContent = state;
+            serverStateEl.style.backgroundColor = '#f1c40f';
+            setTimeout(() => serverStateEl.style.backgroundColor = '#ecf0f1', 500);
+        }
+
+        // 更好的动画实现：使用绝对定位和计算
+        function animatePacket(name, direction, startYPercent, endYPercent, onFinish) {
+            const packet = document.createElement('div');
+            packet.className = 'packet';
+            packet.textContent = name;
+            packetArea.appendChild(packet);
+
+            const startX = direction === 'c2s' ? 0 : packetArea.offsetWidth;
+            const endX = direction === 'c2s' ? packetArea.offsetWidth : 0;
+            const startY = (packetArea.offsetHeight * startYPercent) / 100;
+            const endY = (packetArea.offsetHeight * endYPercent) / 100;
+
+            // 绘制连线
+            const line = document.createElement('div');
+            line.className = 'arrow-line';
+            packetArea.appendChild(line);
+            
+            // 计算连线长度和角度
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+
+            line.style.width = length + 'px';
+            line.style.left = startX + 'px';
+            line.style.top = startY + 'px';
+            line.style.transform = `rotate(${angle}deg)`;
+            line.style.opacity = 1;
+
+            // 移动包
+            packet.style.left = startX + 'px';
+            packet.style.top = startY + 'px';
+            packet.style.opacity = 1;
+            
+            // 强制重绘
+            packet.offsetHeight;
+
+            packet.style.transition = 'left 1.5s linear, top 1.5s linear';
+            packet.style.left = endX + 'px';
+            packet.style.top = endY + 'px';
+
+            setTimeout(() => {
+                packet.style.opacity = 0;
+                line.style.opacity = 0;
+                setTimeout(() => {
+                    packet.remove();
+                    line.remove();
+                }, 500);
+                if (onFinish) onFinish();
+            }, 1500);
+        }
+
+        async function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startHandshake() {
+            if (isAnimating) return;
+            isAnimating = true;
+            resetUI();
+            btnHandshake.classList.add('active');
+            
+            log("开始三次握手...", "建立可靠连接，确认双方的接收和发送能力。");
+            setClientState("CLOSED");
+            setServerState("LISTEN");
+
+            // Step 1: Client -> Server (SYN)
+            await wait(500);
+            setClientState("SYN_SENT");
+            log("第一次握手: 客户端发送 SYN=1, seq=x", "客户端发起连接请求，告知初始序列号。此时客户端处于 SYN_SENT 状态。");
+            
+            await new Promise(resolve => {
+                animatePacket("SYN", "c2s", 10, 30, resolve);
+            });
+
+            setServerState("SYN_RCVD");
+            log("服务端收到 SYN，状态变为 SYN_RCVD", "服务端确认收到客户端的连接请求。");
+
+            // Step 2: Server -> Client (SYN, ACK)
+            await wait(500);
+            log("第二次握手: 服务端发送 SYN=1, ACK=1, seq=y, ack=x+1", "服务端同意连接 (ACK)，并发送自己的初始序列号 (SYN)。防止已失效的连接请求突然到达导致错误。");
+            
+            await new Promise(resolve => {
+                animatePacket("SYN, ACK", "s2c", 30, 50, resolve);
+            });
+
+            setClientState("ESTABLISHED");
+            log("客户端收到 SYN+ACK，状态变为 ESTABLISHED", "客户端确认服务端收到了自己的 SYN，且服务端愿意建立连接。客户端连接建立完成。");
+
+            // Step 3: Client -> Server (ACK)
+            await wait(500);
+            log("第三次握手: 客户端发送 ACK=1, seq=x+1, ack=y+1", "客户端确认收到服务端的 SYN。至此，双方都确认了对方的发送和接收能力正常。");
+            
+            await new Promise(resolve => {
+                animatePacket("ACK", "c2s", 50, 70, resolve);
+            });
+
+            setServerState("ESTABLISHED");
+            log("服务端收到 ACK，状态变为 ESTABLISHED", "服务端确认客户端收到了自己的 SYN。服务端连接建立完成。");
+            log("三次握手完成，连接建立！", "双方可以开始传输数据。");
+            
+            isAnimating = false;
+            btnHandshake.classList.remove('active');
+        }
+
+        async function startWave() {
+            if (isAnimating) return;
+            isAnimating = true;
+            resetUI();
+            btnWave.classList.add('active');
+
+            // 假设初始状态是 ESTABLISHED
+            setClientState("ESTABLISHED");
+            setServerState("ESTABLISHED");
+            log("开始四次挥手... (初始状态 ESTABLISHED)", "断开连接，释放资源。TCP 是全双工的，需要双方分别关闭。");
+
+            // Step 1: Client -> Server (FIN)
+            await wait(500);
+            setClientState("FIN_WAIT_1");
+            log("第一次挥手: 客户端发送 FIN=1, seq=u", "客户端没有数据要发送了，请求关闭连接。进入半关闭状态。");
+
+            await new Promise(resolve => {
+                animatePacket("FIN", "c2s", 10, 30, resolve);
+            });
+
+            setServerState("CLOSE_WAIT");
+            log("服务端收到 FIN，状态变为 CLOSE_WAIT", "服务端收到关闭请求，通知应用层准备关闭。但服务端可能还有数据未发送完。");
+
+            // Step 2: Server -> Client (ACK)
+            // 服务端可能还有数据要发，所以先回 ACK
+            await wait(500);
+            log("第二次挥手: 服务端发送 ACK=1, seq=v, ack=u+1", "服务端确认收到 FIN，告知客户端'我知道你想关了，但我可能还有数据要发，请稍等'。");
+
+            await new Promise(resolve => {
+                animatePacket("ACK", "s2c", 30, 50, resolve);
+            });
+
+            setClientState("FIN_WAIT_2");
+            log("客户端收到 ACK，状态变为 FIN_WAIT_2", "客户端等待服务端发送 FIN。此时客户端仍可接收数据。");
+
+            // 模拟服务端处理剩余数据
+            log("...服务端处理剩余数据...", "服务端发送剩余数据给客户端。");
+            await wait(1000);
+
+            // Step 3: Server -> Client (FIN, ACK)
+            setServerState("LAST_ACK");
+            log("第三次挥手: 服务端数据发送完毕，发送 FIN=1, ACK=1, seq=w, ack=u+1", "服务端数据发送完毕，正式请求关闭连接。");
+
+            await new Promise(resolve => {
+                animatePacket("FIN, ACK", "s2c", 50, 70, resolve);
+            });
+
+            setClientState("TIME_WAIT");
+            log("客户端收到 FIN，状态变为 TIME_WAIT", "客户端确认服务端已准备好关闭。");
+
+            // Step 4: Client -> Server (ACK)
+            await wait(500);
+            log("第四次挥手: 客户端发送 ACK=1, seq=u+1, ack=w+1", "客户端确认收到服务端的 FIN。");
+
+            await new Promise(resolve => {
+                animatePacket("ACK", "c2s", 70, 90, resolve);
+            });
+
+            setServerState("CLOSED");
+            log("服务端收到 ACK，状态变为 CLOSED", "服务端连接彻底关闭。");
+
+            log("客户端等待 2MSL 后关闭...", "等待 2MSL (最长报文段寿命) 是为了确保服务端收到了最后的 ACK。如果服务端没收到会重传 FIN，客户端就能重传 ACK。同时让网络中残存报文消失。");
+            await wait(1000); // 模拟等待
+            setClientState("CLOSED");
+            log("客户端状态变为 CLOSED。四次挥手完成。", "双方连接均已关闭，资源释放。");
+
+            isAnimating = false;
+            btnWave.classList.remove('active');
+        }
+
+        function reset() {
+            if (isAnimating) return;
+            resetUI();
+            log("已重置");
+        }
+
+        function resetUI() {
+            clientStateEl.textContent = "CLOSED";
+            serverStateEl.textContent = "LISTEN";
+            logsEl.innerHTML = '';
+            packetArea.innerHTML = '';
+            btnHandshake.classList.remove('active');
+            btnWave.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
