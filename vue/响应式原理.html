@@ -73,6 +73,27 @@
         font-family: Consolas, monospace;
         color: #e96900;
       }
+
+      /* 代码块样式（核心实现代码） */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
       
       /* 放大功能样式 */
       .diagram-container {
@@ -142,6 +163,11 @@
         to { opacity: 1; }
       }
     </style>
+    <!-- highlight.js 代码高亮主题（atom-one-dark，与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
   </head>
   <body>
     <h1>Vue 响应式原理对比 (Vue 2 vs Vue 3)</h1>
@@ -283,6 +309,144 @@ graph TD
           </div>
         </div>
       </div>
+
+      <!-- Vue 2 核心实现代码 -->
+      <div class="section">
+        <h2>Vue 2 核心实现代码 (手写最简版)</h2>
+        <div class="explanation">
+          <p>
+            下面用不到 60 行代码还原 Vue 2 响应式「三件套」：<code>Dep</code>
+            （依赖收集器）、<code>defineReactive</code>/<code>observe</code>
+            （数据劫持）、<code>Watcher</code>（订阅者）。
+          </p>
+        </div>
+
+        <div class="code-title">1. Dep：每个响应式属性对应一个依赖收集器</div>
+        <pre class="code-block"><code>class Dep {
+  constructor() {
+    this.subs = [];          // 存放依赖当前属性的 Watcher
+  }
+  depend() {
+    if (Dep.target) this.subs.push(Dep.target); // 收集正在计算的 Watcher
+  }
+  notify() {
+    this.subs.forEach(w => w.update());         // 通知所有 Watcher 更新
+  }
+}
+Dep.target = null;            // 全局标记：当前正在执行的 Watcher</code></pre>
+
+        <div class="code-title">2. 数据劫持：Object.defineProperty 递归定义 getter/setter</div>
+        <pre class="code-block"><code>function defineReactive(obj, key, val) {
+  const dep = new Dep();
+  if (typeof val === 'object' && val !== null) observe(val); // 递归子对象
+  Object.defineProperty(obj, key, {
+    get() {
+      dep.depend();          // 读取时收集依赖
+      return val;
+    },
+    set(newVal) {
+      if (newVal === val) return;
+      val = newVal;
+      dep.notify();          // 写入时派发更新
+    }
+  });
+}
+
+function observe(obj) {
+  if (typeof obj !== 'object' || obj === null) return;
+  Object.keys(obj).forEach(key => defineReactive(obj, key, obj[key]));
+}</code></pre>
+
+        <div class="code-title">3. Watcher：订阅者（组件渲染 / computed / watch 的抽象）</div>
+        <pre class="code-block"><code>class Watcher {
+  constructor(getter) {
+    this.getter = getter;
+    this.value = this.get();
+  }
+  get() {
+    Dep.target = this;       // 标记自己，get 触发时才能被收集
+    const value = this.getter();
+    Dep.target = null;       // 收集完置空
+    return value;
+  }
+  update() {
+    console.log('[update] 新值:', this.get());
+  }
+}</code></pre>
+
+        <div class="code-title">4. 跑起来看效果</div>
+        <pre class="code-block"><code>const data = { name: 'Vue2', count: 0 };
+observe(data);
+new Watcher(() => data.count); // 读取一次 → 建立依赖
+data.count = 1;                // 触发 setter → notify → update()
+// 输出：[update] 新值: 1</code></pre>
+      </div>
+
+      <!-- Vue 3 核心实现代码 -->
+      <div class="section">
+        <h2>Vue 3 核心实现代码 (手写最简版)</h2>
+        <div class="explanation">
+          <p>
+            Vue 3 用 <code>Proxy</code> + <code>Reflect</code> 实现，核心是
+            <code>track</code>/<code>trigger</code>（依赖管理）、<code>reactive</code>
+            （代理）、<code>effect</code>（副作用）。依赖关系存于
+            <code>WeakMap&lt;target, Map&lt;key, Set&lt;effect&gt;&gt;</code>。
+          </p>
+        </div>
+
+        <div class="code-title">1. 全局依赖存储 &amp; 当前活跃 effect</div>
+        <pre class="code-block"><code>const targetMap = new WeakMap(); // target -> (key -> Set&lt;effect&gt;)
+let activeEffect = null;         // 当前正在执行的副作用函数</code></pre>
+
+        <div class="code-title">2. track：get 时收集依赖</div>
+        <pre class="code-block"><code>function track(target, key) {
+  if (!activeEffect) return;
+  let depsMap = targetMap.get(target);
+  if (!depsMap) targetMap.set(target, (depsMap = new Map()));
+  let dep = depsMap.get(key);
+  if (!dep) depsMap.set(key, (dep = new Set()));
+  dep.add(activeEffect);        // 把当前 effect 收进依赖集合
+}</code></pre>
+
+        <div class="code-title">3. trigger：set 时派发更新</div>
+        <pre class="code-block"><code>function trigger(target, key) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+  const dep = depsMap.get(key);
+  if (dep) dep.forEach(effect => effect()); // 重新执行所有相关 effect
+}</code></pre>
+
+        <div class="code-title">4. reactive：Proxy 代理整个对象（懒代理，无需递归初始化）</div>
+        <pre class="code-block"><code>function reactive(target) {
+  return new Proxy(target, {
+    get(obj, key, receiver) {
+      const res = Reflect.get(obj, key, receiver);
+      track(obj, key);          // 读取时收集依赖
+      return res;
+    },
+    set(obj, key, value, receiver) {
+      const res = Reflect.set(obj, key, value, receiver);
+      trigger(obj, key);        // 写入时派发更新
+      return res;
+    }
+  });
+}</code></pre>
+
+        <div class="code-title">5. effect：副作用函数</div>
+        <pre class="code-block"><code>function effect(fn) {
+  activeEffect = fn;
+  fn();                         // 先执行一次，触发 get 完成收集
+  activeEffect = null;
+}</code></pre>
+
+        <div class="code-title">6. 跑起来看效果</div>
+        <pre class="code-block"><code>const state = reactive({ count: 0 });
+effect(() => console.log('count 变为', state.count)); // 收集依赖
+state.count++;                  // 触发 set → trigger → effect 重新执行
+// 输出：count 变为 0  （首次执行）
+//       count 变为 1  （count++ 后重新执行）</code></pre>
+      </div>
+
     </div>
 
     <!-- 模态框 -->
@@ -290,6 +454,18 @@ graph TD
         <span class="close">&times;</span>
         <div class="modal-content" id="modalImage"></div>
     </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      // 给核心代码块标记语言，再统一高亮（mermaid 图不受影响）
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
 
     <!-- 引入 Mermaid -->
     <script type="module">
