@@ -17,13 +17,17 @@
       h1 {
         text-align: center;
         color: #42b983;
-        margin-bottom: 40px;
+        margin-bottom: 40px;YLJKDSJZZL020803
       }
       h2 {
         color: #35495e;
         border-bottom: 2px solid #42b983;
         padding-bottom: 10px;
         margin-top: 40px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
       }
       .container {
         display: flex;
@@ -94,7 +98,61 @@
         line-height: 1.55;
         background: transparent;
       }
-      
+
+      /* 对应关系映射表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th, .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .flow-step {
+        margin: 6px 0;
+        padding-left: 4px;
+      }
+      .flow-step b {
+        color: #35495e;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
       /* 放大功能样式 */
       .diagram-container {
         cursor: zoom-in;
@@ -310,6 +368,368 @@ graph TD
         </div>
       </div>
 
+      <!-- 先认识两个原生 API -->
+      <div class="section">
+        <h2>先认识两个原生 API：Object.defineProperty 与 Proxy</h2>
+
+        <div class="explanation">
+          <p>
+            两个都是 <strong>JavaScript 语言本身</strong>提供的「对象拦截」能力，Vue 只是使用者。
+            先看 API 本身，后面的对比和原理就都通了。
+          </p>
+        </div>
+
+        <h3>1. Object.defineProperty：属性级拦截（ES5）</h3>
+        <div class="explanation">
+          <p>
+            作用是<strong>给「某一个属性」定义描述符</strong>。Vue 2 用的是访问器描述符
+            （<code>get</code> / <code>set</code>），即把属性变成 getter/setter。
+          </p>
+        </div>
+
+        <div class="code-title">基本用法</div>
+        <pre class="code-block"><code class="language-js">const obj = {}
+let val = 1
+Object.defineProperty(obj, 'a', {
+  enumerable: true,    // 可枚举
+  configurable: true,  // 可配置（能否 delete / 重新定义）
+  get() {              // 读取 obj.a 时触发
+    console.log('get a')
+    return val
+  },
+  set(newVal) {        // 给 obj.a 赋值时触发
+    console.log('set a =', newVal)
+    val = newVal
+  }
+})
+
+obj.a = 2        // ✅ 触发 set
+console.log(obj.a) // ✅ 触发 get</code></pre>
+
+        <div class="code-title">它做不到的事（Vue 2 硬伤的根源）</div>
+        <pre class="code-block"><code class="language-js">const obj = { a: 1 }
+// 假设 a 已经被 defineProperty 劫持...
+
+obj.b = 3        // ❌ 无法拦截：b 从未被 defineProperty 定义过
+delete obj.a     // ❌ 无法拦截：没有对应钩子
+
+const arr = [1, 2, 3]
+arr.length = 0   // ❌ length 是 non-configurable，根本无法 defineProperty
+arr[3] = 4       // ❌ 新下标无法被预先 defineProperty
+
+// → 所以 Vue 2 只能：增删用 Vue.set/Vue.delete（手动通知）
+//                 数组重写 push/pop/shift/unshift/splice/sort/reverse 七个方法</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">核心局限</strong>
+          <code>defineProperty</code> 必须<strong>针对「已知的 key」</strong>逐个定义，
+          且语言层面只提供 get/set 两个钩子 —— 它<strong>天生不知道</strong>
+          「对象多了/少了一个属性」这种事件。这是 API 设计决定的，不是 Vue 能绕开的。
+        </div>
+
+        <h3>2. Proxy：对象级代理（ES6）</h3>
+        <div class="explanation">
+          <p>
+            作用是<strong>给「整个对象」包一层代理</strong>，之后对代理对象的<strong>任何操作</strong>
+            都会先经过你定义的 <code>handler</code>（trap 集合）。
+          </p>
+        </div>
+
+        <div class="code-title">基本用法</div>
+        <pre class="code-block"><code class="language-js">const raw = { a: 1 }
+const proxy = new Proxy(raw, {
+  get(target, key, receiver) {
+    console.log('get', key)
+    return Reflect.get(target, key, receiver)
+  },
+  set(target, key, value, receiver) {
+    console.log('set', key, '=', value) // 新增属性也会进来！
+    return Reflect.set(target, key, value, receiver)
+  },
+  deleteProperty(target, key) {
+    console.log('delete', key)
+    return Reflect.deleteProperty(target, key)
+  }
+})
+
+proxy.a = 2       // set a = 2
+proxy.b = 3       // ✅ set b = 3（新增！defineProperty 做不到）
+delete proxy.a    // ✅ delete a
+
+// 数组同理（数组也是对象）
+const arrP = new Proxy([1, 2, 3], { /* 同上 handler */ })
+arrP[0] = 9       // ✅ 拦截到下标赋值
+arrP.push(4)      // ✅ push 底层就是「读 length + 写下标」
+arrP.length = 0   // ✅ length 也能拦</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">13 种 Trap</span>
+            get / set / has（in）/ deleteProperty / ownKeys（for…in、Object.keys）/
+            getOwnPropertyDescriptor / defineProperty / preventExtensions /
+            getPrototypeOf / setPrototypeOf / isExtensible / apply / construct
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">本质区别</span>
+            defineProperty 拦的是「<strong>某个属性</strong>」；Proxy 拦的是「<strong>对这个对象的操作</strong>」。
+            属性存不存在、是不是数组、是不是 Map/Set 都无所谓。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Reflect 的角色</span>
+            Vue 3 在每个 trap 里都用 <code>Reflect.xxx(target, key, receiver)</code>
+            执行默认行为，保证 <code>this</code> 指向正确（getter 里用 <code>this.xxx</code>
+            时仍走代理），否则深层响应式会断。
+          </div>
+        </div>
+      </div>
+
+      <!-- Proxy 如何实现那些方便特性 -->
+      <div class="section">
+        <h2>Proxy 是如何实现那些「方便特性」的？</h2>
+
+        <div class="explanation">
+          <p>
+            「增删属性自动监听」「数组方法自动监听」「子对象懒代理」都不是 Proxy 白送的，
+            而是 <strong>Vue 3 在 trap 里做的二次加工</strong>。逐个拆开看。
+          </p>
+        </div>
+
+        <h3>1. 增删属性：set / deleteProperty 对「不存在的 key」照样触发</h3>
+        <div class="explanation">
+          <p>
+            因为 Proxy 拦的是「操作」而非「属性」，<code>obj.newKey = 1</code> 也走 set trap。
+            Vue 3 在 set 里用 <code>hasOwn</code> 判断是新增还是修改，触发不同类型的
+            <code>trigger</code>；删除则走 <code>deleteProperty</code> trap。
+          </p>
+        </div>
+
+        <div class="code-title">Vue 3 baseHandlers 的 set 简化版</div>
+        <pre class="code-block"><code class="language-js">function createSetter() {
+  return function set(target, key, value, receiver) {
+    const hadKey = hasOwn(target, key) // 判断是「新增」还是「修改」
+    const result = Reflect.set(target, key, value, receiver)
+    if (!hadKey) {
+      trigger(target, TriggerOpTypes.ADD, key, value)   // ✅ 新增属性
+    } else if (hasChanged(value, oldValue)) {
+      trigger(target, TriggerOpTypes.SET, key, value)   // 修改属性
+    }
+    return result
+  }
+}
+// deleteProperty trap 里：trigger(target, TriggerOpTypes.DELETE, key) ✅</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">关键点：ITERATE_KEY</strong>
+          <code>for...in</code> / <code>Object.keys</code> 走的是 <code>ownKeys</code> trap，
+          收集的依赖挂在特殊的 <code>ITERATE_KEY</code> 上。<strong>新增 / 删除属性</strong>时
+          Vue 3 会连 <code>ITERATE_KEY</code> 的依赖一起通知 —— 所以
+          <code>v-for</code> 渲染的列表也能感知到「多了/少了一项」。
+        </div>
+
+        <h3>2. 数组：方法调用本质就是「对象操作」</h3>
+        <div class="explanation">
+          <p>
+            JS 里数组就是特殊对象，所以 <code>arr.push(x)</code> ≈
+            <code>arr[arr.length] = x</code>，<code>arr.includes(x)</code> 是先 get 到方法再调用
+            —— 全部落进 get/set trap。<strong>不需要重写任何数组方法</strong>。
+          </p>
+        </div>
+
+        <div class="code-title">数组操作 → trap 的映射</div>
+        <pre class="code-block"><code class="language-js">const arr = reactive([1, 2, 3])
+
+arr[0] = 9         // set trap：下标赋值
+arr.length = 0     // set trap：改 length
+arr.push(4)        // get trap（length、push）+ set trap（写入新下标）
+arr.includes(2)    // get trap（读 includes 方法）+ 循环里逐个 get
+delete arr[0]      // deleteProperty trap</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">Vue 3 的细节处理</strong>
+          <code>push</code> 会触发「读 length + 读方法 + 写 length + 写下标」多次 trap，
+          Vue 3 在 get trap 里对数组的 <code>push/pop/shift/unshift/splice</code>
+          做了 <code>pauseTracking / resumeTracking</code> 包裹，避免<strong>重复 track</strong>
+          导致的死循环与多余依赖 —— 这是 Proxy 方案需要的「收尾补丁」。
+        </div>
+
+        <h3>3. 子对象懒代理：Proxy 本身是「浅」的，Vue 3 在 get 里补</h3>
+        <div class="explanation">
+          <p>
+            很多人以为 Proxy 天生深层响应式，其实 <code>new Proxy(obj, handler)</code>
+            <strong>只代理第一层</strong>：<code>proxy.child</code> 通过 get 拿到的是
+            <strong>原始对象</strong>。Vue 3 的做法是：get 返回值前判断，是对象就再包一层
+            <code>reactive()</code> —— 于是「<strong>访问到哪一层，哪一层才被代理</strong>」。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["访问 proxy.child"] --> B["get trap 触发"]
+    B --> C["Reflect.get 拿到原始 child"]
+    C --> D{"isObject(child) ?"}
+    D -->|是| E["reactive(child) 包一层后返回"]
+    D -->|否| F["直接返回原始值"]
+    E --> G["再访问 proxy.child.grand"]
+    G --> H["同样在 get 里再 reactive 一层"]
+    style E fill:#e1f5fe,stroke:#01579b
+    style F fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <div class="code-title">Vue 3 baseHandlers 的 get 简化版</div>
+        <pre class="code-block"><code class="language-js">function createGetter(isReadonly = false, shallow = false) {
+  return function get(target, key, receiver) {
+    const res = Reflect.get(target, key, receiver)
+    track(target, TrackOpTypes.GET, key)   // 依赖收集
+
+    if (isRef(res)) return res.value
+    if (isObject(res)) {
+      // ✅ 关键：返回前把子对象转成响应式（只有访问到才发生）
+      return isReadonly ? readonly(res) : reactive(res)
+    }
+    return res
+  }
+}</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">对比 Vue 2</strong>
+          Vue 2 必须<strong>初始化时</strong>就把整棵数据树递归
+          <code>observe</code> 一遍（eager）；Vue 3 是<strong>用到才代理</strong>（lazy）。
+          这就是 Vue 3 初始化更快、且「没被用到的子对象永远不浪费性能」的根本原因。
+        </div>
+      </div>
+
+      <!-- 基础手段对比：Object.defineProperty vs Proxy -->
+      <div class="section">
+        <h2>Vue 2 Object.defineProperty vs Vue 3 Proxy（基础响应式手段）</h2>
+
+        <div class="explanation">
+          <p>
+            Vue 2 和 Vue 3 的「响应式」本质都是<strong>拦截对数据的读写并通知更新</strong>，
+            差别在于<strong>用什么手段拦截</strong>：
+          </p>
+          <ul>
+            <li>
+              <strong>Vue 2（ES5）</strong>：在<strong>初始化时递归遍历</strong> data 的每个属性，
+              用 <code>Object.defineProperty</code> 给<strong>每个 key</strong> 单独挂
+              getter/setter —— 只能拦截「读取」和「赋值」两种操作。
+            </li>
+            <li>
+              <strong>Vue 3（ES6）</strong>：在初始化时只给<strong>整个对象包一层
+              <code>Proxy</code></strong>，拦截对该对象的<strong>所有操作</strong>
+              （get / set / deleteProperty / has / ownKeys …），无需遍历属性，且子对象懒代理。
+            </li>
+          </ul>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph V2["Vue 2：Object.defineProperty（逐属性）"]
+        D["data 对象"] --> D1["defineProperty(key1) getter/setter"]
+        D --> D2["defineProperty(key2) getter/setter"]
+        D --> D3["defineProperty(keyN) getter/setter"]
+        D1 -->|读写| DEP1["每个 key 一个 Dep"]
+        D2 --> DEP1
+        D3 --> DEP1
+    end
+    subgraph V3["Vue 3：Proxy（整个对象，一层）"]
+        O["原始对象"] --> P["Proxy 代理"]
+        P -->|get| T["track"]
+        P -->|"set / deleteProperty / has / ownKeys ..."| TR["trigger"]
+    end
+    style D1 fill:#f3e5f5,stroke:#7b1fa2
+    style D2 fill:#f3e5f5,stroke:#7b1fa2
+    style D3 fill:#f3e5f5,stroke:#7b1fa2
+    style P fill:#e1f5fe,stroke:#01579b
+    style T fill:#fff9c4,stroke:#fbc02d
+    style TR fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>对比维度</th>
+              <th>Vue 2 · Object.defineProperty</th>
+              <th>Vue 3 · Proxy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>劫持粒度</td>
+              <td>逐属性：每个 key 单独 <code>defineProperty</code></td>
+              <td>整个对象：一个 Proxy 包住即可</td>
+            </tr>
+            <tr>
+              <td>能拦截的操作</td>
+              <td>仅 <strong>get / set</strong>（赋值）</td>
+              <td><strong>13+ 种</strong>：get / set / deleteProperty / has / ownKeys / in …</td>
+            </tr>
+            <tr>
+              <td>新增属性</td>
+              <td>❌ 监听不到，需 <code>Vue.set</code></td>
+              <td>✅ 自动（<code>deleteProperty</code> + <code>ITERATE_KEY</code> 触发）</td>
+            </tr>
+            <tr>
+              <td>删除属性</td>
+              <td>❌ 需 <code>Vue.delete</code></td>
+              <td>✅ 自动（<code>deleteProperty</code>）</td>
+            </tr>
+            <tr>
+              <td>数组</td>
+              <td>❌ 下标 / <code>length</code> 监听不到，需<strong>重写 7 个数组方法</strong></td>
+              <td>✅ 原生支持下标、<code>length</code>、<code>push</code> 等</td>
+            </tr>
+            <tr>
+              <td>初始化性能</td>
+              <td>递归遍历全对象（<strong>一次性 eager</strong>），大对象有开销</td>
+              <td><strong>懒代理</strong>（访问到才代理子对象），启动更快</td>
+            </tr>
+            <tr>
+              <td>Map / Set / WeakMap</td>
+              <td>❌ 不支持</td>
+              <td>✅ 通过 collection handlers 支持</td>
+            </tr>
+            <tr>
+              <td>基本类型</td>
+              <td><code>data</code> 整体必须是对象</td>
+              <td><code>reactive</code> 也只能对象；但 <code>ref</code> 解决基本类型</td>
+            </tr>
+            <tr>
+              <td>浏览器兼容</td>
+              <td>ES5，<strong>IE9+</strong></td>
+              <td>Proxy，<strong>现代浏览器（不支持 IE）</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">Vue 2 的硬伤</span>
+            监听不到「新增 / 删除属性」与「数组下标 / length」，所以必须
+            <code>Vue.set</code> / 重写数组方法；且初始化要递归遍历全部属性，深层大对象有性能损耗。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Vue 3 的优势</span>
+            原生支持增删、数组、Map/Set；懒代理让启动更快；依赖管理收敛成一套
+            <code>track / trigger / targetMap</code>，代码更简洁、可维护性更好。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">代价</span>
+            <code>Proxy</code> 无法被 polyfill，这是 Vue 3 <strong>彻底放弃 IE</strong> 的根本原因。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">为什么 Vue 3 要从 defineProperty 切换到 Proxy？</strong>
+          核心诉求是「<strong>真正完整的响应式</strong>」：新增 / 删除属性、数组下标修改、
+          Map/Set 这些在 Vue 2 里要么做不到、要么要 hack（重写数组方法、Vue.set），
+          而 Proxy 在语言层面一次性解决。再叠加懒代理带来的初始化性能提升，迁移收益明显大于兼容 IE 的代价。
+        </div>
+      </div>
+
       <!-- Vue 2 核心实现代码 -->
       <div class="section">
         <h2>Vue 2 核心实现代码 (手写最简版)</h2>
@@ -382,6 +802,111 @@ data.count = 1;                // 触发 setter → notify → update()
 // 输出：[update] 新值: 1</code></pre>
       </div>
 
+      <!-- Vue 2 核心代码 ↔ SFC 对应 -->
+      <div class="section">
+        <h2>Vue 2：核心代码 ↔ 单文件组件（Options API）</h2>
+
+        <div class="explanation">
+          <p>
+            上面那段不到 60 行的代码只有三个「积木」：<code>observe/defineReactive</code>
+            （把数据变成响应式）、<code>Dep</code>（每个属性一个依赖盒子）、<code>Watcher</code>
+            （订阅者）。在真实的单文件组件里，Vue 在
+            <code>new Vue()</code> 的初始化阶段（<code>initState</code> /
+            <code>$mount</code>）把这些积木和你在 Options API 里写的配置一一接上。关系如下：
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>你写的 (Options API)</th>
+              <th>底层对应</th>
+              <th>怎么起作用的</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>data() { return {...} }</code></td>
+              <td><code>observe()</code> + <code>defineReactive()</code></td>
+              <td>
+                data 返回的对象被递归遍历，每个 key 挂上 getter/setter，并闭包持有一个
+                <code>Dep</code>。这就是「响应式状态」的本体。
+              </td>
+            </tr>
+            <tr>
+              <td><code>template</code> / <code>render</code></td>
+              <td>渲染 Watcher（Render Watcher）</td>
+              <td>
+                模板被编译成 render 函数，作为「渲染 watcher」的 getter。首次执行 render
+                时读到的 data 属性，会把<strong>这个渲染 watcher</strong>
+                收进各自的 Dep；之后任一属性变化 → <code>notify()</code> → watcher 更新 → 重渲染。
+              </td>
+            </tr>
+            <tr>
+              <td><code>computed: { full() { return this.a + this.b } }</code></td>
+              <td>计算属性 Watcher（lazy）</td>
+              <td>
+                每个 computed 是一个<strong>懒 + 带缓存(dirty)</strong> 的 watcher。它内部读到的
+                <code>this.a / this.b</code> 会把 computed watcher 收进它们的 Dep；而读取
+                computed 的地方（如 render）又会把 computed watcher 收进自己的依赖。只有依赖变了才重算。
+              </td>
+            </tr>
+            <tr>
+              <td><code>watch: { x(v) {} }</code></td>
+              <td>用户 Watcher（User Watcher）</td>
+              <td>
+                每个 watch 项生成一个 user watcher，getter 是监听的表达式/函数，变化后调用你的回调
+                <code>(newVal, oldVal)</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>methods: { ... }</code></td>
+              <td>普通函数，<strong>非响应式</strong></td>
+              <td>
+                方法只是绑定到实例的普通函数，本身不产生 Watcher。在 render 期间调用方法时，方法里读到的响应式数据会「顺带」
+                参与依赖收集（此时 <code>Dep.target</code> 是渲染 watcher）。
+              </td>
+            </tr>
+            <tr>
+              <td><code>props</code></td>
+              <td>同样是响应式（<code>defineReactive</code>）</td>
+              <td>props 也被劫持，可以作为依赖被任意 watcher 收集。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">渲染 Watcher</span>
+            每个组件一个，getter = render 函数。负责把「模板用到的数据」和「这个组件」绑定起来；
+            数据变 → <code>update()</code> → 进入<strong>异步更新队列</strong>（nextTick 批量 flush，去重避免重复渲染）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">计算 Watcher (computed)</span>
+            <code>lazy + dirty</code> 缓存：没被读取时不求值；读取且 dirty 才重算；
+            依赖变化只把 dirty 置 true 并通知「读了它的上层」重新取值。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">用户 Watcher (watch)</span>
+            对应 <code>watch</code> 选项；变化后执行你传入的回调，并带上新旧值。
+          </div>
+        </div>
+
+        <div class="explanation">
+          <p><strong>一个完整流程（以改 data 为例）：</strong></p>
+          <p class="flow-step"><b>1.</b> <code>new Vue()</code> → <code>initState</code> → <code>observe(data)</code>：data 每个属性挂上 getter/setter 和 Dep。</p>
+          <p class="flow-step"><b>2.</b> <code>$mount</code> → 创建渲染 watcher，执行 render 函数。</p>
+          <p class="flow-step"><b>3.</b> render 读 <code>this.message</code> → 触发 getter → <code>dep.depend()</code> 把「当前 Dep.target（渲染 watcher）」收进 message 的 Dep。</p>
+          <p class="flow-step"><b>4.</b> 用户改 <code>this.message = 'hi'</code> → 触发 setter → <code>dep.notify()</code> → 渲染 watcher 进入 nextTick 队列 → 批量重渲染。</p>
+          <p style="margin-top: 12px">
+            <strong>补充：</strong>真实的 <code>Dep.target</code> 其实是一个<strong>栈</strong>
+            （<code>pushTarget / popTarget</code>），用来处理嵌套收集——比如 render 里读一个
+            computed，会先压入 computed watcher 收集它内部的依赖，读完再弹出恢复成渲染 watcher。
+            这就是为什么「computed 依赖 data、render 又依赖 computed」不会串味。
+          </p>
+        </div>
+      </div>
+
       <!-- Vue 3 核心实现代码 -->
       <div class="section">
         <h2>Vue 3 核心实现代码 (手写最简版)</h2>
@@ -445,6 +970,122 @@ effect(() => console.log('count 变为', state.count)); // 收集依赖
 state.count++;                  // 触发 set → trigger → effect 重新执行
 // 输出：count 变为 0  （首次执行）
 //       count 变为 1  （count++ 后重新执行）</code></pre>
+      </div>
+
+      <!-- Vue 3 核心组件 ↔ 组合式 API 对应 -->
+      <div class="section">
+        <h2>Vue 3：核心组件 ↔ 组合式 API（Composition API）</h2>
+
+        <div class="explanation">
+          <p>
+            上面那段核心代码里有四个「积木」：<code>reactive()</code>（Proxy 代理）、<code>track/trigger</code>
+            （依赖收集 / 派发）、<code>targetMap</code>（全局依赖仓库）、<code>effect()</code>
+            （副作用函数）。在真实 Vue 3 里，组合式 API 的每个函数都是这几个积木的「封装」。
+            <code>effect</code> 就是 Vue 2 里 <code>Watcher</code> 的等价物（真实类名
+            <code>ReactiveEffect</code>），<code>activeEffect</code> 等价于 <code>Dep.target</code>。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>你写的 (Composition API)</th>
+              <th>底层对应</th>
+              <th>怎么起作用的</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>reactive(obj)</code></td>
+              <td><code>reactive()</code>（Proxy）</td>
+              <td>
+                直接对应核心里的 <code>reactive()</code>：整个对象被 Proxy 代理（懒代理）；
+                读属性走 <code>get</code> → <code>track</code>，写属性走 <code>set</code> → <code>trigger</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>ref(0)</code> / <code>ref(obj)</code></td>
+              <td><code>RefImpl</code>（带 <code>.value</code> 拦截的响应式对象）</td>
+              <td>
+                基本类型无法被 Proxy，所以 ref 用「一个对象 + <code>.value</code> 的 getter/setter
+                来调 track/trigger」实现单值响应式；模板里会自动解包 <code>.value</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>computed(() =&gt; ...)</code></td>
+              <td>computed = <code>ref</code> + <code>effect(lazy)</code> + <code>dirty</code></td>
+              <td>
+                读 <code>.value</code> 时才懒执行 getter 并收集内部依赖；依赖变只把 dirty 置 true，
+                下次被读才重算并缓存。相当于 Vue 2 的「计算 Watcher」。
+              </td>
+            </tr>
+            <tr>
+              <td><code>watchEffect(fn)</code></td>
+              <td>直接就是 <code>effect(fn)</code></td>
+              <td>
+                立即执行 fn 收集依赖，依赖变则重跑 fn。和你核心代码里的 <code>effect()</code> 几乎一模一样。
+              </td>
+            </tr>
+            <tr>
+              <td><code>watch(src, cb)</code></td>
+              <td><code>effect</code> + <code>scheduler</code> + 回调</td>
+              <td>
+                用 effect 跟踪 src，变化时通过 scheduler 调用你的回调
+                <code>(newVal, oldVal)</code>。相当于 Vue 2 的「用户 Watcher」。
+              </td>
+            </tr>
+            <tr>
+              <td><code>&lt;script setup&gt;</code> + 模板</td>
+              <td>渲染 <code>ReactiveEffect</code></td>
+              <td>
+                <code>&lt;script setup&gt;</code> 只是声明响应式来源的语法糖；模板编译成的 render
+                函数本身就是一个 ReactiveEffect，读到的 ref/reactive 会被收集，数据变则重渲染。
+              </td>
+            </tr>
+            <tr>
+              <td><code>shallowRef / shallowReactive / readonly</code></td>
+              <td>同一套 track/trigger 的变体</td>
+              <td>只是关闭深层代理或只读拦截，机制完全相同。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">渲染 Effect（组件更新）</span>
+            每个组件一个 <code>ReactiveEffect</code>，其 <code>scheduler</code> 把更新推入 job 队列，
+            <code>nextTick</code> 时批量 flush（等价于 Vue 2 的异步更新队列）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Computed</span>
+            = <code>ref</code> + 懒 <code>effect</code> + <code>dirty</code> 缓存：
+            没被读不求值的；被读且 dirty 才重算。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Watch / WatchEffect</span>
+            用户侧 effect，配上 <code>scheduler</code> 决定刷新时机
+            （<code>pre</code> / <code>post</code> flush），变化后执行你的回调。
+          </div>
+        </div>
+
+        <div class="explanation">
+          <p><strong>一个完整流程（以改 reactive 属性为例）：</strong></p>
+          <p class="flow-step"><b>1.</b> <code>reactive({ count: 0 })</code> → 返回 Proxy，读/写分别走 get/set 拦截。</p>
+          <p class="flow-step"><b>2.</b> 组件挂载 → 创建渲染 ReactiveEffect 并执行 render；render 读 <code>state.count</code> → get 拦截 → <code>track(state, 'count')</code> 把当前 activeEffect 收进 <code>targetMap[state]['count']</code> 的 Set。</p>
+          <p class="flow-step"><b>3.</b> 改 <code>state.count++</code> → set 拦截 → <code>trigger(state, 'count')</code> → 取出该 Set 里的 effect → 交给 scheduler 排队。</p>
+          <p class="flow-step"><b>4.</b> nextTick flush → 渲染 effect 重跑 → 视图更新。</p>
+          <p style="margin-top: 12px">
+            <strong>补充两点差异（Vue 3 相对 Vue 2）：</strong>
+          </p>
+          <p class="flow-step">
+            <b>①</b> <code>activeEffect</code> 也是一个<strong>栈</strong>（effectStack），原理同 Vue 2 的
+            <code>Dep.target</code> 栈，用来处理 render 里读 computed 这类嵌套收集。
+          </p>
+          <p class="flow-step">
+            <b>②</b> <code>trigger</code> 还能感知「属性新增/删除」和「遍历（ITERATE_KEY）」——
+            这是 Proxy 相比 <code>Object.defineProperty</code> 的天然优势，所以 Vue 3 不用 <code>Vue.set</code>。
+          </p>
+        </div>
       </div>
 
     </div>

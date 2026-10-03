@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 3 ref vs reactive 详细对比</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vue 3：ref 与 reactive 详细对比</h1>
+    <p class="subtitle">原理结构 · 解包规则 · 响应式丢失的坑 · 最佳实践（图文并茂）</p>
+
+    <div class="container">
+      <!-- 一、一句话区别 + 总览 -->
+      <div class="section">
+        <h2>一、一句话区别 &amp; 总览对比</h2>
+        <div class="explanation">
+          <p>
+            <strong>ref</strong> 是一个「<strong>响应式盒子</strong>」——它把任何值（基本类型或对象）包进
+            <code>{ value: ... }</code> 里，靠这个对象的 <code>value</code> 属性做 track/trigger。
+          </p>
+          <p>
+            <strong>reactive</strong> 是「<strong>响应式代理</strong>」——它直接对<strong>对象/数组本身</strong>
+            用 <code>Proxy</code> 包装，对象的每个属性读写都被拦截。
+          </p>
+          <p>
+            记住核心差异：<strong>ref 包的是「值」，reactive 包的是「对象」</strong>。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>对比维度</th>
+              <th><code>ref</code></th>
+              <th><code>reactive</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>本质</td>
+              <td>包装对象（盒子）<code>{ value }</code>，带 <code>__v_isRef</code> 标记</td>
+              <td>原始对象的 <code>Proxy</code> 代理</td>
+            </tr>
+            <tr>
+              <td>能包裹的类型</td>
+              <td><strong>任意</strong>：基本类型 + 对象/数组</td>
+              <td><strong>仅</strong>对象 / 数组（基本类型会报警告）</td>
+            </tr>
+            <tr>
+              <td>访问 / 修改方式</td>
+              <td>需 <code>.value</code>（模板顶层自动解包）</td>
+              <td>直接 <code>.属性</code></td>
+            </tr>
+            <tr>
+              <td>对象内部是否深层响应式</td>
+              <td>是（对象的 <code>value</code> 内部自动调 <code>reactive()</code>）</td>
+              <td>是（深层递归代理）</td>
+            </tr>
+            <tr>
+              <td>解构 / 展开</td>
+              <td><strong>安全</strong>：拿到的仍是 ref 对象</td>
+              <td><strong>丢失</strong>：拿到的是原始值，脱钩</td>
+            </tr>
+            <tr>
+              <td>整体重新赋值</td>
+              <td><strong>可以</strong>：<code>ref.value = 新对象</code></td>
+              <td><strong>不行</strong>：会断开响应式引用</td>
+            </tr>
+            <tr>
+              <td>TS 类型</td>
+              <td><code>Ref&lt;T&gt;</code></td>
+              <td><code>UnwrapNestedRefs&lt;T&gt;</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 二、原理剖析 -->
+      <div class="section">
+        <h2>二、原理剖析：为什么 ref 能包基本类型？</h2>
+        <div class="explanation">
+          <p>
+            <code>Proxy</code> 只能代理「对象」，没法代理一个数字 <code>0</code>。所以 Vue 3
+            用 <strong>ref 套一层对象</strong> 来曲线救国：把基本类型塞进
+            <code>{ value }</code>，再对这个对象的 <code>value</code> 做响应式。而对对象类型的
+            <code>ref</code>，它的 <code>value</code> 内部又会调用 <code>reactive()</code>，所以行为一致。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph Ref["ref 的内部结构（一个'盒子'）"]
+        R1["ref(0) 或 ref(obj)"] --> R2["RefImpl 对象&lt;br/&gt;{ value, __v_isRef: true }"]
+        R2 -->|"基本类型: 拦截 value 的 get/set"| R3["track / trigger"]
+        R2 -->|"对象类型: value 内部调 reactive()"| R4["Proxy 代理（深层响应式）"]
+    end
+
+    subgraph Reactive["reactive 的内部结构（Proxy）"]
+        RAW["原始对象 obj"] --> RP["Proxy 代理"]
+        RP -->|get| RT["track"]
+        RP -->|set| RG["trigger"]
+    end
+
+    style R2 fill:#e1f5fe,stroke:#01579b
+    style RP fill:#e1f5fe,stroke:#01579b
+    style R3 fill:#fff9c4,stroke:#fbc02d
+    style RT fill:#fff9c4,stroke:#fbc02d
+    style RG fill:#f3e5f5,stroke:#7b1fa2
+    style R4 fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">ref 的「拆箱」</span>
+            源码里 <code>ref</code> 走 <code>RefImpl</code> 类：<code>get value()</code>
+            调 <code>track</code>，<code>set value()</code> 调 <code>trigger</code>。模板和
+            <code>reactive</code> 属性会自动「拆箱」成原始值。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">reactive 的代理</span>
+            源码里 <code>reactive</code> 走 <code>Proxy</code> + <code>track/trigger</code>，
+            并对嵌套对象<strong>懒代理</strong>（访问到才代理），深层天然响应式。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">两者底层同源</span>
+            ref 的对象分支和 reactive 最终都落到同一套
+            <code>track / trigger / targetMap</code> 机制上，所以「响应式的本质」完全一样。
+          </div>
+        </div>
+      </div>
+
+      <!-- 三、使用方式对比 -->
+      <div class="section">
+        <h2>三、使用方式对比</h2>
+
+        <div class="code-title">1. JS 中的基本用法</div>
+        <pre class="code-block"><code class="language-js">import { ref, reactive } from 'vue'
+
+// ref：任意类型都行，访问 / 修改都要 .value
+const count = ref(0)
+console.log(count.value) // 0
+count.value++            // 修改
+
+// reactive：只能用于对象 / 数组，直接访问属性
+const state = reactive({ count: 0 })
+console.log(state.count) // 0
+state.count++</code></pre>
+
+        <div class="code-title">2. 在 &lt;script setup&gt; + 模板中的区别</div>
+        <pre class="code-block"><code class="language-html">&lt;script setup&gt;
+import { ref, reactive } from 'vue'
+const count = ref(0)
+const state = reactive({ count: 0 })
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;!-- ref 在模板顶层自动解包，不用写 .value --&gt;
+  &lt;p&gt;{{ count }}&lt;/p&gt;
+  &lt;!-- reactive 直接写属性 --&gt;
+  &lt;p&gt;{{ state.count }}&lt;/p&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">INFO</strong>
+          模板顶层 <code>ref</code> 会自动解包，这是编译期的语法糖；在 <code>return</code>
+          给模板时 Vue 已经帮你处理了，但<strong>在 JS 逻辑里永远要写 <code>.value</code></strong>。
+        </div>
+      </div>
+
+      <!-- 四、解包规则 -->
+      <div class="section">
+        <h2>四、ref 的自动解包（unwrapping）规则</h2>
+        <div class="explanation">
+          <p>
+            「解包」指 <code>ref</code> 在某种上下文里被自动当成它的 <code>.value</code> 来用。
+            规则很简单：<strong>只有在「模板顶层」或「作为 reactive 对象的属性」时才会自动解包</strong>，
+            其它情况（普通对象、数组、Map）都<strong>不会</strong>解包，需要手动 <code>.value</code>。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    Start["一个 ref 出现在哪里?"] --> Q1{"在 模板顶层 ?"}
+    Q1 -->|是| A1["自动解包&lt;br/&gt;直接写 count，不用 .value ✅"]
+    Q1 -->|否| Q2{"是 reactive 对象的属性 ?"}
+    Q2 -->|是| A2["自动解包&lt;br/&gt;state.count 无需 .value ✅"]
+    Q2 -->|否| Q3{"在 数组 / Map / 普通对象 中 ?"}
+    Q3 -->|是| A3["不解包&lt;br/&gt;需手动 .value ⚠️"]
+    Q3 -->|否| A4["独立使用&lt;br/&gt;需 .value"]
+          </pre>
+        </div>
+
+        <div class="code-title">解包规则代码验证</div>
+        <pre class="code-block"><code class="language-js">import { ref, reactive } from 'vue'
+
+const count = ref(0)
+
+// 1) 作为 reactive 对象的属性 → 自动解包
+const state = reactive({ count }) // state.count 已经是数字 0（ref 被拆箱）
+console.log(state.count)          // 0（无需 .value）
+state.count++                     // 等价于 count.value++
+
+// 2) 在普通对象 / 数组 / Map 中 → 不解包，需手动 .value
+const plain = { count }           // plain.count 仍是 ref 对象
+console.log(plain.count.value)    // 0
+
+const list = reactive([count])    // ⚠️ 数组里不会自动解包
+console.log(list[0].value)        // 0（仍需 .value）</code></pre>
+      </div>
+
+      <!-- 五、响应式丢失的坑 -->
+      <div class="section">
+        <h2>五、最易踩的坑：响应式丢失</h2>
+        <div class="explanation">
+          <p>
+            这是 <code>ref</code> 和 <code>reactive</code> 体验差异最大的地方。
+            <strong>reactive 一旦被解构 / 展开，拿到的是「原始值」，响应式当场断掉</strong>；
+            而 <code>ref</code> 解构后拿到的仍是 <code>ref</code> 对象，<code>.value</code> 永远有效。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    subgraph Bad["reactive 的坑"]
+        B1["const state = reactive({count:0})"] --> B2["const { count } = state"]
+        B2 --> B3["count 是普通数字&lt;br/&gt;与 state 脱钩 ❌"]
+        B1 --> B4["state = {count:1}"]
+        B4 --> B5["state 不再是代理&lt;br/&gt;响应式断裂 ❌"]
+    end
+    subgraph Good["ref 的优势"]
+        G1["const count = ref(0)"] --> G2["const { count } = obj&lt;br/&gt;（仍是 ref 对象）"]
+        G2 --> G3["count.value 永远 track ✅"]
+        G1 --> G4["count.value = {x:1}"]
+        G4 --> G5["整体替换没问题 ✅"]
+    end
+          </pre>
+        </div>
+
+        <div class="code-title">reactive 解构 → 丢失响应式 ❌</div>
+        <pre class="code-block"><code class="language-js">import { reactive } from 'vue'
+
+const state = reactive({ count: 0, name: 'vue' })
+const { count } = state     // count 变成普通数字，与 state 脱钩
+count++                     // ❌ 不会触发任何更新</code></pre>
+
+        <div class="code-title">ref 解构 → 不丢失 ✅</div>
+        <pre class="code-block"><code class="language-js">import { ref } from 'vue'
+
+const countRef = ref(0)
+const obj = { countRef }
+const { countRef: c } = obj  // c 还是 ref 对象
+c.value++                    // ✅ 仍然响应式</code></pre>
+
+        <div class="code-title">用 toRefs / toRef 拯救 reactive 解构 ✅</div>
+        <pre class="code-block"><code class="language-js">import { reactive, toRefs, toRef } from 'vue'
+
+const state = reactive({ count: 0, name: 'vue' })
+const { count, name } = toRefs(state) // 全变成 ref，解构不丢失
+count.value++
+
+const nameRef = toRef(state, 'name')   // 只取单个属性为 ref
+nameRef.value = 'vue3'</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING</strong>
+          <code>toRefs</code> 只对<strong>已存在的属性</strong>有效；若解构了一个后续可能新增的属性，
+          应用 <code>toRef</code>。另外 <code>toRefs</code> 返回的每个 ref 与源对象<strong>保持同步</strong>，
+          改一方另一方也变。
+        </div>
+      </div>
+
+      <!-- 六、整体重新赋值 -->
+      <div class="section">
+        <h2>六、整体重新赋值的差异</h2>
+        <div class="explanation">
+          <p>
+            <code>reactive</code> 的响应式绑定在「那个具体的代理对象」上。如果你把变量指向一个新对象，
+            新对象<strong>没有被代理</strong>，响应式直接断裂。而 <code>ref</code> 只是改了盒子里的
+            <code>.value</code>，盒子本身不变，所以整体替换完全没问题。
+          </p>
+        </div>
+
+        <div class="code-title">对比代码</div>
+        <pre class="code-block"><code class="language-js">// ❌ reactive 不能整体替换（会断掉响应式引用）
+let state = reactive({ count: 0 })
+state = { count: 1 }        // state 不再是响应式代理 ❌
+
+// ✅ ref 可以整体替换 value
+const stateRef = ref({ count: 0 })
+stateRef.value = { count: 1 } // 完全没问题 ✅（新对象也会被 reactive 化）</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">TIP</strong>
+          如果你确实需要「整体换对象」又想用类似 reactive 的写法，可以包一层：
+          <code>const state = reactive({ data: {...} })</code>，之后用
+          <code>state.data = 新对象</code> 替换，响应式不丢。或者直接用 <code>ref</code>。
+        </div>
+      </div>
+
+      <!-- 七、最佳实践 -->
+      <div class="section">
+        <h2>七、到底该用哪个？（最佳实践）</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">基本类型 → ref</span>
+            数字、字符串、布尔值只能用 <code>ref</code>，<code>reactive</code> 不接受基本类型。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">对象 / 表单状态 → reactive</span>
+            表单、配置对象用 <code>reactive</code> 更直观，访问不用到处写 <code>.value</code>。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">组合式函数返回值 → ref</span>
+            composables 返回 <code>ref</code> 最安全：调用方能解构、不会丢失响应式、类型一致。
+          </div>
+        </div>
+
+        <div class="explanation">
+          <p><strong>官方 / 社区的主流建议：</strong></p>
+          <ul>
+            <li>优先用 <code>ref</code>：更一致、对 TypeScript 更友好、避免解构 / 重赋值丢失。</li>
+            <li>
+              当你有一组<strong>强耦合、几乎不解构、不需要整体替换</strong>的对象属性时，
+              用 <code>reactive</code> 更顺手（如 <code>const form = reactive({...})</code>）。
+            </li>
+            <li>
+              需要解构 reactive 对象时，记得用 <code>toRefs</code> / <code>toRef</code>。
+            </li>
+            <li>
+              深层只想浅层响应式时，可用 <code>shallowRef</code> / <code>shallowReactive</code>；
+              只读场景用 <code>readonly</code>。
+            </li>
+          </ul>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>值用 ref（盒子装值），对象用 reactive（代理对象）；要解构、要整换，统统用 ref</strong>」。
+        </div>
+      </div>
+
+      <!-- 八、完整示例 -->
+      <div class="section">
+        <h2>八、一个完整可跑的对比示例</h2>
+        <div class="code-title">推荐写法：组合式函数返回 ref</div>
+        <pre class="code-block"><code class="language-js">import { ref, reactive, computed, toRefs } from 'vue'
+
+// 1) 基本类型用 ref
+const count = ref(0)
+
+// 2) 表单对象用 reactive（不解构时很爽）
+const form = reactive({ name: '', age: 0 })
+
+// 3) 计算属性
+const double = computed(() => count.value * 2)
+
+// 4) composable 返回 ref，调用方可安全解构
+function useCounter() {
+  const n = ref(0)
+  const inc = () => n.value++
+  return { n, inc } // 解构不丢失 ✅
+}
+const { n, inc } = useCounter()
+
+// 5) 若必须解构 reactive，用 toRefs
+const { name, age } = toRefs(form)</code></pre>
+
+        <div class="code-title">模板（ref 自动解包）</div>
+        <pre class="code-block"><code class="language-html">&lt;template&gt;
+  &lt;p&gt;count: {{ count }}&lt;/p&gt;
+  &lt;p&gt;double: {{ double }}&lt;/p&gt;
+  &lt;p&gt;name: {{ form.name }}&lt;/p&gt;
+  &lt;button @click="inc"&gt;+1&lt;/button&gt;
+&lt;/template&gt;</code></pre>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          // 仅当代码块尚未指定语言时，默认按 javascript 高亮
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
