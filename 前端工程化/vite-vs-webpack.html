@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite 与 Webpack 深度对比：两套打包哲学的交锋</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        /* 图过宽时局部滚动，避免撑破版心 */
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      /* 兜底：超长标识符不允许撑破卡片 */
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        /* 长行可横向滚动，而不是被裁掉 */
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 左右并排对比面板 */
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      /* 代码需要宽度：并排展示时改为上下堆叠 */
+      .vs-grid.stack {
+        grid-template-columns: 1fr;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.webpack {
+        border-top: 4px solid #1c78c0;
+      }
+      .vs-panel.vite {
+        border-top: 4px solid #646cff;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.webpack h4 {
+        color: #1c78c0;
+      }
+      .vs-panel.vite h4 {
+        color: #646cff;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* 量级示意图（横向条形） */
+      .bars {
+        margin: 18px 0;
+      }
+      .bars-caption {
+        font-weight: bold;
+        color: #35495e;
+        margin: 22px 0 6px;
+        font-size: 15px;
+      }
+      .bar-group {
+        color: #7a8aa0;
+        font-size: 13px;
+        font-weight: bold;
+        margin: 16px 0 2px;
+      }
+      .bar-row {
+        display: grid;
+        grid-template-columns: 130px 1fr 120px;
+        align-items: center;
+        gap: 12px;
+        margin: 7px 0;
+        font-size: 13px;
+      }
+      .bar-track {
+        background: #eef1f5;
+        border-radius: 6px;
+        height: 26px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding-left: 8px;
+        color: #fff;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+      .bar-fill.webpack {
+        background: #1c78c0;
+      }
+      .bar-fill.vite {
+        background: #646cff;
+      }
+      .bar-fill.rust {
+        background: #2e7d32;
+      }
+      .bar-note {
+        color: #7a8aa0;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 面试问答折叠块 */
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vite 与 Webpack 深度对比</h1>
+    <p class="subtitle">
+      打包哲学 · loader 与 plugin 扩展点 · 冷启动原理 · 依赖预构建 · HMR 复杂度 ·
+      生产构建 · 能力矩阵 · 迁移踩坑 · 选型决策 · 2026 最新动态（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇、30 秒结论 -->
+      <div class="section">
+        <h2>〇、先给结论：30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            两者的根本差异<strong>不是"谁写得快"，而是"什么时候把代码变成浏览器能跑的东西"</strong>：
+          </p>
+          <ul>
+            <li>
+              <strong>Webpack（Bundle 型）</strong>：启动时就必须从入口递归遍历<strong>整个</strong>依赖图，
+              用 loader 转换 + plugin 处理，把全部模块<em>打包</em>成少数几个 chunk，再交给 dev server。
+              所以<strong>冷启动成本 = 整个项目的构建成本</strong>，项目越大越慢。
+            </li>
+            <li>
+              <strong>Vite（Bundle-free Dev）</strong>：只把 <code>index.html</code> 和浏览器<em>真正请求到</em>的模块
+              用原生 ESM 按需编译返回。启动时只做两件事——起服务 + <strong>预构建依赖</strong>。
+              所以<strong>冷启动成本 ≈ 常量</strong>，与业务代码规模几乎无关。
+            </li>
+            <li>
+              代价（<strong>Vite ≤ 7 的经典模型</strong>）：Vite 把"打包"推迟到了<strong>生产构建</strong>
+              （默认交给 Rollup），于是天然出现 <strong>dev 与 build 两条不同管线</strong>，
+              这是它绝大多数诡异 bug 的根源——而这条代价正在被 Vite 8 收回，见第十一章。
+            </li>
+          </ul>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">先划版本边界（很重要，别说错）</strong>
+          本文<strong>第二~第九章讲经典模型（Vite 2~7）</strong>：dev 用原生 ESM 不打包、
+          esbuild 做转译与依赖预构建、build 交给 Rollup。这套叙述<strong>至今仍是绝大多数存量项目的事实</strong>，
+          也是面试官心里的默认答案。但请同时记住 2026 年的三个变化，它们改写了其中一半结论：
+          <br />① <strong>Vite 8（2026-03）</strong>：esbuild 与 Rollup
+          <strong>双双退出</strong>，统一为 Rust 内核 <strong>Rolldown</strong>；
+          <br />② <strong>Vite 8.1（2026-06）</strong>：实验性
+          <strong>bundledDev</strong> 让 dev 也可以打包，正面解决"dev 与 build 不一致"；
+          <br />③ <strong>VoidZero 于 2026-06 加入 Cloudflare</strong>，并在 2026-09 发布
+          <strong>Vite+ 1.0</strong>——把 Vite / Vitest / Rolldown / Oxlint / Oxfmt / tsdown
+          打成一个统一工具链。详见第十一章。
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">面试加分表述</strong>
+          一句话升级版：「Webpack 是<strong>先编译后服务</strong>，Vite 是<strong>先服务后编译</strong>；
+          Vite 用<strong>浏览器的 ESM</strong> 替换了 bundler 的模块图遍历，用 <strong>esbuild</strong> 替换了
+          最耗时的依赖转换环节，用 <strong>Rollup</strong> 保留了产物的可控性——本质上它是一次
+          <em>把"打包"从开发环节解耦出去</em>的架构选择，而不只是"用 Rust 重写一遍"。」
+          <br />（这段描述的是 Vite 2~7 的架构。Vite 8 之后第三、四小节要换成
+          <strong>"用 Rolldown 一个内核同时承担转译与打包"</strong>，别照背。）
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph WP["Webpack：构建先行"]
+      direction TB
+      W1["entry 入口"] --> W2["递归解析<br/>完整 dependency graph"]
+      W2 --> W3["loader 逐个转换<br/>babel / css / 资源"]
+      W3 --> W4["plugin 处理<br/>Chunk / Asset"]
+      W4 --> W5["输出 bundle 到内存"]
+      W5 --> W6["dev server 提供<br/>少量大文件"]
+    end
+    subgraph VT["Vite：服务先行"]
+      direction TB
+      V1["index.html"] --> V2["esbuild 预构建依赖<br/>node_modules/.vite/deps"]
+      V2 --> V3["起 dev server"]
+      V3 --> V4["浏览器按 ESM<br/>逐个 import 请求"]
+      V4 --> V5["服务端按需 transform<br/>只编译被请求的模块"]
+      V5 --> V6["浏览器自行组装<br/>几百个小请求"]
+    end
+    WP -.->|"生产 build"| R["Rollup：真正打包<br/>tree-shaking + code splitting"]
+    VT -.-> R
+    style W2 fill:#ffe0b2,stroke:#ef6c00
+    style W3 fill:#ffcc80,stroke:#ef6c00
+    style V2 fill:#d1c4e9,stroke:#4527a0
+    style V5 fill:#c8e6c9,stroke:#2e7d32
+    style R fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+        <p class="diagram-note">
+          上图为 <strong>Vite 2~7 经典架构</strong>。Vite 8 起右下角那条"Rollup 生产打包"与
+          中间的"esbuild 预构建"合并为单一 <strong>Rolldown</strong> 内核。
+        </p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>Webpack（5）</th>
+              <th>Vite</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>诞生</td>
+              <td>2012，Tobias Koppers</td>
+              <td>2020，尤雨溪（Evan You）</td>
+            </tr>
+            <tr>
+              <td>Dev 模块方案</td>
+              <td>打包成 chunk，自建 require 运行时</td>
+              <td><strong>原生 ESM</strong>，浏览器负责解析</td>
+            </tr>
+            <tr>
+              <td>冷启动</td>
+              <td>O(项目规模)</td>
+              <td class="win">≈ O(依赖数量)，与业务代码量弱相关</td>
+            </tr>
+            <tr>
+              <td>HMR</td>
+              <td>重建受影响模块与 chunk</td>
+              <td class="win">只失效改动模块链，粒度恒定</td>
+            </tr>
+            <tr>
+              <td>生产产物</td>
+              <td>同一套引擎，dev/build 一致</td>
+              <td>
+                ≤7：另一套引擎（Rollup），dev/build 有语义差异<br />
+                <strong>8：同一内核 Rolldown，差异大幅收窄</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>底层内核</td>
+              <td>JS 单线程（Webpack 5 有持久化缓存）</td>
+              <td class="win">
+                ≤7：esbuild(Go) + Rollup(JS)<br />
+                8+：<strong>Rolldown(Rust) 单内核 + Oxc 转译，可并行</strong>
+              </td>
+            </tr>
+            <tr>
+              <td>配置心智</td>
+              <td>loader + plugin，强大但繁琐</td>
+              <td class="win">约定优于配置 + plugin（兼容部分 loader 生态）</td>
+            </tr>
+            <tr>
+              <td>生态成熟度</td>
+              <td class="win">十年积累，几乎无死角</td>
+              <td>快速追赶，长尾场景仍需自研</td>
+            </tr>
+            <tr>
+              <td>典型场景</td>
+              <td>大型遗留项目、复杂定制构建、微前端</td>
+              <td>SPA/MPA 新项目、组件库、SSR、快速迭代</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bars">
+          <p class="bars-caption">三大场景耗时量级示意（条越长 = 越慢，非真实基准，仅体现相对关系）</p>
+
+          <p class="bar-group">① 冷启动（中大型 SPA）</p>
+          <div class="bar-row">
+            <span>Webpack</span>
+            <div class="bar-track"><div class="bar-fill webpack" style="width: 92%">需完整构建依赖图</div></div>
+            <span class="bar-note">数十秒级</span>
+          </div>
+          <div class="bar-row">
+            <span>Vite</span>
+            <div class="bar-track"><div class="bar-fill vite" style="width: 8%"></div></div>
+            <span class="bar-note">亚秒级</span>
+          </div>
+
+          <p class="bar-group">② 改动一个组件（HMR）</p>
+          <div class="bar-row">
+            <span>Webpack</span>
+            <div class="bar-track"><div class="bar-fill webpack" style="width: 55%">随规模增长</div></div>
+            <span class="bar-note">秒级 → 十秒级</span>
+          </div>
+          <div class="bar-row">
+            <span>Vite</span>
+            <div class="bar-track"><div class="bar-fill vite" style="width: 5%"></div></div>
+            <span class="bar-note">几乎瞬时</span>
+          </div>
+
+          <p class="bar-group">③ 生产构建（超大型项目）</p>
+          <div class="bar-row">
+            <span>Webpack</span>
+            <div class="bar-track"><div class="bar-fill webpack" style="width: 70%"></div></div>
+            <span class="bar-note">持久化缓存加持，反而占优</span>
+          </div>
+          <div class="bar-row">
+            <span>Vite</span>
+            <div class="bar-track"><div class="bar-fill vite" style="width: 58%">Rollup 单线程</div></div>
+            <span class="bar-note">不一定更快，甚至更慢</span>
+          </div>
+          <div class="bar-row">
+            <span>Rust 内核</span>
+            <div class="bar-track"><div class="bar-fill rust" style="width: 22%">Rspack / Rolldown</div></div>
+            <span class="bar-note">2024 之后的真正竞争者</span>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">最常见的错误认知</strong>
+          「Vite 快是因为它用 esbuild 打包」——<strong>错</strong>。Vite
+          <strong>dev 阶段根本不打包</strong>业务代码，esbuild 只用于依赖预构建和 TS/JSX 的
+          <em>transform</em>（转译），生产 bundle 这一步默认仍然是 <strong>Rollup</strong>，
+          默认 minifier 才是 esbuild。能把这条说清楚，基本就及格了。
+        </div>
+      </div>
+
+      <!-- 一、Webpack 原理 -->
+      <div class="section">
+        <h2>一、Webpack 为什么必须打包：一条完整的编译流水线</h2>
+        <div class="explanation">
+          <p>
+            Webpack 出生时（2012）浏览器没有可靠的模块化方案（ESM 直到 2015 才定稿、2017 年后才普遍支持），
+            所以它的设计目标是<strong>「把任何模块格式编译成浏览器可执行的静态文件」</strong>。
+            这个前提决定了它的流程：必须先看到<strong>全部</strong>模块，才能生成完整产物。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["make：从 entry 开始"] --> B["parse：acorn 解析 AST<br/>收集 import / require 依赖"]
+    B --> C{"是 JS 吗？"}
+    C -->|"否：.vue/.ts/.css/图片"| D["匹配 use-loader 链<br/>从右往左依次执行"]
+    C -->|"是"| E["生成模块源码"]
+    D --> E
+    E --> F["递归处理新依赖<br/>直到 dependency graph 完整"]
+    F --> G["seal：优化阶段<br/>tree-shaking / splitChunks / scope hoisting"]
+    G --> H["生成 chunk"]
+    H --> I["emit：渲染 module template<br/>拼接 webpack require 运行时"]
+    I --> J["写文件 / 内存 fs"]
+    J --> K["dev server 拦截请求返回 bundle"]
+    K --> L["浏览器加载 &lt;script&gt;"]
+    style B fill:#ffe0b2,stroke:#ef6c00
+    style D fill:#ffcc80,stroke:#ef6c00
+    style F fill:#ffab91,stroke:#bf360c
+    style G fill:#c5cae9,stroke:#283593
+    style I fill:#e1bee7,stroke:#6a1b9a
+          </pre>
+        </div>
+
+        <h3>冷启动的三个耗时来源</h3>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">① 全量模块图遍历</span>
+            <code>parse</code> + AST 解析是 CPU 密集且<strong>必须串行于依赖关系</strong>。
+            你没访问的那个页面，它的 500 个模块也照样被解析了。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">② loader 链在 JS 运行时</span>
+            babel / ts-loader / css-loader 全是 Node 单线程执行，
+            大项目里 <code>node_modules</code> 中未预编译的产物（ESM/CJS/JSX）都要现编一遍。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">③ seal 阶段的产物优化</span>
+            tree-shaking、作用域提升、chunk 分组都要在完整模块图上做，规模一大就是分钟级。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">缓解手段：缓存</span>
+            Webpack 5 <code>cache.type='filesystem'</code> 能把模块解析结果落盘，
+            二次启动提速明显——但<strong>首次启动和 CI 冷跑</strong>依然无解。
+          </div>
+        </div>
+
+        <div class="code-title">webpack.config.js —— 缓存与转译范围是性能关键项</div>
+        <pre class="code-block"><code class="language-js">module.exports = {
+  mode: 'development',
+  // 1) 明确入口，Webpack 从此递归建图
+  entry: './src/main.ts',
+  module: {
+    rules: [
+      // 转译类 loader 必须限定范围，否则会去啃 node_modules
+      {
+        test: '\\.[jt]sx?$',
+        exclude: /node_modules/,
+        use: { loader: 'babel-loader', options: { cacheDirectory: true } },
+      },
+      {
+        test: '\\.module\\.css$',
+        use: ['style-loader', { loader: 'css-loader', options: { modules: true } }, 'sass-loader'],
+      },
+      { test: /\\.(png|jpg|svg)$/, type: 'asset', parser: { dataUrlCondition: { maxSize: 8 * 1024 } } },
+    ],
+  },
+  resolve: { alias: { '@': path.resolve('src') }, extensions: ['.ts', '.vue', '.js'] },
+  // 2) 持久化缓存：二次启动的救命稻草
+  cache: { type: 'filesystem', buildDependencies: { config: [__filename] } },
+  optimization: { moduleIds: 'deterministic', splitChunks: { chunks: 'all' } },
+}</code></pre>
+      </div>
+
+      <!-- 二、Webpack 扩展点 -->
+      <div class="section">
+        <h2>二、Webpack 的两类扩展点：loader 与 plugin</h2>
+        <div class="explanation">
+          <p>
+            上一章的流水线里有两个"可插拔"的位置，面试时经常被混为一谈，其实职责完全不同：
+          </p>
+          <ul>
+            <li>
+              <strong>loader = 文件翻译官</strong>：一个纯函数，输入<em>单个模块的原始内容</em>，
+              输出<em>合法的 JS 源码</em>。它看不到模块图、看不到 chunk，只管"这一个文件"。
+            </li>
+            <li>
+              <strong>plugin = 流程订阅者</strong>：一个带
+              <code>apply(compiler)</code> 的对象，通过 tapable 钩子挂在编译生命周期的<em>任意节点</em>上，
+              能读改模块图、chunk、产物和统计信息。
+            </li>
+          </ul>
+          <p>
+            判断标准一句话：<strong>这件事只依赖当前文件内容 → 写 loader；需要跨模块或改产物 → 写 plugin。</strong>
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["compiler 启动<br/>钩子 environment / entryOption / beforeRun / run"] --> B["创建 compilation<br/>钩子 compile / compilation / make"]
+    B --> C["逐模块构建<br/>钩子 buildModule / beforeResolve / afterResolve / succeedModule"]
+    C --> L["★ loader 链唯一的作用点<br/>原始文件内容 → JS 模块源码<br/>use 数组从右往左执行"]
+    L --> C
+    C --> D["seal 优化<br/>钩子 optimizeChunks / processAssets（分 stage）"]
+    D --> E["emit 写盘<br/>钩子 shouldGenerateAssets / emit / afterEmit"]
+    E --> F["watch 模式<br/>钩子 watchRun / invalid，回到 make"]
+    F -.-> B
+    style L fill:#fff9c4,stroke:#fbc02d
+    style C fill:#e1f5fe,stroke:#01579b
+    style D fill:#f3e5f5,stroke:#7b1fa2
+    style E fill:#c8e6c9,stroke:#2e7d32
+          </pre>
+        </div>
+        <p class="diagram-note">
+          黄色是 loader 的位置（只在"单个模块转换"这一步），其余蓝色/紫色/绿色节点都是 plugin 的挂钩点。
+        </p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>loader</th>
+              <th>plugin</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>本质</td>
+              <td>纯函数 <code>(source) =&gt; string | Buffer</code></td>
+              <td>对象 <code>{ apply(compiler) }</code> + tapable 订阅</td>
+            </tr>
+            <tr>
+              <td>作用范围</td>
+              <td><strong>单个模块</strong>，彼此隔离</td>
+              <td><strong>整次编译</strong>：模块图 / chunk / assets / stats</td>
+            </tr>
+            <tr>
+              <td>能做什么</td>
+              <td>
+                语法转换（TS/JSX）、预处理器（Sass）、把 CSS 变成 JS 模块、
+                资源内联或产出 URL、注入代码、加 source map
+              </td>
+              <td>
+                新增产物（HTML/manifest）、改写任意 chunk、注入全局常量、
+                复制文件、跨模块分析、上报构建统计、控制缓存与 watch
+              </td>
+            </tr>
+            <tr>
+              <td>做不到什么</td>
+              <td>看不到别的模块，不能新增入口或改产物结构</td>
+              <td>一般不碰单文件语法转换（那是 loader 的活，硬做会失去缓存粒度）</td>
+            </tr>
+            <tr>
+              <td>配置位置</td>
+              <td><code>module.rules[].use</code>（字符串/对象，<strong>不用 new</strong>）</td>
+              <td><code>plugins: []</code>（<strong>必须 new 实例</strong>）</td>
+            </tr>
+            <tr>
+              <td>执行顺序</td>
+              <td>
+                normal 阶段<strong>从右往左 / 从下往上</strong>；<br />
+                pitch 阶段<strong>从左往右</strong>，可短路
+              </td>
+              <td>钩子注册顺序 + <code>stage</code> 常量决定先后</td>
+            </tr>
+            <tr>
+              <td>典型成员</td>
+              <td>
+                <code>babel-loader</code>、<code>ts-loader</code>、
+                <code>css-loader</code>、<code>style-loader</code>、
+                <code>sass-loader</code>、<code>file-loader</code>
+              </td>
+              <td>
+                <code>HtmlWebpackPlugin</code>、<code>MiniCssExtractPlugin</code>、
+                <code>DefinePlugin</code>、<code>CopyWebpackPlugin</code>、
+                <code>ModuleFederationPlugin</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>最小 loader：5 行就能跑</h3>
+        <div class="explanation">
+          <p>
+            loader 的契约只有一条：<strong>入参是上游给的文件内容，返回值会被当成 JS 源码继续解析</strong>。
+            注意最后一行——webpack 会去 <code>import()</code> 你的返回值，所以纯文本必须先包成模块。
+          </p>
+        </div>
+
+        <div class="code-title">loaders/upper-loader.js —— 把 .txt 变成导出字符串的模块</div>
+        <pre class="code-block"><code class="language-js">// 最小可用 loader：没有任何依赖
+module.exports = function (source) {
+  // source 是文件原始内容（string）。转大写后包成 ESM 默认导出
+  return `export default ${JSON.stringify(source.toUpperCase())}`
+}</code></pre>
+
+        <div class="code-title">webpack.config.js —— 注册并按 query 命中</div>
+        <pre class="code-block"><code class="language-js">const path = require('node:path')
+
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.txt$/,
+        // 只有带 ?upper 的请求才走这个 loader，避免误伤普通文本
+        resourceQuery: /upper/,
+        use: {
+          loader: path.resolve('loaders/upper-loader.js'),
+          options: { keepTail: true },   // 通过 this.getOptions() 读取
+        },
+      },
+    ],
+  },
+}</code></pre>
+
+        <div class="code-title">业务代码里直接使用</div>
+        <pre class="code-block"><code class="language-js">import notice from './notice.txt?upper'
+// notice === 'SYSTEM WILL MAINTAIN AT 22:00'</code></pre>
+
+        <h3>稍真实的 loader：异步、options、错误处理</h3>
+        <div class="explanation">
+          <p>
+            一旦要做"转换前先读别的文件 / 调外部工具"，就必须切到异步模式：
+            调用 <code>this.async()</code> 拿到 callback，此后<strong>返回值失效</strong>，
+            只能用 <code>callback(err, code, map)</code> 交付结果。
+          </p>
+        </div>
+
+        <div class="code-title">loaders/wrap-loader.js</div>
+        <pre class="code-block"><code class="language-js">const fs = require('node:fs/promises')
+const path = require('node:path')
+
+module.exports = function (source) {
+  const done = this.async()            // ① 声明异步：必须调用 done 才算完成
+  const options = this.getOptions()    // ② webpack 5 内置，替代旧版 loader-utils.getOptions
+
+  // ③ 让 webpack 参与依赖追踪：这个文件变了会触发本模块重新构建
+  this.addDependency(path.resolve(__dirname, '../templates/wrap.html'))
+
+  return fs
+    .readFile(path.resolve(__dirname, '../templates/wrap.html'), 'utf8')
+    .then((tpl) => {
+      const html = tpl.replace('&lt;slot/&gt;', source)
+      // 第二参数是 source map；没有就传 null，别传 undefined 之外的脏值
+      done(null, `export default ${JSON.stringify(html)}`, null)
+    })
+    .catch((err) => {
+      // ④ 第一个参数非空 → 编译失败，webpack 会把错误定位到当前文件
+      done(err)
+    })
+}</code></pre>
+
+        <div class="code-title">loader 的三种形态与执行顺序</div>
+        <pre class="code-block"><code class="language-js">// —— 一个 loader 文件可以同时提供两种阶段 ——
+module.exports = function normal(source) {
+  return source                 // normal：拿到左侧 loader 处理完的结果
+}
+module.exports.raw = true       // 让 normal 收到 Buffer 而不是 string（处理图片/字体必须）
+module.exports.pitch = function (remainingRequest, precedingRequest, data) {
+  // pitch：从【最左】往右先跑一遍。
+  // · return 一个字符串 = 短路，跳过右侧所有 loader 与自身 normal
+  // · return 一个 promise = 异步短路
+  // · this.loadModule(request, cb) = 主动拉取并递归处理另一个模块
+  // style-loader 就是靠 pitch 把 css 请求转成"注入 style 标签"的 JS
+}
+
+// —— 顺序：use 数组 normal 从右往左执行 ——
+// {
+//   test: /\.md$/,
+//   use: [
+//     { loader: 'style-loader' },   // ③ 最后执行：把 JS 里的 css 注入页面
+//     { loader: 'css-loader' },     // ② 解析 @import / url()，CSS → JS 模块
+//     { loader: 'sass-loader' },    // ① 最先拿到原始 .scss 文本
+//   ],
+// }
+
+// —— 内联写法可以临时改写某个请求的 loader 链 ——
+// import a from '!!raw-loader!./a.md'      // !! 忽略配置里的其它 loader
+// import b from '-!sass-loader!./c.scss'   // -  减去 / 跳过
+// import d from 'style-loader!css-loader!./e.css'  // 内联链同样是右→左</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">写 loader 的五个高频坑</strong>
+          ① 忘了 <code>this.async()</code> 就直接 return promise → 产物里出现
+          <code>[object Promise]</code>；
+          ② 返回纯文本没包成模块 → 报 <code>Module parse failed: Unexpected token</code>；
+          ③ 二进制没设 <code>module.exports.raw = true</code> → 内容被按 UTF-8 解码损坏；
+          ④ 转换后不返回 source map，导致调试时源码对不上；
+          ⑤ 在 loader 里同步读大量文件（<code>readFileSync</code>）又不
+          <code>addDependency</code>，watch 模式下改了模板却<strong>不触发重建</strong>。
+        </div>
+
+        <h3>最小 plugin：往产物里多塞一个文件</h3>
+        <div class="explanation">
+          <p>
+            plugin 的骨架只有两层：外层拿 <code>compiler</code>（一次编译的总控），
+            内层拿 <code>compilation</code>（<strong>每次构建</strong>的快照，watch 下会重建）。
+            <code>tap</code> 的第一个参数是插件名，用于调试与去重。
+          </p>
+        </div>
+
+        <div class="code-title">plugins/build-info-plugin.js —— 输出 build-info.json 并给 JS 产物加 banner</div>
+        <pre class="code-block"><code class="language-js">class BuildInfoPlugin {
+  constructor(options = {}) {
+    this.options = options
+  }
+
+  // webpack 只做一件事：把 compiler 交给你
+  apply(compiler) {
+    const NAME = 'BuildInfoPlugin'
+    const { Compilation, sources } = compiler.webpack   // webpack 5 推荐从 compiler.webpack 取
+
+    compiler.hooks.thisCompilation.tap(NAME, (compilation) => {
+      compilation.hooks.processAssets.tap(
+        {
+          name: NAME,
+          // stage 决定先后：改产物必须选对阶段，太早会被后续插件覆盖，太晚则错过优化
+          stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
+          // 只关心 js，减少无谓遍历
+          assets: (asset) => asset.name.endsWith('.js'),
+        },
+        (assets) => {
+          // ① 给每个 js chunk 头部注入 banner
+          for (const name of Object.keys(assets)) {
+            const asset = compilation.getAsset(name)
+            compilation.updateAsset(
+              name,
+              new sources.ConcatSource(`/*! built by ${this.options.team ?? 'team'} */\n`, asset.source),
+            )
+          }
+
+          // ② 额外产出一个文件（loader 做不到，因为它没有"产物"概念）
+          compilation.emitAsset(
+            'build-info.json',
+            new sources.RawSource(
+              JSON.stringify(
+                { hash: compilation.hash, time: new Date().toISOString(), ...this.options },
+                null,
+                2,
+              ),
+            ),
+          )
+        },
+      )
+    })
+  }
+}
+
+module.exports = BuildInfoPlugin</code></pre>
+
+        <div class="code-title">注册，以及一个异步钩子的写法</div>
+        <pre class="code-block"><code class="language-js">const BuildInfoPlugin = require('./plugins/build-info-plugin')
+
+module.exports = {
+  plugins: [
+    new BuildInfoPlugin({ team: 'infra', env: process.env.BUILD_ENV }),
+    {
+      // 不想单独建类？匿名对象也行，只要有 apply
+      apply(compiler) {
+        compiler.hooks.afterEmit.tapAsync('ReportPlugin', (compilation, callback) => {
+          const stats = compilation.getStats().toJson({ all: false, assets: true })
+          fetch('/api/build-report', { method: 'POST', body: JSON.stringify(stats) })
+            .then(() => callback())     // ★ 必须调用 callback，否则编译永远挂住
+            .catch(callback)            //   传错则让构建失败
+        })
+      },
+    },
+  ],
+}</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">compiler vs compilation</span>
+            <code>compiler</code> 全局唯一，保存配置与 watch 实例；
+            <code>compilation</code> 每次构建新建一个，包含本次的模块图与产物。
+            <strong>90% 的插件写错是因为在 compiler 级钩子里缓存了 compilation 数据。</strong>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">为什么 loader 必须输出 JS</span>
+            webpack 的解析器只认 JS：所有非 JS 文件都要先被翻译成
+            <code>export default ...</code> 形式，才能进入依赖分析。
+            这就是 <code>css-loader</code> 存在的原因——它把 CSS 变成"导出字符串的 JS 模块"。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">tap / tapAsync / tapPromise</span>
+            三种订阅方式：<code>tap</code> 同步、<code>tapAsync</code> 回调、
+            <code>tapPromise</code> 返回 Promise。
+            异步钩子里忘调 callback 是最经典的"构建卡死不动"事故。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">processAssets 的 stage</span>
+            <code>PROCESS_ASSETS_STAGE_*</code> 是一串有序常量
+            （ADDITIONS → OPTIMIZE_SIZE → SUMMARIZE …）。
+            HtmlWebpackPlugin 在 ADDITIONS 注入 script 标签，压缩插件在 OPTIMIZE_SIZE 改内容——
+            <strong>选错 stage 就会出现"我加的 banner 被压缩掉了"。</strong>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">映射到 Vite：这两类扩展点变成了一种</strong>
+          Vite 里<strong>没有 loader 这个概念</strong>，它的职责被插件的
+          <code>load(id)</code>（替代"读原始文件"）和
+          <code>transform(code, id)</code>（替代"单文件翻译"）两个钩子吃掉；
+          plugin 的职责则对应 <code>config</code> / <code>configureServer</code> /
+          <code>buildStart</code> / <code>generateBundle</code> 等 Rollup 钩子。
+          实际迁移时的体感差异有三点：
+          ① loader 是<strong>配置项</strong>（字符串 + options，按 <code>test</code> 自动匹配），
+          Vite 插件是<strong>代码对象</strong>（自己判断 <code>id</code>）；
+          ② loader 链顺序靠数组位置，Vite 靠 <code>enforce</code> 与返回 <code>null</code> 表示不处理；
+          ③ webpack 的 <code>module.rules</code> 精细匹配（resourceQuery / oneOf / issuer）
+          在 Vite 里都要手写条件判断，这也是<strong>复杂 loader 迁移成本被低估</strong>的地方。
+        </div>
+      </div>
+
+      <!-- 三、Vite 原理 -->
+      <div class="section">
+        <h2>三、Vite 的原理：把「模块图」这件事外包给浏览器</h2>
+        <div class="explanation">
+          <p>
+            Vite 的洞察是：<strong>现代浏览器已经实现了 ESM</strong>，
+            那么「按 <code>import</code> 语句解析依赖并逐个拉取」这件事，
+            浏览器自己就能做，dev server 只需要充当一个<strong>按需转译的文件响应服务</strong>。
+            于是"必须先构建全部"的前提被抽掉了。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant B as 浏览器
+    participant S as Vite Dev Server
+    participant FS as 文件系统
+    B->>S: GET /（HTML）
+    S->>S: html transform：注入 /@vite/client<br/>改写 script src 为 /src/main.ts
+    S-->>B: 返回 HTML
+    B->>S: GET /src/main.ts
+    S->>S: esbuild transform（去类型 / JSX）<br/>+ 重写 import 说明符
+    S-->>B: 返回 ESM（no-cache + ETag）
+    Note over B: 浏览器解析 main.ts，<br/>发现新 import 才继续请求
+    B->>S: GET /src/App.vue
+    S->>S: @vitejs/plugin-vue 编译 SFC<br/>script + style 拆成两个模块
+    S-->>B: 返回编译后 JS
+    B->>S: GET /node_modules/.vite/deps/vue.js?v=7f3c…
+    S-->>B: 200 + max-age=31536000, immutable（强缓存）
+    B->>S: GET /src/components/Hello.vue …
+    Note over B,S: 只有真正被引用到的模块才会被编译<br/>未被访问的路由 = 零成本
+          </pre>
+        </div>
+
+        <h3>这个模型带来了什么，又放弃了什么</h3>
+        <div class="vs-grid">
+          <div class="vs-panel vite">
+            <h4>得到的</h4>
+            <ul>
+              <li><strong>启动无需遍历业务代码</strong>：项目从 200 个模块涨到 2000 个，冷启动几乎不变。</li>
+              <li><strong>HMR 与规模解耦</strong>：只重新请求改动模块（详见第五章）。</li>
+              <li><strong>天然支持 TS/Vue/JSX</strong>：不用配 babel 链，开箱即用。</li>
+              <li><strong>错误定位直观</strong>：source map 对应真实文件路径，不是 bundle 里的偏移行号。</li>
+            </ul>
+          </div>
+          <div class="vs-panel webpack">
+            <h4>放弃的</h4>
+            <ul>
+              <li><strong>瀑布式请求</strong>：ESM 必须先拿到父模块才知道子依赖，深依赖链 = 多轮 RTT。</li>
+              <li><strong>dev 请求数爆炸</strong>：几百上千个小文件，HTTP/1.1 下 6 连接会打满。</li>
+              <li><strong>dev 无全局视野</strong>：没有完整模块图，就<strong>做不了</strong>跨模块优化（tree-shaking 应用码、chunk 划分、模块预加载分析）。</li>
+              <li><strong>dev/build 双份现实</strong>：两者产物结构不同，构建期才暴露的问题会延迟出现。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">Vite 如何补救瀑布问题</strong>
+          两个手段：① <strong>依赖预构建</strong>把 <code>node_modules</code> 里的几百个小文件合并成单文件，
+          一次性消灭最大的请求源；② 建议 dev server 开 <strong>HTTP/2</strong>（多路复用），
+          让几百个小请求并行而非排队。剩下长尾的源码请求，靠 ETag/304 让<strong>刷新页面</strong>时几乎零传输成本。
+        </div>
+      </div>
+
+      <!-- 四、依赖预构建 -->
+      <div class="section">
+        <h2>四、依赖预构建（optimizeDeps）：Vite 的地基，也是最容易被忽略的一环</h2>
+        <div class="explanation">
+          <p>
+            很多解释到「按需编译所以快」就停了，但 Vite 启动时确实做了<strong>一件重活</strong>：预构建第三方依赖。
+            理解它，才理解 Vite 的缓存模型和一大类"HMR 为什么整页刷新"的问题。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["扫描入口，收集<br/>node_modules 中的依赖<br/>（import 说明符）"] --> B{"命中缓存？<br/>hash = lockfile + 配置 + resolve"}
+    B -->|"命中"| C["直接复用 node_modules/.vite/deps<br/>秒开"]
+    B -->|"未命中（首次/依赖变更/配置变更）"| D["esbuild 以 bundle 模式<br/>为每个依赖入口单独打包"]
+    D --> E["① CJS / UMD → ESM<br/>② 碎文件合并：lodash-es 600+ → 1<br/>③ 顺手 treeshake 掉未引用导出"]
+    E --> F["写入 deps 目录 + _metadata.json<br/>记录 browserHash"]
+    F --> G["HTML transform 注入<br/>script type=module src=/@vite/client"]
+    G --> H["import 重写：<br/>from 'vue' → from '/node_modules/.vite/deps/vue.js?v=HASH'"]
+    C --> H
+    H --> I["浏览器强缓存 immutable<br/>依赖不变则永不再请求"]
+    style B fill:#fff9c4,stroke:#fbc02d
+    style D fill:#d1c4e9,stroke:#4527a0
+    style I fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>请求对象</th>
+              <th>响应头策略</th>
+              <th>为什么这么设计</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>预构建依赖<br /><code>/node_modules/.vite/deps/*</code></td>
+              <td><code>max-age=31536000, immutable</code></td>
+              <td>URL 带 <code>?v=browserHash</code>，内容变化就换 URL，因此可以放心<strong>不进协商缓存</strong>，刷新零开销。</td>
+            </tr>
+            <tr>
+              <td>源码模块 <code>/src/*</code></td>
+              <td><code>no-cache</code> + <code>ETag</code> / <code>Last-Modified</code></td>
+              <td>源码随时在改，必须协商；未改动时返回 <code>304</code>，成本极低。</td>
+            </tr>
+            <tr>
+              <td><code>/@fs/</code> 绝对路径外文件（monorepo 外部包）</td>
+              <td>同源码，<code>no-cache</code></td>
+              <td>跨目录引用需要 <code>server.fs.allow</code> 放行，这也是 monorepo 常见的报错来源。</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">vite.config.ts —— 预构建相关的高频配置项</div>
+        <pre class="code-block"><code class="language-ts">import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  optimizeDeps: {
+    // 动态 import / require 无法被静态扫描到 → 运行中才触发二次预构建 → 整页刷新
+    // 显式 include 可避免这种「dev 跑着跑着白屏一下」
+    include: ['lodash-es', 'some-cjs-only-pkg', 'some-cjs-only-pkg/deep/path'],
+    // 大型且很少改的依赖可排除，交给浏览器按需请求（代价：请求数上升）
+    exclude: ['@arcgis/core'],
+    esbuildOptions: { target: 'es2020' },
+  },
+  server: {
+    fs: { allow: ['..'] },      // monorepo：允许访问 workspace 上层文件
+    hmr: true,
+    // 预热：启动时提前 transform 关键模块，缓解首屏瀑布（Vite 5.1+）
+    warmup: { clientFiles: ['./src/main.ts', './src/views/Dashboard.vue'] },
+  },
+})</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">高频线上事故：依赖发现导致的二次预构建</strong>
+          Vite 只预构建<strong>扫描得到</strong>的依赖。若代码里有
+          <code>await import(variablePath)</code>、运行时才走到的分支里的 <code>import 'xxx'</code>，
+          或是 CJS 包内部 <code>require()</code> 的可选依赖，浏览器请求到它时 Vite 才发现"这个没预构建过"，
+          于是<strong>重新打包依赖 + 提升 browserHash + 强制 full reload</strong>。
+          表现就是"页面点着点着整个刷一次、状态丢失"。解法：<code>optimizeDeps.include</code> 提前列全，
+          或 <code>optimizeDeps.entries</code> 指定扫描入口。
+        </div>
+      </div>
+
+      <!-- 五、HMR -->
+      <div class="section">
+        <h2>五、HMR：一个随规模增长，一个近乎恒定</h2>
+        <div class="explanation">
+          <p>
+            热更新的体验差距往往比冷启动更影响开发心情。核心区别在于
+            <strong>「更新单位」</strong>：Webpack 的更新单位是
+            <em>chunk</em>（要重新构建），Vite 的更新单位是 <em>模块</em>（只需重新请求）。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TB
+    subgraph M1["Webpack HMR"]
+      direction TB
+      A1["改动 App.vue"] --> A2["模块图增量更新<br/>重建该模块"]
+      A2 --> A3["它所在 chunk 及<br/>依赖它的 chunk 一起重编"]
+      A3 --> A4["生成 update manifest<br/>main.xxxx.[hash].hot-update.js"]
+      A4 --> A5["客户端 runtime 拉取并替换模块"]
+      A6["成本随模块图规模上升<br/>大项目秒级 → 十秒级"]
+      A5 --> A6
+    end
+    subgraph M2["Vite HMR"]
+      direction TB
+      B1["改动 App.vue"] --> B2["插件（如 plugin-vue）<br/>判定：该模块可接受更新？"]
+      B2 -->|"是：HMR 边界"| B3["模块自身 invalidate<br/>推送 ws 消息"]
+      B3 --> B4["importer 重新 fetch<br/>该模块 URL（带时间戳）"]
+      B4 --> B5["执行新模块，组件原地替换<br/>状态保留"]
+      B6["成本 ≈ O(改动链深度)<br/>与项目总规模无关"]
+      B5 --> B6
+    end
+    style A3 fill:#ffcc80,stroke:#ef6c00
+    style A6 fill:#ffab91,stroke:#bf360c
+    style B2 fill:#d1c4e9,stroke:#4527a0
+    style B6 fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+
+        <h3>HMR 边界：Vite 的"能热就热，不能热就刷"</h3>
+        <div class="explanation">
+          <p>
+            Vite 的更新逻辑是<strong>沿 importer 链向上冒泡</strong>，直到找到第一个
+            调用过 <code>import.meta.hot.accept()</code> 的模块（HMR 边界）：
+          </p>
+          <ul>
+            <li><strong>.vue / React 组件</strong>：框架插件自动注入 accept → 原地替换，状态保留。</li>
+            <li><strong>纯 CSS</strong>：不产生新模块，直接替换 style 标签。</li>
+            <li><strong>普通 JS 模块被改</strong>：自己没有 accept，向父级冒泡；父级也没有 → 触发<strong>页面级 reload</strong>。</li>
+            <li><strong>index.html 或依赖预构建结果变化</strong>：直接 full reload。</li>
+          </ul>
+        </div>
+
+        <div class="code-title">手写一个可热更新的模块（面试常考「Vite 的 HMR API」）</div>
+        <pre class="code-block"><code class="language-ts">// stores/ui.ts —— 没有框架插件帮忙，就得自己声明边界
+export const state = { sidebarCollapsed: false }
+
+export function toggle() {
+  state.sidebarCollapsed = !state.sidebarCollapsed
+}
+
+if (import.meta.hot) {
+  // accept 自身：改动本模块时不刷新页面，用新实例替换并手动重放副作用
+  import.meta.hot.accept((mod) => {
+    if (!mod) return
+    // 保留旧状态，避免热更后 UI 闪回默认值
+    mod.state.sidebarCollapsed = state.sidebarCollapsed
+  })
+
+  // 也可以接受别的模块的变化：import.meta.hot.accept('./dep.ts', cb)
+  // 主动通知依赖自己的父级：import.meta.hot.invalidate()
+  // 需要整页刷新时：import.meta.hot.fullReload()
+}</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">对比细节：为什么 Vite 的 HMR 更"干净"</strong>
+          Webpack 的 <code>module.hot.accept</code> 是
+          <em>callback API</em>，模块状态在新旧实例间迁移要靠开发者自觉；
+          Vite 的 accept 回调直接给你<strong>新模块对象</strong>，
+          并且因为是原生 ESM，没有 webpack require 缓存层带来的
+          "旧闭包引用旧变量"这一类隐蔽问题。当然，副作用型模块（注册路由、挂载全局）在两边都需要手动清理
+          （<code>import.meta.hot.dispose</code> / <code>module.hot.dispose</code>）。
+        </div>
+      </div>
+
+      <!-- 六、esbuild -->
+      <div class="section">
+        <h2>六、esbuild 的角色：为什么 Vite（2~7）不用它打包生产</h2>
+        <div class="explanation">
+          <p>
+            esbuild 是 Go 写的，官方基准里"处理 100MB React 代码"耗时是 JS 系 bundler
+            的 <strong>数十到上百倍</strong>量级。Vite 在 dev 里让它做三件事：
+            <strong>依赖预构建</strong>、<strong>TS/JSX transform</strong>、<strong>CSS/JS minify</strong>
+            （Vite 3+ 默认 minifier 就是 esbuild）。
+            但生产 <em>bundling</em> 默认仍是 Rollup，这是刻意取舍。
+          </p>
+          <p>
+            <strong>本节讲的是 Vite 2~7 的引擎分工。</strong>下表最后一列给出 Vite 8（2026-03 起）的对应变化：
+            esbuild 已被<strong>完全移除</strong>，Rollup 也被<strong>替换</strong>，两者由 Rolldown 一个内核接管。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>Vite 环节</th>
+              <th>实际引擎（≤7）</th>
+              <th>原因</th>
+              <th>Vite 8 之后</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>dev 依赖预构建</td>
+              <td><strong>esbuild</strong></td>
+              <td>CJS→ESM + 合并碎文件，是纯粹的 transform/bundle 小任务，最吃性能。</td>
+              <td><strong>Rolldown</strong>（预构逻辑保留，缓存策略不变）</td>
+            </tr>
+            <tr>
+              <td>dev 源码转译（TS/JSX/Vue）</td>
+              <td><strong>esbuild</strong>（+ 框架插件）</td>
+              <td>transform 是单文件无状态操作，正好避开 esbuild 的 bundle 短板。</td>
+              <td><strong>Oxc</strong>（Rolldown 的解析/转译前端）</td>
+            </tr>
+            <tr>
+              <td>生产 bundle</td>
+              <td><strong>Rollup</strong>（默认）</td>
+              <td>见下方三点：产物可控性、code splitting 成熟度、插件生态复用。</td>
+              <td><strong>Rolldown</strong>：Rust 实现、可并行建图</td>
+            </tr>
+            <tr>
+              <td>生产 minify</td>
+              <td><strong>esbuild</strong>（默认）/ Terser 可切</td>
+              <td>压缩比略低于 Terser，但速度快一个量级；追求极致体积可 <code>build.minify:'terser'</code>。</td>
+              <td>Oxc 压缩器；Terser / esbuild 选项退出默认</td>
+            </tr>
+            <tr>
+              <td>生产 CSS minify</td>
+              <td><strong>esbuild</strong>（可选 lightningcss）</td>
+              <td>lightningcss 支持嵌套语法、转换 targets，性能与兼容性更好。</td>
+              <td><strong>内置 lightningcss</strong>（也是包体积变大的原因之一）</td>
+            </tr>
+            <tr>
+              <td>生产 tree-shaking</td>
+              <td><strong>Rollup</strong></td>
+              <td>Rollup 的静态 ESM 分析是它的看家本领，剥离更彻底。</td>
+              <td>Rolldown + Oxc 语义分析，官方称摇树<strong>更彻底</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">① Code splitting 与 CSS 拆分</span>
+            esbuild（在其能力成熟前）对<em>动态 import 边界</em>、
+            共享 chunk 划分、CSS 随 chunk 拆分、<code>assetFileNames</code> 级别的产物控制支持有限，
+            而这些正是应用构建的刚需。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">② 类型与语法的保守策略</span>
+            esbuild 的 TS 处理是<strong>纯擦除</strong>：不查类型、不解析
+            <code>const enum</code>跨文件用法、不跑装饰器元数据（早期）、不处理
+            <code>import type</code> 之外的类型依赖。这既带来速度，也带来"必须单独做类型检查"的义务。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">③ 插件生态是护城河</span>
+            Vite 插件系统直接<strong>兼容 Rollup 钩子</strong>
+            （<code>transform</code>、<code>resolveId</code>、<code>generateBundle</code> 等），
+            所以能立刻用上大量 Rollup 插件；若换 esbuild 内核，等于生态清零。
+            <strong>这也是 Vite 8 敢换内核的前提</strong>——官方明确
+            Rolldown 沿用同一套插件 API，因此"换引擎"对外表现为性能变化而非 API 变化。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">④ 循环依赖与副作用</span>
+            Rollup 对 ESM 循环依赖的 TDZ 处理更严谨，产物可读性也更好，
+            出问题容易 diff——库构建场景尤其看重这点。
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">必考陷阱：dev 快但类型没检查</strong>
+          因为 esbuild 只<strong>擦类型</strong>，Vite dev 里
+          <code>const a: number = 'x'</code> 这类错误<strong>不会报错、不会中断</strong>，
+          页面照常跑。类型安全完全依赖 CI 里独立跑一遍：
+          TS 用 <code>tsc --noEmit</code>，Vue 用 <code>vue-tsc --noEmit</code>。
+          Webpack + <code>ts-loader</code> 或 <code>fork-ts-checker-webpack-plugin</code>
+          则可以在 dev 就把诊断打到浏览器 overlay。这是 Vite「快」的隐性代价之一。
+          <br /><strong>Vite 8 换内核后这条结论依然成立</strong>：Oxc 同样是"转译器"而非类型检查器，
+          类型检查仍然必须独立跑。
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">2026 更新：本节哪些结论作废、哪些仍然成立</strong>
+          <table class="map-table" style="margin-top: 10px">
+            <tbody>
+              <tr>
+                <td style="width: 50%">
+                  <strong>作废</strong>：「dev 用 esbuild、build 用 Rollup 的双引擎分工」
+                  <br /><strong>作废</strong>：「生产 bundle 一定是 Rollup」
+                </td>
+                <td>
+                  <strong>仍然成立</strong>：dev 默认依旧<strong>不打包业务代码</strong>（原生 ESM）
+                  <br /><strong>仍然成立</strong>：依赖预构建、HMR 按模块失效、类型检查需独立跑
+                  <br /><strong>仍然成立</strong>：dev 与 build 的<strong>语义差异</strong>（要靠 bundledDev 才逐步消除）
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          迁移提示：官方提供兼容层<strong>自动转换</strong>既有的
+          <code>esbuild</code> 与 <code>rollupOptions</code> 配置；
+          但升级前先确认插件作者已适配，并留意包体积上涨约 15MB（Rust 二进制 + 内置 CSS 压缩器）。
+        </div>
+
+        <div class="code-title">生产构建的常见关键配置</div>
+        <pre class="code-block"><code class="language-ts">export default defineConfig({
+  build: {
+    outDir: 'dist',
+    target: 'es2018',           // 决定语法降级程度；老浏览器 + 用 plugin-legacy
+    sourcemap: true,
+    cssCodeSplit: true,          // CSS 跟随 chunk 拆分（dev 永远不拆，又一处差异）
+    minify: 'terser',            // 默认 esbuild；Terser 体积更小但慢
+    reportCompressedSize: false, // 大项目里 gzip 统计本身要几十秒，CI 可关
+    rollupOptions: {
+      output: {
+        manualChunks(id) {       // 精细的 vendor 划分，直接影响缓存命中率
+          if (id.includes('node_modules')) {
+            return id.toString().split('node_modules/')[1].split('/')[0].toString()
+          }
+        },
+      },
+    },
+  },
+})</code></pre>
+      </div>
+
+      <!-- 七、能力矩阵 -->
+      <div class="section">
+        <h2>七、能力矩阵：逐项硬碰硬</h2>
+        <div class="explanation">
+          <p>
+            面试问「除了快，还有啥区别」时，答案应该落在<strong>具体能力</strong>上，
+            而不是形容词。下表按"选型时真正会卡住你的点"排序。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>Webpack 5</th>
+              <th>Vite</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tree-shaking</td>
+              <td>支持，需 <code>sideEffects</code> 声明辅助，CommonJS 下基本失效</td>
+              <td class="win">Rollup 静态分析，默认更彻底；但 <strong>dev 阶段不摇树</strong></td>
+            </tr>
+            <tr>
+              <td>代码分割 / 动态 import</td>
+              <td class="win"><code>import()</code> + <code>splitChunks</code> 极精细（size/name/cacheGroup）</td>
+              <td><code>import()</code> + <code>manualChunks</code>，粒度略逊；<code>prebuild</code> 后差异会体现在 chunk 数</td>
+            </tr>
+            <tr>
+              <td>Module Federation（微前端）</td>
+              <td class="win"><strong>原生一等公民</strong>，生产验证充分</td>
+              <td>靠社区 <code>@module-federation/vite</code>，可用但坑多，重要项目需先验证</td>
+            </tr>
+            <tr>
+              <td>老浏览器兼容（IE11）</td>
+              <td class="win">babel 链成熟可控，官方 runtime 无 ESM 依赖</td>
+              <td><strong>dev 无法支持</strong>（依赖原生 ESM）；build 靠 <code>@vitejs/plugin-legacy</code> 双产物</td>
+            </tr>
+            <tr>
+              <td>CSS 方案</td>
+              <td>style-loader / MiniCssExtract / CSS Modules 全支持</td>
+              <td class="win">内置 CSS Modules、预处理器、PostCSS；dev 用 style 标签注入，build 才抽文件</td>
+            </tr>
+            <tr>
+              <td>静态资源</td>
+              <td>Asset Modules（<code>type: 'asset' / 'resource' / 'source'</code>）</td>
+              <td class="win">URL 导入 + <code>?raw</code> / <code>?url</code> / <code>?inline</code>，心智更轻</td>
+            </tr>
+            <tr>
+              <td>Node 内置模块 polyfill</td>
+              <td>WP4 自动注入 → WP5 <strong>已移除</strong>，需手动 fallback</td>
+              <td>从不 polyfill，需 <code>vite-plugin-node-polyfills</code>（两者在这点上一样疼）</td>
+            </tr>
+            <tr>
+              <td>SSR / SSG</td>
+              <td>需自搭双构建（client/server manifest）</td>
+              <td class="win"><code>ssr</code> 构建内置，框架侧（Nuxt / VitePress / Astro / Remix）几乎都用 Vite</td>
+            </tr>
+            <tr>
+              <td>库构建（多格式产物）</td>
+              <td>可做但配置冗长</td>
+              <td class="win"><code>build.lib</code> + <code>rollupOptions</code>；更省事的是 tsup / Rollup / <strong> Rolldown</strong></td>
+            </tr>
+            <tr>
+              <td>monorepo / 本地包开发</td>
+              <td>路径别名 + 需处理未编译产物</td>
+              <td class="win"><code>server.fs.allow</code> + 源码直连（未 build 的 workspace 包可直接跑）</td>
+            </tr>
+            <tr>
+              <td>构建缓存</td>
+              <td class="win">持久化 filesystem cache，增量重建强</td>
+              <td>依赖预构建缓存 + <code>cacheDir</code>，但<strong>生产构建无模块级缓存</strong>（这是它超大型项目 build 慢的主因；Vite 8 的 Rolldown 以 Rust 并行建图 + 统一内核来改善，官方正在重写 chunk 划分逻辑）</td>
+            </tr>
+            <tr>
+              <td>插件写法</td>
+              <td>tapable 钩子体系，学习成本高</td>
+              <td class="win">Rollup 钩子风格 + <code>configureServer</code>，一个对象即可；dev/build 复用同一插件</td>
+            </tr>
+            <tr>
+              <td>CI 冷构建时间</td>
+              <td>可借缓存卷挂载复用；无缓存时较慢</td>
+              <td class="win">通常更快（省去 loader 转译全量代码）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>插件写法对比：同一个需求的两种表达</h3>
+        <div class="vs-grid stack">
+          <div class="vs-panel webpack">
+            <h4>Webpack：tapable 钩子</h4>
+            <pre class="code-block" style="font-size:12px"><code class="language-js">// 需要在编译生命周期上挂多个点
+class BannerInjectPlugin {
+  constructor(text) { this.text = text }
+  apply(compiler) {
+    compiler.hooks.thisCompilation.tap('Banner', (compilation) => {
+      compilation.hooks.processAssets.tap(
+        { name: 'Banner', stage: compilation.PROCESS_ASSETS_STAGE_ADDITIONS },
+        (assets) => {
+          for (const file of Object.keys(assets)) {
+            const asset = compilation.getAsset(file)
+            compilation.updateAsset(file,
+              new RawSource(`/*! ${this.text} */\n` + asset.source.source()))
+          }
+        })
+    })
+  }
+}</code></pre>
+          </div>
+          <div class="vs-panel vite">
+            <h4>Vite：Rollup 钩子 + 模块语义</h4>
+            <pre class="code-block" style="font-size:12px"><code class="language-ts">// 一个普通对象即可；apply 控制只在 dev 或 build 生效
+function bannerInject(text: string): Plugin {
+  const banner = `/*! ${text} */`
+  return {
+    name: 'banner-inject',
+    apply: 'build',
+    // 转换单个模块（id 为解析后的绝对路径）
+    transform(code, id) {
+      if (!id.endsWith('.js')) return
+      return { code: `${banner}\n${code}`, map: null }
+    },
+    // dev 专属：直接往 dev server 挂中间件 / ws
+    configureServer(server) {
+      server.middlewares.use('/__health', (_req, res) => res.end('ok'))
+      server.ws.on('connection', () => server.ws.send({ type: 'full-reload' }))
+    },
+    // 产物级别：遍历最终 chunk
+    generateBundle(_opts, bundle) {
+      for (const item of Object.values(bundle)) {
+        if (item.type === 'chunk') item.code = `${banner}\n${item.code}`
+      }
+    },
+  }
+}</code></pre>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">顺带一个高阶问题：Vite 的钩子顺序</strong>
+          Vite 插件按 <code>pre</code> / 正常 / <code>post</code> 三阶段排序（对象上写
+          <code>enforce: 'pre'</code>），框架插件（vue/react）通常在 pre 阶段把
+          <code>.vue</code> 变成 JS，后续插件才能处理。而 <code>transform</code> 中返回
+          <code>null</code> 表示"不处理"，返回 <code>{ code, map }</code> 才覆盖——
+          <strong>丢了 map 会让整条链的 source map 断掉</strong>，这是新手最常见的插件 bug。
+        </div>
+      </div>
+
+      <!-- 八、dev/build 差异 -->
+      <div class="section">
+        <h2>八、Vite 的结构性代价：dev 与 build 是两套语义</h2>
+        <div class="explanation">
+          <p>
+            这是评价 Vite 时最该被提到的一点，也是区分「用过」和「踩过坑」的标志。
+            Webpack 只有一条管线，dev 和 build 的差异主要是配置开关；
+            Vite 的 dev（不打包，esbuild）与 build（打包，Rollup）<strong>在模块语义层面就不同</strong>。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>差异点</th>
+              <th>dev 表现</th>
+              <th>build 表现</th>
+              <th>真实事故长什么样</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tree-shaking</td>
+              <td>不摇树（按需加载已近似）</td>
+              <td>Rollup 摇树，未引用导出被删</td>
+              <td>dev 好好的，build 后<strong>副作用型导入被删</strong>（polyfill、注册型 import 未标 <code>sideEffects</code>）</td>
+            </tr>
+            <tr>
+              <td>模块格式</td>
+              <td>严格 ESM，浏览器执行</td>
+              <td>Rollup 会把 CJS 依赖转 ESM（<code>@rollup/plugin-commonjs</code>）</td>
+              <td><code>"does not provide an export named 'default'"</code>：CJS 包在 dev 被 esbuild 处理、build 时经 Rollup 推导命名空间不同</td>
+            </tr>
+            <tr>
+              <td>全局脚本 / IIFE 拼接</td>
+              <td>各模块独立求值，顺序由 ESM 图决定</td>
+              <td>多个依赖被拼进同一 chunk，<strong>共享顶层作用域</strong></td>
+              <td>老地图/SDK 类库靠全局变量互相注册，dev 正常，build 报 <code>xxx is not defined</code>（需 <code>optimizeDeps.include</code> 或改 import 方式）</td>
+            </tr>
+            <tr>
+              <td>路径与外部文件</td>
+              <td><code>/@fs/</code> + <code>server.fs.allow</code> 可跨目录</td>
+              <td>依赖必须被打包，跨 workspace 引用未编译包易报错</td>
+              <td>monorepo 里改了 sibling 包源码，dev 立即生效、build 用的却是 <code>dist</code> 旧产物</td>
+            </tr>
+            <tr>
+              <td>环境变量</td>
+              <td><code>import.meta.env</code> 由 dev server 注入</td>
+              <td>构建期静态替换（字面量内联）</td>
+              <td>动态访问 <code>import.meta.env[key]</code>：dev 有值、build 变 <code>undefined</code>（只能静态属性访问）</td>
+            </tr>
+            <tr>
+              <td>CSS 产物</td>
+              <td>style 标签注入，<strong>不做拆分也不合并</strong></td>
+              <td>抽出为 chunk 对应 CSS，顺序由 Rollup 决定</td>
+              <td>build 后样式优先级变了导致<strong>覆盖失效</strong>（<code>cssCodeSplit</code> / 导入顺序 / <code>@layer</code>）</td>
+            </tr>
+            <tr>
+              <td>模块求值时机</td>
+              <td>import 即请求，异步边解析边执行</td>
+              <td>同步的 bundle 运行时</td>
+              <td>依赖"谁先 import 谁先跑"的注册逻辑偶发失效；异步循环依赖表现不同</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <strong class="tag">结论性表述（值得背下来）</strong>
+          「Vite 用 <strong>dev/build 语义不一致</strong>换来了开发体验的量级提升。
+          因此凡是用 Vite 的团队，都必须把 <code>vite build</code> + <strong>预览构建产物</strong>
+          （<code>vite preview</code>）纳入 CI，
+          并把「本地能跑」和「构建后能跑」当成两个不同的验证目标——
+          否则这个 trade-off 就会变成线上事故。」
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">2026 更新：Vite 正在亲手拆掉自己这个短板</strong>
+          上面整节的差异，本质都来自"dev 不打包"这一个决定。Vite 8.1（2026-06）给出了官方解法——
+          实验性 <strong>bundledDev</strong>：dev 阶段也走真正的打包管线，
+          向浏览器提供<strong>预打包产物</strong>而不是几百个源文件，
+          同时保留 HMR 的即时性。官方口径是「combining the best of both worlds」。
+        </div>
+
+        <div class="code-title">开启方式（Vite 8.1，实验特性）</div>
+        <pre class="code-block"><code class="language-js">// 方式一：CLI
+// vite --experimental-bundle
+
+// 方式二：配置文件
+export default defineConfig({
+  experimental: {
+    bundledDev: true,   // dev 也打包：首屏请求数大幅下降，行为向 build 对齐
+  },
+})</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">开 bundledDev 前必须知道的边界</strong>
+          它<strong>不是免费的</strong>：官方明确当前只覆盖"原生 ESM 工作流 + 基础插件"，
+          社区插件可能直接失效，部分能力行为不一致，插件文档也还在补齐中。
+          官方给出的收益量级：1 万个 React 组件场景首屏约快 15 倍、整页刷新快约 10 倍；
+          真实项目反馈冷渲染快至 3 倍、更新快约 40%、网络流量降到约 1/10。
+          <strong>建议</strong>：只在"模块数多到 dev 首屏被请求数拖死"的超大型项目上试点，
+          并把它当作<strong>降低 dev/build 差异</strong>的手段，而不是性能银弹。
+        </div>
+
+        <div class="code-title">把 dev/build 差异压到最小的三条工程约束</div>
+        <pre class="code-block"><code class="language-json">{
+  "scripts": {
+    "dev": "vite",
+    // 1) 类型：esbuild 不做检查，必须单独跑
+    "type-check": "vue-tsc --noEmit -p tsconfig.json",
+    // 2) 构建 + 预览冒烟：CI 必跑，模拟真实产物
+    "build": "vue-tsc --noEmit && vite build",
+    "preview:test": "vite build --mode test && vite preview --port 4173"
+  },
+  "dependencies": { "vite": "^7.0.0" },
+  "devDependencies": {
+    "//peer": "把插件放进 devDependencies，避免业务包版本被库反锁",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "vue-tsc": "^3.0.0"
+  }
+}</code></pre>
+      </div>
+
+      <!-- 九、迁移实战 -->
+      <div class="section">
+        <h2>九、从 Webpack 迁到 Vite：真实踩坑清单</h2>
+        <div class="explanation">
+          <p>
+            迁移的难点从来不是装 vite，而是<strong>把 Webpack 允许的"非标准写法"改成 ESM 标准写法</strong>。
+            下面这些是最高频的对照项。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>Webpack 写法</th>
+              <th>Vite 对应</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>require.context('./views', true, /\.vue$/)</code></td>
+              <td><code>import.meta.glob('./views/**/*.vue')</code></td>
+              <td>Vite 用显式 glob API 替代 webpack 专有的 context 模块； eager 选项对应同步导入</td>
+            </tr>
+            <tr>
+              <td><code>process.env.NODE_ENV</code> / <code>VUE_APP_*</code></td>
+              <td><code>import.meta.env.MODE</code> / <code>VITE_*</code></td>
+              <td>只有 <code>VITE_</code> 前缀的变量才会暴露给客户端，这是安全默认值</td>
+            </tr>
+            <tr>
+              <td><code>__dirname</code> / <code>__filename</code>（配置里）</td>
+              <td><code>import.meta.dirname</code>（Node 20.11+）或 <code>fileURLToPath(new URL('.', import.meta.url))</code></td>
+              <td>Vite 配置文件在 ESM 下加载，没有 CJS 全局</td>
+            </tr>
+            <tr>
+              <td><code>&lt;%= require('raw-loader!./x.svg') %&gt;</code>、内联 loader 语法</td>
+              <td><code>import x from './x.svg?raw'</code></td>
+              <td>内联 loader 是 webpack 专有能力，Vite 用查询参数表达</td>
+            </tr>
+            <tr>
+              <td><code>module.rules</code> 里的自定义 loader</td>
+              <td>改写成 Vite/Rollup 插件（<code>transform</code> + <code>resolveId</code>）</td>
+              <td>Vite 有兼容层但覆盖不全，复杂 loader 建议直接重写</td>
+            </tr>
+            <tr>
+              <td><code>resolve.alias: { '@': resolve('src') }</code></td>
+              <td>同名字段保留；推荐改用 <code>tsconfig paths</code> + <code>vite-tsconfig-paths</code></td>
+              <td>避免 TS 与构建两处别名不一致</td>
+            </tr>
+            <tr>
+              <td><code>HtmlWebpackPlugin</code> 多页面注入</td>
+              <td><code>rollupOptions.input</code> 多入口 + 内置 HTML 处理</td>
+              <td>Vite 以 HTML 为入口，MPA 需列出所有 html 路径</td>
+            </tr>
+            <tr>
+              <td><code>DefinePlugin</code> 常量注入</td>
+              <td><code>define</code> 选项</td>
+              <td>注意 Vite 的 <code>define</code> 是<strong>文本替换</strong>，字符串值要自己带引号</td>
+            </tr>
+            <tr>
+              <td><code>externals</code> / CDN 外链</td>
+              <td><code>build.rollupOptions.external</code> + <code>output.globals</code>；或 <code>vite-plugin-html</code>、<code>systemjs-imports</code></td>
+              <td>dev 下 externals 处理是迁移里最容易漏的一环</td>
+            </tr>
+            <tr>
+              <td>IE11 / <code>@babel/preset-env</code> targets</td>
+              <td><code>@vitejs/plugin-legacy</code> + <code>build.target</code>，需 terser</td>
+              <td>产物体积翻倍（modern + legacy 两份），预算要重估</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">glob 导入：替代 require.context 的正确姿势</div>
+        <pre class="code-block"><code class="language-ts">// 路由批量注册：lazy 版返回 thunk，天然契合路由懒加载
+const modules = import.meta.glob('./views/**/*.vue')
+// { './views/Home.vue': () => import('./views/Home.vue'), ... }
+
+// eager 版会立即引入（打包进主 chunk）
+const i18n = import.meta.glob('./locales/*.json', { eager: true })
+
+// 只想要路径字符串（做动态资源映射，比 new URL 更安全）
+const icons = import.meta.glob('./icons/*.svg', {
+  query: '?url',
+  import: 'default',
+  eager: true,
+})
+
+// 进阶：只要默认导出（import: 'default' 取代旧版已废弃的 as: 'modules'）
+const pageLoaders = import.meta.glob('./pages/**/index.vue', { import: 'default' })
+// { './pages/Home/index.vue': () =&gt; Promise&lt;Component&gt;, ... }
+
+// 需要「路径 → 组件」映射时，配合 eager 直接拿值
+const pages = import.meta.glob('./pages/**/index.vue', {
+  import: 'default',
+  eager: true,
+})</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">迁移节奏建议（我们踩过的顺序）</strong>
+          ① 先<strong>并行</strong>：新页面/新项目单独用 Vite，验证插件与构建产物；
+          ② 再收<strong>简单工程</strong>（内部工具、文档站、组件库 playground）；
+          ③ 大型业务最后动，且必须先解决三件事：
+          统一环境/构建命令、CI 加 <code>vite preview</code> 冒烟、
+          把 <code>require</code> 类遗留写法清理成标准 ESM。
+          <strong>不要</strong>指望"改个 config 就跑起来"——真实项目卡点几乎都在依赖与 loader 上。
+        </div>
+      </div>
+
+      <!-- 十、面试追问 -->
+      <div class="section">
+        <h2>十、面试追问链：把这题聊到加分</h2>
+        <div class="explanation">
+          <p>
+            下面按"面试官真实追问顺序"整理，点击展开答案。
+            每一层都往下多答一层，是这类开放题拿分的关键。
+          </p>
+        </div>
+
+        <details class="qa" open>
+          <summary>Q1：Vite 和 Webpack 最本质的区别是什么？</summary>
+          <div class="qa-body">
+            答：<strong>模块解析主体不同</strong>。Webpack 在 Node 侧构建完整依赖图并输出 bundle，浏览器只加载几个大文件；
+            Vite dev 把依赖解析交给浏览器的原生 ESM，服务端只做"请求 → 按需转译 → 返回单模块"。
+            由此推出三个后果：冷启动从 O(项目) 降到近似常量、HMR 更新单位从 chunk 变成模块、
+            以及 dev/build 分裂成两条管线。<em>（说出"后果"比只说"一个打包一个不打包"高一个档次）</em>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2：Vite 一定比 Webpack 快吗？</summary>
+          <div class="qa-body">
+            不一定，要分场景：
+            <ul>
+              <li><strong>冷启动 / HMR</strong>：Vite 明显赢，尤其大型项目。</li>
+              <li><strong>首屏加载</strong>：Vite 有 ESM 瀑布问题，模块层级深时首个可用页面可能反而慢；依赖多时预构建本身要几秒。</li>
+              <li><strong>生产构建</strong>：Vite 的 bundle 走 Rollup（单线程、无模块级持久缓存），超大项目<strong>可能比 Webpack 5 + filesystem cache 更慢</strong>。</li>
+              <li><strong>依赖-heavy 的场景</strong>（大量 CJS 老包）：esbuild 预构建会频繁重跑，体验打折。</li>
+            </ul>
+            诚实的结论：Vite 优化的是<strong>开发反馈回路</strong>，不是所有阶段的构建性能。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3：那为什么 Vite 生产不继续用 esbuild，非得多一层 Rollup？</summary>
+          <div class="qa-body">
+            因为打包这一步需要的能力，esbuild 当时并不齐：<em>成熟的 code splitting 与 chunk 划分控制</em>、
+            CSS 随 chunk 拆分、<em>更彻底的 tree-shaking</em>、
+            ESM 循环依赖处理，以及最重要的——<em>复用 Rollup 插件生态</em>（Vite 插件直接实现 Rollup 钩子）。
+            所以 Vite 的做法是"把 esbuild 用在它最擅长的环节"：依赖预构建、语法转译、代码压缩。
+            <br /><br />
+            <strong>2026 年这条边界已经被抹掉了</strong>：Vite 8（2026-03）宣布以
+            <strong>Rolldown 作为唯一内核</strong>，esbuild 与 Rollup
+            <strong>同时退出默认链路</strong>，转译与压缩由 Oxc / lightningcss 承担。
+            之所以现在敢换，是因为 <strong>Rolldown 复用了 Rollup 的插件 API</strong>，
+            生态不用清零。也就是说：这道题的"标准答案"讲的是历史取舍，
+            而<strong>现状是"一个 Rust 内核同时负责 dev 与 build"</strong>——
+            能把这个演进讲清楚，比背老答案强很多。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4：为什么改了个组件，Vite 瞬间就好了，改个 utils 却整页刷新？</summary>
+          <div class="qa-body">
+            因为 <strong>HMR 边界</strong>。框架插件（<code>@vitejs/plugin-vue</code> / React Refresh）
+            会给组件模块注入 <code>import.meta.hot.accept</code>，改动时它能自接受更新，原地替换、状态保留；
+            普通模块没有 accept，更新请求会沿 importer 链<strong>向上冒泡</strong>，
+            一路冒到 <code>main.ts</code> 都没人接受，就只能 full reload。
+            两种例外必须刷新：改动 <code>index.html</code>；<strong>依赖预构建结果变化</strong>
+            （<code>browserHash</code> 变了，所有依赖 URL 失效）。
+            解法：给状态容器/配置模块手写 accept，或注册为 store 边界。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5：Vite 的依赖预构建解决了什么问题？不做会怎样？</summary>
+          <div class="qa-body">
+            三件事：<strong>① 格式统一</strong>——CJS/UMD 依赖转成浏览器可用的 ESM；
+            <strong>② 请求合并</strong>——像 <code>lodash-es</code> 这种由几百个极小文件组成的包，
+            不合并会产生几百个 304 请求，即使 HTTP/2 也照样拖慢首屏；
+            <strong>③ 稳定 HMR</strong>——依赖被固化为带 hash 的强缓存文件，业务改动不会牵动依赖，
+            同时避免"依赖被多次实例化"。
+            不做的直接后果：<code>import _ from 'lodash'</code> 这种 CJS 会在浏览器里
+            报 <em>does not provide an export named default</em>，且首屏请求数失控。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6：Vite 项目里 TypeScript 类型报错为什么开发时看不到？</summary>
+          <div class="qa-body">
+            因为 dev 走 esbuild，它是<strong>纯转译（type erasing）</strong>：
+            不做类型检查，也不生成类型信息。
+            必须在 CI（和本地 pre-commit）单独跑 <code>tsc --noEmit</code> / <code>vue-tsc --noEmit</code>，
+            或用 IDE 的语言服务。Webpack 项目里 <code>ts-loader</code>（或 fork 出去的 checker 插件）
+            会把诊断显示到 dev overlay——这是 Vite 用"速度"换来的体验项，不是 bug。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q7：微前端 / 老浏览器兼容，你会选哪个？</summary>
+          <div class="qa-body">
+            <strong>Module Federation</strong> 相关的架构：选 Webpack（或它的兼容替代
+            <strong>Rspack</strong>），因为这是原生一等能力，Vite 侧方案仍不成熟。
+            <strong>IE11 必须支持</strong>：也倾向 Webpack——Vite 的 dev 依赖原生 ESM，
+            老浏览器<strong>连开发调试都开不起来</strong>；build 侧虽然能靠 plugin-legacy 出双产物，
+            但体积和运行时注入的复杂度都要重估。
+            一句话原则：<em>需求落在 Vite 的"原生 ESM + Rollup"假设之外的，就用 Webpack。</em>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q8：Webpack 5 加了持久化缓存，还有必要迁移吗？</summary>
+          <div class="qa-body">
+            缓存只解决<strong>二次启动</strong>，且 CI 无缓存 / 缓存卷失效 / 依赖变更时都会退化；
+            它无法改变"必须先构建全部模块"这一结构性成本。所以：
+            <ul>
+              <li>如果团队痛在 <strong>HMR 慢</strong>（改一行等 3 秒）→ 迁移收益直接、可量化。</li>
+              <li>如果痛在 <strong>构建产物体积 / 精细优化 / 私有 loader</strong> → 这些不是 Vite 的优势区，留在 Webpack 或考虑 Rspack。</li>
+              <li>新项目 + 主流框架（Vue/React/SSR 生态已转向 Vite）→ 默认选 Vite，没有反例就别逆着生态走。</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q9：如果让你量化"值不值得迁移"，你测什么？</summary>
+          <div class="qa-body">
+            测四个数，别拿感受说话：
+            ① <code>cold dev start</code>（清 <code>node_modules/.vite</code> 与 webpack cache 后到首屏可交互）；
+            ② <code>HMR latency</code>（挑 3 个代表性文件：页面组件、公共组件、store，取中位数）；
+            ③ <code>CI build duration</code>（含安装、类型检查、构建，迁移后总和不要只看 bundle）；
+            ④ <strong>隐性成本</strong>：迁移工作量 + 构建产物 diff（体积、chunk 数、样式覆盖回归）+ 需要重写的 loader 数量。
+            经验：①②通常是数量级改善，③可能持平，④才是决策关键——
+            一个有 40 个自定义 loader 的老工程，迁移几乎一定不划算。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q10：Webpack 的 loader 和 plugin 有什么区别？各写一个最小的。</summary>
+          <div class="qa-body">
+            答：<strong>loader 是"单文件翻译函数"</strong>，输入模块原始内容、输出 JS 源码，
+            在<em>模块构建</em>阶段生效，看不到模块图和产物；
+            <strong>plugin 是"生命周期订阅对象"</strong>，通过
+            <code>apply(compiler)</code> 挂 tapable 钩子，能改模块图、chunk、产物和统计。
+            选择标准：<em>只依赖当前文件内容就写 loader，需要跨模块或改产物就写 plugin。</em>
+            最小 loader 三行：
+            <code>module.exports = (src) =&gt; `export default ${JSON.stringify(src)}`</code>；
+            最小 plugin 是 <code>apply(compiler)</code> 里
+            <code>compiler.hooks.thisCompilation.tap()</code> →
+            <code>compilation.hooks.processAssets.tap()</code> →
+            <code>compilation.emitAsset()</code>。
+            两个必答细节：① loader 的 <code>use</code> 数组
+            <strong>normal 从右往左、pitch 从左往右</strong>；
+            ② plugin 要区分 <code>compiler</code>（全局一次）与
+            <code>compilation</code>（每次构建），watch 模式下后者会反复重建。
+            完整 demo 见第二章。
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q11：2026 年了，Vite 生态发生了什么？（这题能明显拉开差距）</summary>
+          <div class="qa-body">
+            四条主线，按时间说：
+            <ul>
+              <li><strong>2026-03 Vite 8</strong>：Rolldown 成为唯一内核，esbuild + Rollup 双双退出；
+                官方称内部基准 10~30 倍，并给出 Linear / Ramp / Beehiiv 等落地数据。</li>
+              <li><strong>2026-06 VoidZero 加入 Cloudflare</strong>：官方口径是 "joining"，
+                团队与治理保留、MIT、vendor-agnostic，另设生态基金。</li>
+              <li><strong>2026-06 Vite 8.1</strong>：实验性 <code>bundledDev</code>，
+                dev 也打包，正面解决 dev/build 不一致。</li>
+              <li><strong>2026-09 Vite+ 1.0</strong>：Vite 8 + Vitest 5 + Rolldown + Oxlint +
+                Oxfmt + tsdown + 任务缓存，一条 <code>vp</code> 命令统一工具链。</li>
+            </ul>
+            结论性表述：「Vite 已经从"一个 dev server"长成"一套工具链"，
+            方向是<strong>用 Rust 单内核消除双管线</strong>，并把 lint / format / test / build 的
+            配置与缓存统一起来。所以"要不要选 Vite"这个问题，
+            2024 年比的是启动速度，2026 年比的是<strong>你是否愿意把整条工具链押在同一套内核上」。</strong>
+          </div>
+        </details>
+      </div>
+
+      <!-- 十一、选型 -->
+      <div class="section">
+        <h2>十一、选型决策与趋势</h2>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A{"第一关：有硬性约束吗？<br/>IE11 / Module Federation /<br/>大量私有 loader 与构建插件"} -->|"有"| W["Webpack 5<br/>或换成 Rust 内核的 Rspack"]
+    A -->|"没有"| B{"第二关：新项目还是存量？"}
+    B -->|"新建：SPA / MPA /<br/>组件库 / 文档站 / SSR"| V["Vite 8（默认选择）<br/>想要全家桶可上 Vite+"]
+    B -->|"存量大型项目"| C{"第三关：痛点到底在哪？"}
+    C -->|"dev 启动与 HMR 慢，<br/>依赖能标准化为 ESM"| M["迁移 Vite<br/>超大项目可试点 bundledDev"]
+    C -->|"产物精细控制、<br/>遗留写法清理不掉"| S["留在 Webpack<br/>或用 Rspack 提性能"]
+    style V fill:#42b983,stroke:#2e7d32,color:#fff
+    style W fill:#1c78c0,stroke:#0d47a1,color:#fff
+    style S fill:#fff9c4,stroke:#fbc02d
+    style M fill:#e1f5fe,stroke:#01579b
+          </pre>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">选 Vite 的理由（真实版）</span>
+            开发反馈快、配置心智轻、框架官方默认（Vue / Nuxt / Astro / 大量 React 团队已迁移）、
+            产物质量可控、SSR 与 monorepo 支持内置；Vite 8 之后<strong>dev/build 同一内核</strong>，
+            历史包袱进一步减轻。<strong>不是</strong>"因为新"。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">选 Webpack 的理由（真实版）</span>
+            能力边界更宽：任意模块格式、任意产物形态、十年沉淀的 loader 生态、
+            Module Federation、对旧环境的确定兼容。遗留大项目的<strong>风险成本</strong>常常高于 Vite 带来的收益。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">第三条路：Rspack / Turbopack</span>
+            Rust 内核 + 尽量兼容 webpack 语义（Rspack）或绑定 Next 生态（Turbopack）。
+            适合同时想要「webpack 能力」和「Vite 级体验」的场景，代价是社区插件长尾覆盖仍在补齐。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">共同趋势：Rust 内核 + 工具链合并</span>
+            打包器（Rolldown / Rspack）、解析器与 lint（Oxc / Oxlint）、格式化（Oxfmt / Biome）、
+            测试（Vitest）都在<strong>合并到共享 AST 与统一缓存</strong>上。
+            竞争点已从"谁更快"转到<strong>"谁能在保持兼容的前提下少踩坑"</strong>。
+          </div>
+        </div>
+
+        <h3>2026 动态：Vite 亲手拆掉了自己的双引擎</h3>
+        <div class="explanation">
+          <p>
+            本文前面反复强调的"Vite 最大代价是 dev 与 build 两套语义"，在 2026 年被正面处理了。
+            变化分两层：<strong>内核层</strong>（三合一为 Rolldown）与
+            <strong>产品层</strong>（Vite+ 把整条工具链打包交付）。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph OLD["Vite 2~7：三个引擎拼接"]
+      direction TB
+      O1["esbuild（Go）<br/>预构建 + 转译 + 压缩"] --> O2["框架插件<br/>vue / react / babel"]
+      O2 --> O3["Rollup（JS）<br/>打包 + 摇树 + 分块"]
+      O4["后果：dev 与 build<br/>语义不一致"] --> O3
+    end
+    subgraph NEW["Vite 8+：单一 Rust 内核"]
+      direction TB
+      N1["Rolldown<br/>打包 / 分块 / 摇树"] --> N2["Oxc<br/>解析 / 转译 / lint / 压缩"]
+      N2 --> N3["lightningcss<br/>CSS 压缩与降级"]
+      N4["bundledDev（8.1 实验）<br/>dev 也走打包管线"] --> N1
+    end
+    OLD ==>|"Vite 8"| NEW
+    style O1 fill:#ffcc80,stroke:#ef6c00
+    style O3 fill:#ffe0b2,stroke:#ef6c00
+    style O4 fill:#ffab91,stroke:#bf360c
+    style N1 fill:#42b983,stroke:#2e7d32,color:#fff
+    style N2 fill:#d1c4e9,stroke:#4527a0
+    style N4 fill:#c8e6c9,stroke:#2e7d32
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>事件</th>
+              <th>对你选型/升级的实际影响</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>2026-05-07</td>
+              <td><strong>Rolldown 1.0</strong> 发布</td>
+              <td>Rust 重写版 Rollup，沿用 Rollup/Vite 插件 API，dev 与 build 可共用一套语义。</td>
+            </tr>
+            <tr>
+              <td>2026-06-04</td>
+              <td><strong>VoidZero 加入 Cloudflare</strong></td>
+              <td>
+                官方措辞是 "joining"：团队留任、继续 MIT、承诺
+                <strong>vendor-agnostic</strong>，维护者小组保留架构决策权，另设生态基金
+                资助第三方工具、开发者补贴与漏洞修复。<br />
+                <em>社区关切点：中立性能否长期保持——评估时建议同时看 Rspack / Biome 作为备选。</em>
+              </td>
+            </tr>
+            <tr>
+              <td>2026-07-02</td>
+              <td><strong>Vite+ Beta</strong></td>
+              <td>统一工具链的首个可试用版本。</td>
+            </tr>
+            <tr>
+              <td>2026-09-28</td>
+              <td><strong>Vite+ 1.0</strong></td>
+              <td>
+                定位"<em>unified toolchain for the web</em>"：把 <strong>Vite 8 + Vitest 5 +
+                Rolldown + Oxlint + Oxfmt + tsdown + 任务缓存</strong>合成一个 CLI，
+                目标是让团队"stop maintaining tooling"。
+              </td>
+            </tr>
+            <tr>
+              <td>2026-09-28</td>
+              <td>Cloudflare 工程进展更新</td>
+              <td>
+                后续四件事：更快的 Oxc parser、<strong>重写 Rolldown 的 chunk 划分逻辑</strong>、
+                可自托管的开源 Void 平台、以及把 <strong>bundledDev 从实验转为正式能力</strong>。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">Vite+ 的接入方式：一条 vp 命令</div>
+        <pre class="code-block"><code class="language-bash"># 安装统一 CLI
+curl -fsSL https://vite.plus | bash
+
+vp create    # 新建：直接生成"已配好的一整套"工程骨架
+vp migrate   # 存量：把现有 repo 迁到统一工具链
+vp test      # 底层是 Vitest 5
+vp lint      # 底层是 Oxlint
+vp fmt       # 底层是 Oxfmt
+
+# 已公布的 roadmap：分布式缓存网络、workspace 级诊断、vp release、vp docs</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">怎么理解这波整合（面试可直接用）</strong>
+          以前一个现代前端仓库要维护 <code>vite.config</code> +
+          <code>vitest.config</code> + <code>eslint.config</code> +
+          <code>prettier</code> + <code>tsup/rollup</code> 五套配置，
+          它们的 parser、缓存、workspace 解析<strong>各写一遍</strong>，
+          于是要么 lint 慢、要么缓存命中率低。
+          Vite+ 的思路是<strong>共享同一份 AST 与任务图</strong>：一次解析，供打包、测试、
+          lint、格式化复用，并把构建结果做成可分发缓存。
+          代价是<strong>供应商集中度上升</strong>——工具链从"可自由拼装"变成"整体升级"，
+          这也是评估时最该权衡的一点。
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">版本事实要写准（面试官很在意）</strong>
+          可以直接引用的硬事实：<strong>Vite 8 于 2026-03-12 发布</strong>，默认内核为
+          <strong>Rolldown</strong>，esbuild 已移除；Node 要求与 Vite 7 一致
+          （<strong>20.19+ / 22.12+</strong>）；提供兼容层<strong>自动转换</strong>旧的
+          <code>esbuild</code> / <code>rollupOptions</code> 配置；包体积上涨约
+          <strong>15MB</strong>（Rust 二进制 + 内置 CSS 压缩器）；官方 React 插件
+          <strong>不再依赖 Babel</strong>。<strong>Vite 8.1（2026-06-23）</strong>引入实验性
+          <code>bundledDev</code>。Webpack 侧 5.x 仍是长期主线。
+          <br />官方引用的落地数据（10~30 倍内部基准之外）：Linear 构建降至约 6 秒、
+          Ramp 约 -57%、Mercedes-Benz.io 最高 -38%、Beehiiv 约 -64%。
+          <em>这些是厂商口径，写进方案前请自己在目标仓库复测。</em>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>Webpack 先打包后服务，全图遍历慢起步；<br/>
+          loader 翻译单文件，plugin 钩住编译期；<br/>
+          Vite 借浏览器 ESM，按需编译瞬时起；<br/>
+          esbuild 只做转预构，Rollup 才管产物优；<br/>
+          HMR 模块边界找接受者，预构一变整页洗；<br/>
+          类型检查要单跑，dev 与 build 两套理；<br/>
+          微前端与老浏览器，Webpack 里找答案；<br/>
+          二六之年风向变，Rolldown 单核统一。</strong>」
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
