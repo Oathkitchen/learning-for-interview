@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 组件通信方式大全</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vue 组件通信方式大全</h1>
+    <p class="subtitle">
+      父子 · 跨层级 · 兄弟 · 全局 —— 12 种通信方式原理、代码与选型（图文并茂）
+    </p>
+
+    <div class="container">
+      <!-- 一、总览 -->
+      <div class="section">
+        <h2>一、总览：按「组件关系」分类</h2>
+        <div class="explanation">
+          <p>
+            组件通信的本质是<strong>「数据往哪流、谁来触发」</strong>。面试时按组件关系组织答案最清晰：
+          </p>
+          <ul>
+            <li><strong>父子</strong>：props / emit / v-model / ref+expose</li>
+            <li><strong>爷孙（跨层级）</strong>：$attrs 透传 / provide + inject</li>
+            <li><strong>兄弟 / 任意组件</strong>：父组件中转 / mitt 事件总线 / Pinia 状态管理</li>
+            <li><strong>全局兜底</strong>：路由参数、window 事件、浏览器存储（非常规手段）</li>
+          </ul>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    Root["父组件 Parent"] --> C1["① 父子通信"]
+    C1 --> F1["props（父 → 子）"]
+    F1 ~~~ F2["emit 自定义事件（子 → 父）"]
+    F2 ~~~ F3["v-model（双向语法糖）"]
+    F3 ~~~ F4["ref + defineExpose（调用子组件方法）"]
+    F4 ~~~ C2["② 跨层级通信"]
+    C2 --> X1["$attrs / v-bind 透传（父 → 深层子）"]
+    X1 ~~~ X2["provide + inject（祖先 → 任意后代）"]
+    X2 ~~~ X3["作用域插槽（子把数据传给父的插槽内容）"]
+    X3 ~~~ C3["③ 全局 / 任意组件"]
+    C3 --> G1["Pinia / Vuex（全局状态）"]
+    G1 ~~~ G2["mitt 事件总线（任意组件互发）"]
+    G2 ~~~ G3["路由参数 / 浏览器存储（非常规）"]
+    style Root fill:#42b983,stroke:#2e7d32,color:#fff
+    style C1 fill:#c8e6c9,stroke:#2e7d32
+    style C2 fill:#c8e6c9,stroke:#2e7d32
+    style C3 fill:#c8e6c9,stroke:#2e7d32
+    style F1 fill:#e1f5fe,stroke:#01579b
+    style F2 fill:#e1f5fe,stroke:#01579b
+    style F3 fill:#e1f5fe,stroke:#01579b
+    style F4 fill:#e1f5fe,stroke:#01579b
+    style X1 fill:#fff9c4,stroke:#fbc02d
+    style X2 fill:#fff9c4,stroke:#fbc02d
+    style X3 fill:#fff9c4,stroke:#fbc02d
+    style G1 fill:#f3e5f5,stroke:#7b1fa2
+    style G2 fill:#f3e5f5,stroke:#7b1fa2
+    style G3 fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>方式</th>
+              <th>方向</th>
+              <th>适用场景</th>
+              <th>备注</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>props</code></td>
+              <td>父 → 子</td>
+              <td>最基础的单向数据传递</td>
+              <td>单向数据流，子组件不能直接改</td>
+            </tr>
+            <tr>
+              <td><code>emit</code></td>
+              <td>子 → 父</td>
+              <td>子组件通知父组件某事发生了</td>
+              <td>可携带参数</td>
+            </tr>
+            <tr>
+              <td><code>v-model</code></td>
+              <td>双向</td>
+              <td>表单类组件的双向绑定</td>
+              <td>props + emit 的语法糖</td>
+            </tr>
+            <tr>
+              <td><code>ref + defineExpose</code></td>
+              <td>父 → 子</td>
+              <td>父组件直接调用子组件方法 / 拿属性</td>
+              <td>Vue3 必须显式 <code>defineExpose</code></td>
+            </tr>
+            <tr>
+              <td><code>$attrs</code></td>
+              <td>父 → 深层子</td>
+              <td>属性/事件透传给包装组件</td>
+              <td>爷孙通信的轻量方案</td>
+            </tr>
+            <tr>
+              <td><code>provide / inject</code></td>
+              <td>祖先 → 后代</td>
+              <td>主题、国际化、用户信息等跨层级注入</td>
+              <td>避免逐层 props 钻孔</td>
+            </tr>
+            <tr>
+              <td>作用域插槽</td>
+              <td>子 → 父</td>
+              <td>子组件把内部数据交给父组件渲染</td>
+              <td>常用于列表项自定义渲染</td>
+            </tr>
+            <tr>
+              <td><code>mitt</code> 事件总线</td>
+              <td>任意</td>
+              <td>轻量、无状态的解耦通知</td>
+              <td>Vue3 移除 <code>$on/$off</code> 后用 mitt 库</td>
+            </tr>
+            <tr>
+              <td>Pinia / Vuex</td>
+              <td>全局</td>
+              <td>共享状态：登录态、购物车、配置</td>
+              <td>中大型项目首选</td>
+            </tr>
+            <tr>
+              <td>路由参数 / storage</td>
+              <td>任意</td>
+              <td>页面间传参、跨 Tab 同步</td>
+              <td>兜底手段，非常规通信</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 二、props -->
+      <div class="section">
+        <h2>二、props：父 → 子（单向数据流）</h2>
+        <div class="explanation">
+          <p>
+            <code>props</code> 是最基础的通信方式。核心原则是
+            <strong>单向数据流</strong>：父组件的数据「往下流」，子组件<strong>不能直接修改</strong>
+            prop，只能通过 <code>emit</code> 通知父组件来改——这样数据变化永远可追溯。
+          </p>
+        </div>
+
+        <div class="code-title">Vue 3 &lt;script setup&gt; 写法</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件 --&gt;
+&lt;template&gt;
+  &lt;Child :title="title" :list="list" @update:title="title = $event" /&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref } from 'vue'
+import Child from './Child.vue'
+const title = ref('默认标题')
+const list = ref([1, 2, 3])
+&lt;/script&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 子组件 Child.vue --&gt;
+&lt;script setup&gt;
+// 运行时声明（推荐再配 TS 类型）
+const props = defineProps({
+  title: { type: String, default: '' },
+  list:  { type: Array, required: true },
+})
+console.log(props.title)
+&lt;/script&gt;
+
+&lt;!-- 纯 TS 声明方式（更简洁） --&gt;
+&lt;script setup lang="ts"&gt;
+const props = defineProps&lt;{
+  title?: string
+  list: number[]
+}&gt;()
+&lt;/script&gt;</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING</strong>
+          <code>props</code> 是<strong>浅只读</strong>的：直接改
+          <code>props.title</code> 会警告；但如果传的是对象，改
+          <code>props.obj.key</code> 不会报错（改的是父组件里的原对象）——
+          能跑但<strong>违反单向数据流</strong>，评审时会被打回，正确做法是
+          emit 出去让父组件改。
+        </div>
+      </div>
+
+      <!-- 三、emit -->
+      <div class="section">
+        <h2>三、emit：子 → 父（自定义事件）</h2>
+        <div class="explanation">
+          <p>
+            子组件通过 <code>emit('事件名', 参数)</code> 对外「喊话」，父组件用
+            <code>@事件名</code> 监听。<code>defineEmits</code> 同时起到<strong>声明文档</strong>
+            和校验作用。
+          </p>
+        </div>
+
+        <div class="code-title">Vue 3 写法</div>
+        <pre class="code-block"><code class="language-js">// 子组件
+const emit = defineEmits(['change', 'submit'])
+// 或 TS 写法：const emit = defineEmits&lt;{ (e: 'change', val: number): void }&gt;()
+
+function onClick() {
+  emit('change', 100) // 通知父组件，携带参数
+}</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件监听 --&gt;
+&lt;template&gt;
+  &lt;Child @change="handleChange" /&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+function handleChange(val) {
+  console.log('子组件传来的值：', val)
+}
+&lt;/script&gt;</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">INFO · Vue2 vs Vue3 事件命名</strong>
+          Vue3 中组件事件<strong>不再有大小写自动转换</strong>的坑（DOM 模板限制），
+          官方推荐事件名用 <strong>camelCase 声明、kebab-case 监听</strong>：
+          <code>emit('updateTitle')</code> ↔ <code>@update-title</code>。
+        </div>
+      </div>
+
+      <!-- 四、v-model -->
+      <div class="section">
+        <h2>四、v-model：双向绑定的语法糖</h2>
+        <div class="explanation">
+          <p>
+            <code>v-model</code> 本质就是 <strong>props + emit 的组合糖</strong>：
+          </p>
+          <ul>
+            <li>
+              <strong>Vue3</strong>：<code>v-model="x"</code> 展开为
+              <code>:modelValue="x"</code> + <code>@update:modelValue="x = $event"</code>，
+              且<strong>支持多个 v-model</strong>（<code>v-model:title</code>、<code>v-model:content</code>）。
+            </li>
+            <li>
+              <strong>Vue2</strong>：展开为 <code>:value</code> +
+              <code>@input</code>，一个组件只能有一个 v-model（额外同步要靠
+              <code>.sync</code> 修饰符，Vue3 中被 <code>v-model:arg</code> 取代）。
+            </li>
+          </ul>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    A["父组件: v-model='msg'"] -->|":modelValue='msg'"| B["子组件 props.modelValue"]
+    C["子组件内部输入变化"] -->|"emit('update:modelValue', 新值)"| D["父组件自动更新 msg"]
+    D -->|":modelValue='msg' 重新传入"| B
+    B --> E["渲染最新值"]
+    style A fill:#e1f5fe,stroke:#01579b
+    style D fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <div class="code-title">Vue3：自定义组件上使用 v-model</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件 --&gt;
+&lt;template&gt;
+  &lt;!-- 等价于 :modelValue="msg" @update:modelValue="msg = $event" --&gt;
+  &lt;MyInput v-model="msg" v-model:title="pageTitle" /&gt;
+&lt;/template&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 子组件 MyInput.vue —— Vue3.4+ 推荐用 defineModel
+const model = defineModel()          // 默认 v-model
+const title = defineModel('title')   // v-model:title
+
+function onInput(e) {
+  model.value = e.target.value       // 赋值内部自动 emit
+}</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 3.4 之前的等价手写版
+const props = defineProps(['modelValue'])
+const emit = defineEmits(['update:modelValue'])
+function onInput(e) {
+  emit('update:modelValue', e.target.value)
+}</code></pre>
+      </div>
+
+      <!-- 五、ref + defineExpose -->
+      <div class="section">
+        <h2>五、ref + defineExpose：父组件直接调用子组件</h2>
+        <div class="explanation">
+          <p>
+            通过模板 <code>ref</code> 拿到子组件实例，可以直接调用其暴露的<strong>方法</strong>、
+            读取<strong>属性</strong>。
+            Vue3 中 <code>&lt;script setup&gt;</code> 默认是<strong>封闭的</strong>，
+            子组件必须用 <code>defineExpose</code> 显式暴露，父组件才能访问——
+            这是与 Vue2（<code>this.$refs.child.xxx</code> 全开放）最大的区别。
+          </p>
+        </div>
+
+        <div class="code-title">Vue 3 写法</div>
+        <pre class="code-block"><code class="language-js">// 子组件
+import { ref } from 'vue'
+const count = ref(0)
+function reset() {
+  count.value = 0
+}
+defineExpose({ count, reset }) // 只暴露需要的部分</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件 --&gt;
+&lt;template&gt;
+  &lt;Child ref="childRef" /&gt;
+  &lt;button @click="childRef.reset()"&gt;重置子组件&lt;/button&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref, onMounted } from 'vue'
+const childRef = ref(null)
+onMounted(() =&gt; {
+  console.log(childRef.value.count) // 访问暴露的属性
+})
+&lt;/script&gt;</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING</strong>
+          这种方式是<strong>命令式</strong>的，耦合度高，属于「逃生舱」：
+          适合表单组件的 <code>focus()</code> / <code>validate()</code>、
+          弹窗的 <code>open()</code> 等场景，<strong>不要</strong>拿它当常规数据通道。
+        </div>
+      </div>
+
+      <!-- 六、$attrs -->
+      <div class="section">
+        <h2>六、$attrs：爷孙通信的轻量透传</h2>
+        <div class="explanation">
+          <p>
+            <code>$attrs</code> 收集父组件传入的<strong>未被 props 声明的</strong>属性和事件。
+            在「包装组件」场景里，中间层组件可以
+            <code>v-bind="$attrs"</code> 一股脑透传给深层子组件，
+            实现<strong>爷 → 孙</strong>通信，而不用逐层声明 props。
+          </p>
+          <p>
+            Vue3 的变化：<strong>事件监听也进了 <code>$attrs</code></strong>（Vue2 中事件和
+            <code>class/style</code> 是分开的），且 <code>class/style</code> 不再特殊，也可透传。
+          </p>
+        </div>
+
+        <div class="code-title">透传示例</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 爷爷组件 --&gt;
+&lt;template&gt;
+  &lt;Wrapper :size="'large'" :color="'red'" @click="onClick" /&gt;
+&lt;/template&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 中间层 Wrapper.vue：不声明 size/color，直接透传 --&gt;
+&lt;template&gt;
+  &lt;Deep v-bind="$attrs" /&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// Vue3 setup 中用 useAttrs 拿到（非响应式读取用 attrs）
+import { useAttrs } from 'vue'
+const attrs = useAttrs()
+&lt;/script&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 孙子 Deep.vue --&gt;
+&lt;script setup&gt;
+const props = defineProps(['size', 'color']) // 消费掉需要的属性
+&lt;/script&gt;</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">TIP</strong>
+          设置 <code>inheritAttrs: false</code>（Vue3 写在
+          <code>defineOptions({ inheritAttrs: false })</code>）可以关闭「自动把 $attrs
+          挂到根元素」的行为，让你自己控制透传到哪个元素/组件。
+        </div>
+      </div>
+
+      <!-- 七、provide / inject -->
+      <div class="section">
+        <h2>七、provide / inject：跨层级注入</h2>
+        <div class="explanation">
+          <p>
+            祖先组件 <code>provide</code> 数据，<strong>任意层级</strong>的后代组件
+            <code>inject</code> 使用，中间组件完全无感——解决「props 钻孔
+            （prop drilling）」问题。典型场景：主题色、国际化、当前登录用户、字典数据。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["App.vue<br/>provide('theme', themeRef)"] --> B["Layout.vue<br/>（中间层，无需感知）"]
+    B --> C["Sidebar.vue<br/>inject('theme')"]
+    B --> D["Header.vue<br/>inject('theme')"]
+    D --> E["UserMenu.vue<br/>inject('theme') ✅ 深层也能拿"]
+    style A fill:#42b983,stroke:#2e7d32,color:#fff
+    style C fill:#e1f5fe,stroke:#01579b
+    style D fill:#e1f5fe,stroke:#01579b
+    style E fill:#e1f5fe,stroke:#01579b
+          </pre>
+        </div>
+
+        <div class="code-title">Vue 3 写法（传递 ref 保持响应式）</div>
+        <pre class="code-block"><code class="language-js">// 祖先组件
+import { ref, provide } from 'vue'
+const theme = ref('dark')
+provide('theme', theme)              // 传 ref 本身，后代改 theme.value 全局生效
+provide('theme', readonly(theme))    // 更严谨：只读注入，防止后代乱改</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 任意后代组件
+import { inject } from 'vue'
+const theme = inject('theme', 'light') // 第二个参数是默认值</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING</strong>
+          <code>provide</code> 一个普通值（非 ref）时后代拿到的是<strong>死值</strong>，
+          祖先更新后代不更新。要响应式就传 <code>ref</code> / <code>computed</code>，
+          或直接 provide 一个<strong>带方法的对象</strong>（如
+          <code>{ theme, setTheme }</code>），把修改权收敛回祖先——
+          这也是组件库源码里最常见的模式。
+        </div>
+      </div>
+
+      <!-- 八、插槽 -->
+      <div class="section">
+        <h2>八、作用域插槽：子组件把数据「递」给父组件</h2>
+        <div class="explanation">
+          <p>
+            插槽通常被认为只是「内容分发」，但<strong>作用域插槽（scoped slot）</strong>
+            是一种真实的通信方式：<strong>子组件把内部数据作为参数传给插槽</strong>，
+            由父组件决定怎么渲染——数据流是「子 → 父」，渲染权是「父 → 子」。
+          </p>
+        </div>
+
+        <div class="code-title">典型场景：自定义列表项渲染</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 子组件 List.vue：提供数据 --&gt;
+&lt;template&gt;
+  &lt;ul&gt;
+    &lt;li v-for="item in items" :key="item.id"&gt;
+      &lt;!-- 把 item 传给插槽 --&gt;
+      &lt;slot :item="item" :index="index"&gt;{{ item.name }}&lt;/slot&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/template&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件：拿到数据自定义渲染 --&gt;
+&lt;template&gt;
+  &lt;List :items="users"&gt;
+    &lt;template #default="{ item, index }"&gt;
+      &lt;span&gt;{{ index }}. {{ item.name }}（VIP）&lt;/span&gt;
+    &lt;/template&gt;
+  &lt;/List&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">INFO</strong>
+          <code>el-table</code> 的 <code>&lt;template #default="{ row }"&gt;</code>
+          就是最常见的作用域插槽通信。默认插槽可简写
+          <code>v-slot="props"</code>；具名插槽用 <code>#name="props"</code>。
+        </div>
+      </div>
+
+      <!-- 九、兄弟通信 -->
+      <div class="section">
+        <h2>九、兄弟 / 任意组件：中转、mitt 事件总线</h2>
+
+        <h3>方案 A：共同父组件中转（推荐优先考虑）</h3>
+        <div class="explanation">
+          兄弟 A <code>emit</code> 给父组件，父组件再通过 props 传给兄弟 B。
+          数据流清晰、可调试，<strong>层级浅时永远首选</strong>。
+        </div>
+
+        <h3>方案 B：mitt 事件总线（解耦通知）</h3>
+        <div class="explanation">
+          Vue3 移除了实例上的 <code>$on / $off / $once</code>，官方推荐用
+          <a href="https://github.com/developit/mitt" target="_blank">mitt</a>
+          这样的微型事件库实现「发布-订阅」。适合<strong>无状态、一次性的事件通知</strong>
+          （如「退出登录」「全局 toast」），不适合传共享状态。
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph Bus["mitt 事件总线（ emitter.js ）"]
+        M["on('notify', handler)"] --> Q["事件队列"]
+        Q --> O["off / all.clear 解绑"]
+    end
+    A["组件 A<br/>emitter.emit('notify', data)"] -->|发布| Q
+    Q -->|触发| B["组件 B<br/>on('notify') 收到 data"]
+    Q -->|触发| C["组件 C<br/>也订阅了同一事件"]
+    style Q fill:#fff9c4,stroke:#fbc02d
+    style A fill:#e1f5fe,stroke:#01579b
+    style B fill:#c8e6c9,stroke:#2e7d32
+    style C fill:#c8e6c9,stroke:#2e7d32
+          </pre>
+        </div>
+
+        <div class="code-title">mitt 使用（npm i mitt）</div>
+        <pre class="code-block"><code class="language-js">// emitter.js —— 全局单例
+import mitt from 'mitt'
+export const emitter = mitt()</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 组件 A：发布事件
+import { emitter } from './emitter'
+function logout() {
+  emitter.emit('user-logout', { reason: 'manual' })
+}</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 组件 B：订阅 + 组件卸载时解绑（防内存泄漏）
+import { onMounted, onUnmounted } from 'vue'
+import { emitter } from './emitter'
+
+const handler = (payload) =&gt; console.log('收到通知', payload)
+onMounted(() =&gt; emitter.on('user-logout', handler))
+onUnmounted(() =&gt; emitter.off('user-logout', handler))</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 事件总线三宗罪</strong>
+          <ul style="margin: 8px 0 0">
+            <li><strong>难追踪</strong>：事件在哪触发、谁在听，全靠全局搜索。</li>
+            <li><strong>易泄漏</strong>：忘记 <code>off</code> 会导致重复回调。</li>
+            <li><strong>无类型</strong>：Vue2 的 <code>$emit</code> 链路编辑器无法提示。</li>
+          </ul>
+          只做「通知」不做「状态」；能被 Pinia 解决的就不要上事件总线。
+        </div>
+      </div>
+
+      <!-- 十、Pinia -->
+      <div class="section">
+        <h2>十、Pinia：全局状态管理（中大型项目首选）</h2>
+        <div class="explanation">
+          <p>
+            当「共享状态」多起来（登录态、购物车、权限），props 总线和事件总线都会失控，
+            这时需要一个<strong>单一数据源（Store）</strong>：
+            所有组件都从 store 读数据、通过 action 改数据，变化集中、可调试、可持久化。
+            Vue3 官方推荐 <strong>Pinia</strong>（Vue2 可用 Vuex 3 / Pinia 2 均可）。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph Store["defineStore('cart')"]
+        S["state：{ items: [] }<br/>（数据源）"]
+        G["getters：totalPrice<br/>（派生值，类似 computed）"]
+        A["actions：addItem / clear<br/>（同步+异步修改）"]
+        S --> G
+        A --> S
+    end
+    C1["组件 1（读 state）"] --> S
+    C2["组件 2（读 getter）"] --> G
+    C3["组件 3（调 action）"] --> A
+    S -->|响应式更新| C1
+    G -->|响应式更新| C2
+    style S fill:#e1f5fe,stroke:#01579b
+    style G fill:#fff9c4,stroke:#fbc02d
+    style A fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <div class="code-title">定义 Store</div>
+        <pre class="code-block"><code class="language-js">// stores/cart.js
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+
+export const useCartStore = defineStore('cart', () =&gt; {
+  // state
+  const items = ref([])
+  // getter
+  const totalPrice = computed(() =&gt;
+    items.value.reduce((s, it) =&gt; s + it.price * it.count, 0)
+  )
+  // action
+  function addItem(item) {
+    const exist = items.value.find((it) =&gt; it.id === item.id)
+    exist ? exist.count++ : items.value.push({ ...item, count: 1 })
+  }
+  function clear() {
+    items.value = []
+  }
+  return { items, totalPrice, addItem, clear }
+})</code></pre>
+
+        <div class="code-title">任意组件中使用</div>
+        <pre class="code-block"><code class="language-js">import { useCartStore } from '@/stores/cart'
+import { storeToRefs } from 'pinia'
+
+const store = useCartStore()
+const { items, totalPrice } = storeToRefs(store) // 解构保持响应式（只解 state/getter）
+
+store.addItem({ id: 1, name: '键盘', price: 199 })
+store.clear() // 任何组件调用，所有用到的组件同步更新</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">Pinia vs Vuex</span>
+            Pinia 没有 mutation（直接在 action 改）、天然支持 TS、支持多 store、
+            无嵌套模块、 devtools 完整支持，Vue 官方已把它定为默认方案。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">storeToRefs</span>
+            直接解构 store 会丢响应式；<code>storeToRefs</code>
+            只把 state/getter 转 ref（action 是函数，直接从 store 上取）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">适合放什么</span>
+            跨页面/跨组件共享的状态。仅父子用的数据放 Pinia 反而增加复杂度——
+            <strong>就近原则</strong>。
+          </div>
+        </div>
+      </div>
+
+      <!-- 十一、其他手段 -->
+      <div class="section">
+        <h2>十一、其他非常规手段（了解即可）</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>手段</th>
+              <th>说明</th>
+              <th>风险 / 适用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>路由参数 / query</td>
+              <td><code>router.push({ path, query })</code> 页面级传参</td>
+              <td>页面间通信的正规手段，不适用组件内</td>
+            </tr>
+            <tr>
+              <td>window 挂载 / 自定义事件</td>
+              <td><code>window.dispatchEvent(new CustomEvent(...))</code></td>
+              <td>能跨 iframe / 微前端，但脱离 Vue 体系难调试</td>
+            </tr>
+            <tr>
+              <td>localStorage + storage 事件</td>
+              <td>监听 <code>storage</code> 事件实现<strong>跨 Tab</strong> 通信</td>
+              <td>跨浏览器标签页唯一常规方案</td>
+            </tr>
+            <tr>
+              <td>Vuex（Vue2 时代）</td>
+              <td>state / getter / mutation / action 四件套</td>
+              <td>老项目维护用，新项目选 Pinia</td>
+            </tr>
+            <tr>
+              <td>$parent / $children（Vue2）</td>
+              <td>直接访问父/子实例</td>
+              <td>Vue3 已<strong>移除 $children</strong>，强耦合不推荐</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 十二、面试问答 -->
+      <div class="section">
+        <h2>十二、面试高频问答</h2>
+
+        <h3>Q1：Vue 组件通信方式有哪些？（高频必考）</h3>
+        <div class="explanation">
+          按关系背：<strong>父子</strong>（props / emit / v-model / ref+defineExpose）→
+          <strong>跨层级</strong>（$attrs 透传 / provide + inject）→
+          <strong>兄弟</strong>（父组件中转 / mitt）→
+          <strong>全局</strong>（Pinia / Vuex）→
+          <strong>兜底</strong>（路由参数、storage）。每种都能说清「方向 + 场景」即可拿高分。
+        </div>
+
+        <h3>Q2：v-model 的原理？Vue2 和 Vue3 有什么区别？</h3>
+        <div class="explanation">
+          本质是语法糖：Vue2 = <code>:value + @input</code>（单 v-model，多值用 .sync）；
+          Vue3 = <code>:modelValue + @update:modelValue</code>，
+          支持<strong>多个 v-model 参数</strong>（v-model:title），
+          3.4 起子组件用 <code>defineModel</code> 一行搞定。
+        </div>
+
+        <h3>Q3：provide/inject 的响应式怎么保证？</h3>
+        <div class="explanation">
+          provide 一个 <strong>ref / reactive / computed</strong> 对象（而不是值本身），
+          后代读取/修改其 <code>.value</code> 即保持响应式；若要防止后代乱改，
+          用 <code>readonly()</code> 包一层再 provide，同时 provide 一个
+          <code>setXxx</code> 方法收敛修改入口。
+        </div>
+
+        <h3>Q4：事件总线有什么问题？为什么 Vue3 移除了 $on？</h3>
+        <div class="explanation">
+          发布订阅让数据流<strong>不可追踪</strong>、容易<strong>忘记解绑</strong>导致重复触发、
+          事件名<strong>无类型约束</strong>。Vue3 移除实例方法后，官方引导：
+          状态共享用 Pinia，事件通知用 mitt 等显式库，且<strong>记得在
+          onUnmounted 中 off</strong>。
+        </div>
+
+        <h3>Q5：props 传对象后子组件改它的属性会怎样？</h3>
+        <div class="explanation">
+          props 本身<strong>浅只读</strong>：改 <code>props.obj.key</code> 不会报警告
+          （因为改的是父组件里那个原对象），且父组件也会跟着变——但这属于
+          <strong>隐式双向修改</strong>，破坏单向数据流，排查困难。正确姿势：
+          emit 事件让父组件改，或用 <code>v-model</code> / <code>defineModel</code> 显式约定。
+        </div>
+      </div>
+
+      <!-- 十三、选型 -->
+      <div class="section">
+        <h2>十三、选型指南 &amp; 记忆口诀</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">父子 → props + emit</span>
+            默认答案。表单组件加 v-model；要调子组件方法才用 ref + defineExpose。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">跨层级 → provide / inject</span>
+            主题、用户、字典这类「全局但轻」的数据；包装组件用 $attrs 透传。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">兄弟 → 父中转优先</span>
+            层级浅用父组件中转；解耦通知用 mitt（记得解绑）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">全局共享 → Pinia</span>
+            多页面共享状态、需要 devtools 调试和持久化时上 store。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>父子 props 事件传，双向 v-model 糖两半；跨层 provide 加 inject，
+          透传 $attrs 少声明；兄弟中转或 mitt，全局状态 Pinia 管</strong>」。
+        </div>
+
+        <div class="code-title">综合示例：一个表单弹窗用齐主流方式</div>
+        <pre class="code-block"><code class="language-js">// 父组件
+&lt;template&gt;
+  &lt;!-- props 下发 + v-model 控制显隐 + emit 接收提交 --&gt;
+  &lt;UserDialog
+    v-model:visible="show"
+    :user="editingUser"
+    @submit="handleSubmit"
+  /&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// 子组件内部需要全局用户权限 → inject
+// 表单校验由父触发 → 子组件 defineExpose({ validate })
+// 登录状态、字典数据 → Pinia store
+&lt;/script&gt;</code></pre>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
