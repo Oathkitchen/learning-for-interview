@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 组件库封装：从 0 到 1 的工程化实践</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vue 组件库封装：从 0 到 1 的工程化实践</h1>
+    <p class="subtitle">
+      架构分层 · API 设计 · 样式主题 · 构建产物 · 依赖治理 · 质量门禁 · 版本发布（结合真实项目复盘）
+    </p>
+
+    <div class="container">
+      <!-- 〇、总览 -->
+      <div class="section">
+        <h2>〇、总览：组件库 = 组件 + 工程 + 治理</h2>
+        <div class="explanation">
+          <p>
+            写好一个组件和做好一个组件库是两件事。组件库的难点
+            <strong>80% 在工程与治理</strong>：目录结构、构建产物、依赖策略、主题体系、
+            版本发布、文档与门禁。完整链路是一条流水线：
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["① 需求与 API 设计<br/>props / slots / events / expose 契约"] --> B["② 编码实现<br/>TS strict + 组合式函数复用"]
+    B --> C["③ 样式体系<br/>BEM 前缀 + CSS 变量主题"]
+    C --> D["④ 测试与类型<br/>vitest + vue-tsc（门禁前置）"]
+    D --> E["⑤ 构建<br/>Vite / tsup → ESM + CJS + d.ts + style.css"]
+    E --> F["⑥ 文档站与示例<br/>VitePress + playground"]
+    F --> G["⑦ 版本与发布<br/>changelogen / changesets → 内网 registry"]
+    G --> H["⑧ 消费与反馈<br/>业务 App 接入 → issue → 回到 ①"]
+    style A fill:#e1f5fe,stroke:#01579b
+    style D fill:#c8e6c9,stroke:#2e7d32
+    style E fill:#fff9c4,stroke:#fbc02d
+    style G fill:#f3e5f5,stroke:#7b1fa2
+    style H fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>路线</th>
+              <th>Element 脚手架路线</th>
+              <th>自建 Monorepo 路线</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>适用</td>
+              <td>
+                基于 Element Plus 做<strong>二次封装</strong>的公司内部组件库
+                （业务组件 + 深度定制）
+              </td>
+              <td>
+                自研<strong>独立领域组件库</strong>（如 AI Chat UI），
+                多包协作、核心能力与 UI 分层
+              </td>
+            </tr>
+            <tr>
+              <td>起手方式</td>
+              <td>
+                参考 element-plus 仓库结构（play + docs + packages），
+                或直接用其脚手架生成：Vite + Vitest + 文档站开箱即用
+              </td>
+              <td>
+                pnpm workspace + tsconfig.base.json 共享，
+                核心包 tsup、UI 包 Vite，多包独立发布
+              </td>
+            </tr>
+            <tr>
+              <td>优势</td>
+              <td>与 Element 的组件规范天然对齐，样式覆盖成本低，团队上手快</td>
+              <td>包职责清晰、可独立发版、核心逻辑（协议层）可被多端复用</td>
+            </tr>
+            <tr>
+              <td>代价</td>
+              <td>被 Element 版本绑定，升级 Element 需要回归整个库</td>
+              <td>工程复杂度高：workspace 依赖、构建工具链、门禁都要自己搭</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">实战复盘</strong>
+          两条路线都走过：基于 Element Plus 脚手架封装内部库，赢在「站在 Element
+          肩膀上快速交付」；而自建 monorepo（如 <code>@hsa-ai/ui</code>）时，
+          把「流式协议核心 → Vue 适配层 → UI 组件层」拆成三个包，
+          让<strong>不含 UI 的能力也能被复用</strong>——这是单包组件库给不了的。
+          选型依据：组件库是否要沉淀「与渲染无关的核心逻辑」。
+        </div>
+      </div>
+
+      <!-- 一、架构分层 -->
+      <div class="section">
+        <h2>一、架构设计：把「核心逻辑」和「UI」拆开</h2>
+        <div class="explanation">
+          <p>
+            组件库最常见的腐化：所有逻辑都堆在 <code>.vue</code> 文件里，
+            换个渲染端（小程序、Web Component、SSR）全部重写。
+            解法是<strong>分层</strong>：协议/核心层零 UI 依赖，适配层消化框架差异，
+            UI 层只做渲染与交互。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    APP["业务应用 App（多个仓库，npm 消费）"] --> UI["UI 层：@hsa-ai/ui<br/>场景组件 AiChat + 20+ 区块组件<br/>主题 CSS 变量 / Block Registry"]
+    APP --> DQ["数据层：@hsa-ai/data-query<br/>查询参数组装 + 响应解包<br/>Fetcher 由消费端注入"]
+    UI --> CV["适配层：@hsa-ai/chat-vue<br/>useChat() composable<br/>消息状态 + 流式更新"]
+    CV --> CORE["核心层：@hsa-ai/chat<br/>SSE / ReadableStream 流式客户端<br/>AsyncIterable&lt;ChatEvent&gt;，零框架依赖"]
+    DQ -.->|"零依赖，互不引用"| CORE
+    style APP fill:#42b983,stroke:#2e7d32,color:#fff
+    style UI fill:#fff9c4,stroke:#fbc02d
+    style CV fill:#e1f5fe,stroke:#01579b
+    style CORE fill:#f3e5f5,stroke:#7b1fa2
+    style DQ fill:#e1f5fe,stroke:#01579b
+          </pre>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">核心层不认识 Vue</span>
+            纯 TS 实现（SSE 解析、协议状态机），输出
+            <code>AsyncIterable</code> 这种<strong>框架无关接口</strong>，
+            换 React 只需重写适配层。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">适配层薄而稳定</span>
+            <code>useChat()</code> 只做「协议事件 → 响应式状态」的翻译，
+            输出 <code>Ref</code> + 动作函数，UI 层与业务层都只依赖这层 API。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">依赖方向单向</span>
+            ui → chat-vue → chat，禁止反向、禁止跨层；
+            两个核心包（chat ↔ data-query）<strong>零依赖</strong>，各自独立演进。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">外部能力靠注入</span>
+            库内<strong>禁止引入 axios 等运行时 HTTP 依赖</strong>，
+            请求层抽象成 <code>Fetcher</code> 适配器接口，由消费方注入实现。
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 内部库的隐性需求：宿主环境</strong>
+          公司内部组件库往往跑在<strong>受控宿主</strong>里（都有 Element Plus、都有统一
+          token）。这既是优势（可以用 <code>peerDependencies</code> 锁定宿主能力），
+          也是风险（宿主升级 = 全公司回归）。所以 Element 系内部库要：
+          peer 范围写<strong>区间</strong>（如 <code>&gt;=2.13.0 &lt;3</code>），
+          并在 CI 里对 Element 高版本做冒烟构建。
+        </div>
+      </div>
+
+      <!-- 二、组件 API 设计 -->
+      <div class="section">
+        <h2>二、组件 API 设计：库组件和业务组件的区别</h2>
+        <div class="explanation">
+          <p>
+            库组件的第一原则：<strong>可预测、可扩展、可逃生</strong>。
+            API 一旦发布就是契约，改 props 名称就是破坏性变更。
+            设计 checklist：
+          </p>
+          <ul>
+            <li>
+              <strong>受控 / 非受控双模式</strong>：<code>v-model</code> 优先，
+              同时允许不传直接用（内部维护初始值）。
+            </li>
+            <li>
+              <strong>透传兜底</strong>：未声明的属性/事件通过 <code>$attrs</code>
+              落到内部根元素，消费方能用 <code>el-input 的原生能力</code> 而不用你逐个转发。
+            </li>
+            <li>
+              <strong>插槽留逃生口</strong>：默认 + 具名 + 作用域插槽，
+              「数据我给你，渲染你来定」。
+            </li>
+            <li>
+              <strong>命令式能力用 defineExpose</strong>：<code>focus() / validate() /
+              open()</code>，配合 ref 调用。
+            </li>
+            <li>
+              <strong>事件命名带语义</strong>：<code>change / submit / error</code>，
+              载荷用对象 <code>{ value, raw }</code>，方便后续扩展字段不破坏类型。
+            </li>
+          </ul>
+        </div>
+
+        <div class="code-title">一个合格的二次封装组件（基于 Element Plus）</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- components/ProTable/src/pro-table.vue --&gt;
+&lt;script setup lang="ts"&gt;
+import { ref, computed, useAttrs } from 'vue'
+
+defineOptions({
+  name: 'HProTable',
+  // 关闭 $attrs 自动落到根元素，由自己决定透传给谁
+  inheritAttrs: false,
+})
+
+const props = defineProps&lt;{
+  columns: ProColumn[]          // 库自己的列描述协议
+  request?: Fetcher             // 数据获取注入（呼应核心原则）
+  immediate?: boolean           // 是否立即请求
+}&gt;()
+
+const emit = defineEmits&lt;{
+  (e: 'selectionChange', rows: Row[]): void
+  (e: 'error', err: unknown): void
+}&gt;()
+
+const attrs = useAttrs() // 剩余属性 → 透传给内部 el-table
+const tableRef = ref()
+// 暴露命令式能力：消费方可 ref 调用
+defineExpose({
+  refresh: () =&gt; fetchData(),
+  clearSelection: () =&gt; tableRef.value?.clearSelection(),
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;el-table v-bind="attrs" ref="tableRef" :data="rows"&gt;
+    &lt;!-- 逃生口：允许消费方完全自定义某一列 --&gt;
+    &lt;template v-for="col in columns" :key="col.prop" #[col.prop]="scope"&gt;
+      &lt;slot :name="col.prop" v-bind="scope"&gt;{{ scope.row[col.prop] }}&lt;/slot&gt;
+    &lt;/template&gt;
+  &lt;/el-table&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">进阶 · 开放扩展机制：Block Registry</strong>
+          当组件库要渲染<strong>开放内容</strong>（如 AI 流式返回的文本/表格/图表/表单等
+          20+ 种区块）时，把「区块类型 → 组件」做成注册表模式：
+          库内置默认注册表，消费方可以用 <code>useBlockRegistry</code>
+          <strong>注册自定义区块</strong>替换或新增——
+          组件库不追求穷举所有场景，而是提供<strong>可插拔的扩展点</strong>。
+          这是内部组件库长期演化的关键设计。
+        </div>
+
+        <div class="code-title">Registry 模式的最小骨架</div>
+        <pre class="code-block"><code class="language-ts">// registry.ts：类型安全的注册表
+const registry = new Map&lt;string, Component&gt;()
+
+export function registerBlock(type: string, comp: Component) {
+  registry.set(type, comp) // 消费方注册自定义区块
+}
+
+export function resolveBlock(type: string): Component {
+  return registry.get(type) ?? FallbackBlock // 未注册 → 兜底组件
+}</code></pre>
+      </div>
+
+      <!-- 三、样式与主题 -->
+      <div class="section">
+        <h2>三、样式与主题：前缀隔离 + CSS 变量</h2>
+        <div class="explanation">
+          <p>
+            组件库样式最大的诉求：<strong>不污染宿主、不被宿主污染、可换肤</strong>。
+            三板斧：命名空间前缀（BEM）、CSS 变量做主题令牌、SCSS 变量做编译期定制。
+          </p>
+        </div>
+
+        <div class="code-title">主题体系：createTheme + CSS 变量</div>
+        <pre class="code-block"><code class="language-css">/* theme/vars.css —— 全部视觉参数收敛为变量 */
+.hsa-ai {
+  --hsa-color-primary: #409eff;
+  --hsa-color-bg: #ffffff;
+  --hsa-radius-md: 8px;
+  --hsa-font-size-base: 14px;
+}
+.hsa-ai[data-theme='dark'] {
+  --hsa-color-bg: #1a1a1a;
+  --hsa-color-primary: #66b1ff;
+}</code></pre>
+
+        <pre class="code-block"><code class="language-ts">// theme/create-theme.ts：运行时工厂
+export function createTheme(options: ThemeOptions) {
+  return {
+    install(app: App) {
+      const cssVar = (k: string, v: string) =&gt;
+        document.documentElement.style.setProperty(k, v)
+      if (options.primaryColor) cssVar('--hsa-color-primary', options.primaryColor)
+      // ...其余令牌
+    },
+  }
+}</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">BEM + 前缀命名空间</span>
+            所有类名 <code>.hsa-btn__icon--disabled</code>，
+            重置样式只作用于 <code>.hsa-ai</code> 作用域内，
+            与宿主（Element 的 <code>.el-</code>）物理隔离。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">覆盖 Element 用官方通道</span>
+            二次封装时优先用 Element 的 <code>--el-</code> CSS 变量覆盖，
+            其次 SCSS 变量编译期改主题，<strong>避免写死类名深度覆盖</strong>
+            （升级即碎）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">样式单独出口</span>
+            <code>import '@hsa-ai/ui/style.css'</code>——样式与 JS 分离出口，
+            消费方决定加载时机，也方便做按需样式。
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · sideEffects 必须声明</strong>
+          样式文件是有副作用的（挂到 DOM），若不声明，构建方 tree-shaking
+          可能<strong>把 import 进来的 css 当死代码删掉</strong>：
+        </div>
+        <pre class="code-block"><code class="language-json">"sideEffects": ["**/*.css", "**/*.scss"]</code></pre>
+
+        <h3>3.4 真实实现复盘：AiThemeProvider 的主题切换链路</h3>
+        <div class="explanation">
+          <p>
+            上面是通用模式，这里复盘 <code>@hsa-ai/ui</code> 里
+            <strong>真实跑在线上</strong>的实现。先补两条 CSS 底层原理：
+          </p>
+          <ul>
+            <li>
+              <strong>CSS 变量会继承</strong>：<code>--xxx</code> 声明在某个元素上，
+              它的<strong>所有后代</strong>都能通过 <code>var()</code> 读到——
+              所以只要把变量写在一个「根容器」上，整棵子树生效。
+            </li>
+            <li>
+              <strong>同名变量靠层叠覆盖</strong>：
+              <code>[data-theme='dark']</code> 规则与浅色规则匹配同一元素时，
+              特异性高的赢（<code>[data-theme='dark']</code> 比无属性选择器多一级，
+              覆盖浅色值）。
+            </li>
+          </ul>
+          <p>
+            于是「主题切换」可以收敛成一件极小的事：
+            <strong>改根容器上的一个属性</strong>，浏览器自动重算整棵子树的所有
+            <code>var()</code>——组件样式零改动。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["消费方：&lt;AiThemeProvider mode='dark'&gt;<br/>只声明『我要暗色』"] --> B["Provider 渲染作用域根<br/>&lt;div class='ai-theme'&gt;"]
+    B --> C["onMounted / watch(activeMode) 触发<br/>applyTheme(rootEl)"]
+    C --> D["el.setAttribute('data-theme', 'dark')<br/>mode=auto 时跟随系统 prefers-color-scheme"]
+    D --> E["dark.scss 的 [data-theme='dark'] 规则命中根 div<br/>暗色变量覆盖浅色变量"]
+    E --> F1["CSS 通道：变量沿 DOM 继承<br/>AiChat / 气泡 / 表格 var() 自动取暗色值"]
+    E --> F2["JS 通道：provide(THEME_KEY)<br/>ECharts 等 canvas 读不到 CSS 变量，<br/>组件用 JS 侧读取当前模式"]
+    F1 --> G["切换全程只动根元素一个属性<br/>子树零改动"]
+    F2 --> G
+    style A fill:#42b983,stroke:#2e7d32,color:#fff
+    style D fill:#fff9c4,stroke:#fbc02d
+    style E fill:#e1f5fe,stroke:#01579b
+    style F2 fill:#f3e5f5,stroke:#7b1fa2
+    style G fill:#c8e6c9,stroke:#2e7d32
+          </pre>
+        </div>
+
+        <div class="code-title">Provider 源码精简版（providers/AiThemeProvider.vue）</div>
+        <pre class="code-block"><code class="language-html">&lt;script setup lang="ts"&gt;
+import { computed, onMounted, onBeforeUnmount, provide, ref, watch } from 'vue'
+import { createTheme } from '../theme/create-theme'
+import { THEME_KEY } from './injection-keys'
+
+const props = withDefaults(defineProps&lt;ThemeOptions&gt;(), {
+  mode: 'light',          // 'light' | 'dark' | 'auto'
+  tokens: () =&gt; ({}),
+})
+
+const rootEl = ref&lt;HTMLDivElement | null&gt;(null)
+const systemDark = ref(false)
+
+// mode=auto 时跟随系统；否则用显式声明的模式
+const activeMode = computed&lt;'light' | 'dark'&gt;(() =&gt; {
+  if (props.mode === 'auto') return systemDark.value ? 'dark' : 'light'
+  return props.mode as 'light' | 'dark'
+})
+
+// tokens 对象 → CSS Variables 写到根元素 style 上（品牌定制的入口）
+function applyVariables(el: HTMLElement) {
+  const vars = createTheme(props.tokens ?? {})
+  for (const [key, value] of Object.entries(vars)) {
+    el.style.setProperty(key, value)   // 行内 style，特异性最高，压过暗色规则
+  }
+}
+
+function applyTheme(el: HTMLElement) {
+  el.setAttribute('data-theme', activeMode.value)  // ★ 切换就这一行
+  applyVariables(el)
+}
+
+let mq: MediaQueryList | null = null
+function onSystemThemeChange(e: MediaQueryListEvent) {
+  systemDark.value = e.matches
+}
+
+onMounted(() =&gt; {
+  if (rootEl.value) applyTheme(rootEl.value)
+  mq = window.matchMedia('(prefers-color-scheme: dark)')
+  systemDark.value = mq.matches
+  mq.addEventListener('change', onSystemThemeChange)
+})
+onBeforeUnmount(() =&gt; mq?.removeEventListener('change', onSystemThemeChange))
+
+// mode / tokens 变化 → 重新写属性，CSS 自动重算
+watch([activeMode, () =&gt; props.tokens], () =&gt; {
+  if (rootEl.value) applyTheme(rootEl.value)
+}, { deep: true })
+
+// 双通道的 JS 侧：ECharts 等 canvas 组件读不到 CSS 变量，用 provide 注入
+provide(THEME_KEY, {
+  get mode() { return activeMode.value },
+  get options() { return props },
+})
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;!-- 作用域根：变量声明在这，后代全部继承 --&gt;
+  &lt;div ref="rootEl" class="ai-theme"&gt;
+    &lt;slot /&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="code-title">暗色规则（theme/dark.scss）—— 裸属性选择器即可</div>
+        <pre class="code-block"><code class="language-scss">/* 在根元素添加 data-theme="dark" 后生效（Provider 自动加） */
+[data-theme='dark'] {
+  --hsa-color-bg: #1a1a1a;
+  --hsa-color-primary: #66b1ff;
+  /* ...其余暗色令牌 */
+}</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">职责划分</span>
+            Provider 只做三件事：算出 activeMode、往根元素写属性和变量、
+            provide 给 JS 侧。组件与样式<strong>完全不感知切换逻辑</strong>。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">切换的响应式闭环</span>
+            消费方 <code>:mode="themeMode"</code> → prop 变 →
+            <code>watch</code> 触发 → <code>setAttribute</code> →
+            CSS 层叠重算。全程只动根元素一个属性。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">auto 模式</span>
+            <code>matchMedia('(prefers-color-scheme: dark)')</code>
+            监听系统主题，事件回调里只改一个 ref，
+            剩下的交给同一条 watch 链路。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">为什么放作用域根而非 :root</span>
+            变量挂在 <code>:root</code> 会污染宿主全局；
+            挂在 Provider 的根 div 上，<strong>多套系统同页共存互不干扰</strong>，
+            卸载组件即卸载主题。
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · 记忆模型</strong>
+          「<strong>变量定义在作用域根，消费在任意后代；切换 = 根元素换属性，
+          层叠覆盖自动生效；canvas 组件读不到变量，再开一条 provide 通道</strong>」。
+        </div>
+      </div>
+
+      <!-- 四、构建与产物 -->
+      <div class="section">
+        <h2>四、构建与产物：exports 是现代组件库的门面</h2>
+        <div class="explanation">
+          <p>
+            库的构建产物要同时满足：<strong>ESM + CJS 双格式</strong>（兼容新老工程）、
+            <strong>完整 d.ts</strong>（TS 消费体验）、<strong>多子入口</strong>（按需加载大模块）、
+            <strong>tree-shaking 友好</strong>。工具选型：纯 TS 逻辑包用
+            <strong>tsup</strong>（快、零配置），含 <code>.vue</code> 的 UI 包用
+            <strong>Vite library mode + vite-plugin-dts</strong>（d.ts 要经过 vue-tsc 处理）。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["src/ 源码<br/>.vue + .ts + .scss"] --> B["构建工具"]
+    B -->|"UI 包：Vite library mode<br/>+ vite-plugin-dts"| C1["dist/index.js（ESM）"]
+    B --> C2["dist/index.cjs（CJS）"]
+    B --> C3["dist/*.d.ts（rolled-up 类型）"]
+    B --> C4["dist/style.css"]
+    C1 --> D["package.json exports 路由<br/>import/require/types 三元组"]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    D --> E["npm pack / publish<br/>files: ['dist'] → 内网 registry"]
+    E --> F["消费方 App<br/>import { AiChat } from '@hsa-ai/ui'"]
+    style B fill:#fff9c4,stroke:#fbc02d
+    style D fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+
+        <div class="code-title">package.json：exports 多子入口（真实示例）</div>
+        <pre class="code-block"><code class="language-json">{
+  "name": "@hsa-ai/ui",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    },
+    "./scenes": { "import": "./dist/scenes.js", "require": "./dist/scenes.cjs" },
+    "./blocks": { "import": "./dist/blocks.js", "require": "./dist/blocks.cjs" },
+    "./theme": { "import": "./dist/theme.js", "require": "./dist/theme.cjs" },
+    "./style.css": "./dist/style.css"
+  },
+  "files": ["dist", "README.md", "CHANGELOG.md"],
+  "sideEffects": ["**/*.css", "**/*.scss"]
+}</code></pre>
+
+        <div class="code-title">Vite library mode 关键配置</div>
+        <pre class="code-block"><code class="language-js">// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import dts from 'vite-plugin-dts'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    dts({ tsconfigPath: './tsconfig.build.json', rollupTypes: true }), // 汇总成单文件 d.ts
+  ],
+  build: {
+    lib: {
+      entry: {
+        index: './src/index.ts',
+        scenes: './src/scenes/index.ts', // 多入口 = 多子入口
+        blocks: './src/blocks/index.ts',
+        theme: './src/theme/index.ts',
+      },
+      formats: ['es', 'cjs'],
+    },
+    rollupOptions: {
+      external: ['vue', 'element-plus', /^@hsa-ai\//], // 绝不打进 vue/宿主依赖
+    },
+  },
+})</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · external 别漏了 workspace 包</strong>
+          monorepo 里 <code>@hsa-ai/chat</code> 虽然是 <code>workspace:*</code> 依赖，
+          构建时也必须 external（或用 preserveModules），否则会把内部包代码
+          <strong>复制进产物</strong>，发布后与单装的包版本错位，出现双实例问题
+          （两个 Vue / 两个 store 是组件库最阴的 bug）。
+        </div>
+      </div>
+
+      <!-- 五、依赖治理 -->
+      <div class="section">
+        <h2>五、依赖治理：dependencies 为空原则</h2>
+        <div class="explanation">
+          <p>
+            组件库依赖出问题的根源几乎都是「依赖归类错误」。黄金规则：
+          </p>
+          <ul>
+            <li>
+              <strong>dependencies 必须为空</strong>（或极少）：库自身的运行时依赖装进
+              dependencies 会导致消费方多装一份、版本漂移、体积膨胀。
+            </li>
+            <li>
+              <strong>peerDependencies</strong>：宿主必然提供的能力
+              （vue、element-plus、echarts…），只声明<strong>版本区间</strong>，
+              不实际安装。
+            </li>
+            <li>
+              <strong>devDependencies</strong>：peer 的具体版本装在这里，
+              供本地开发与测试使用。
+            </li>
+            <li>
+              <strong>外部能力适配器注入</strong>：HTTP 客户端等抽象成接口
+              （<code>Fetcher</code>），由消费方传实现，库只认接口不认库。
+            </li>
+          </ul>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["库 package.json"] --> B["dependencies = 空或仅 nanoevents<br/>（真正的实现依赖且无宿主冲突风险）"]
+    A --> C["peerDependencies = vue / element-plus / echarts…<br/>宿主提供，只写版本区间 ≥x &lt;3"]
+    A --> D["devDependencies = peer 的具体版本<br/>本地开发 / vitest / vite 用"]
+    A --> E["适配器注入：Fetcher / parser<br/>库定义接口，消费方传实现"]
+    B --> F["CI 门禁：检查 dependencies 字段<br/>+ 发布前 npm pack 验证产物"]
+    C --> F
+    style B fill:#c8e6c9,stroke:#2e7d32
+    style C fill:#e1f5fe,stroke:#01579b
+    style F fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 双实例三大高发场景</strong>
+          <ul style="margin: 8px 0 0">
+            <li>库的 dependencies 装了自己的 vue → 组件渲染到另一个 Vue 上，事件全失效。</li>
+            <li>构建时忘了 external vue → 同上，且产物巨大。</li>
+            <li>peer 区间写太死（如只写 <code>^2.14.0</code>）→ 宿主小版本升级就 peer 冲突。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 六、质量门禁 -->
+      <div class="section">
+        <h2>六、质量门禁：让 AI 写的代码也不敢乱来</h2>
+        <div class="explanation">
+          <p>
+            内部库（尤其多人 / AI 协作）必须把「团队品味」变成<strong>机器可执行的规则</strong>。
+            一套实践中验证过的门禁组合：
+          </p>
+          <ul>
+            <li>
+              <strong>构建前置测试</strong>：<code>build = test → vue-tsc → vite build</code>，
+              测试不过就<strong>根本产不出包</strong>。
+            </li>
+            <li>
+              <strong>pre-commit 钩子</strong>：simple-git-hooks 提交前强制跑核心包测试，
+              紧急逃生用环境变量（保留但不鼓励）。
+            </li>
+            <li>
+              <strong>静态规则</strong>：ESLint 禁 <code>any</code>、公共 API 强制显式返回类型、
+              单文件 ≤ 300 行、<code>index.ts</code> 只做 re-export 不含逻辑。
+            </li>
+            <li>
+              <strong>JSDoc 纪律</strong>：所有公共导出必须有 JSDoc（语言统一中文），
+              文档站和 IDE 悬浮提示都吃这个。
+            </li>
+          </ul>
+        </div>
+
+        <div class="code-title">门禁脚本串联</div>
+        <pre class="code-block"><code class="language-json">{
+  "scripts": {
+    "build": "pnpm test &amp;&amp; vue-tsc --noEmit &amp;&amp; vite build",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
+    "release": "pnpm build &amp;&amp; changelogen --release --push &amp;&amp; pnpm pack"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm test:core"
+  }
+}</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">INFO · 测试什么？</strong>
+          组件库测试性价比排序：<strong>纯逻辑单测</strong>（解析器 / 状态机，跑得飞快，
+          占大头）→ <strong>composable 测试</strong>（@vue/test-utils + effectScope）→
+          <strong>组件行为测试</strong>（渲染关键交互，不求覆盖率数字）→
+          视觉回归（内部库可暂缓）。分层架构的另一收益：核心层是纯函数，
+          测试几乎零成本。
+        </div>
+      </div>
+
+      <!-- 七、版本与发布 -->
+      <div class="section">
+        <h2>七、版本与发布：内部库也需要 semver 纪律</h2>
+        <div class="explanation">
+          <ul>
+            <li>
+              <strong>semver 三段式</strong>：patch 修 bug / minor 加功能（含新 props）/
+              major 破坏 API。内部库最容易犯的错：随手 minor 里改了默认值——
+              对消费方就是 major 事故。
+            </li>
+            <li>
+              <strong>changelog 自动化</strong>：单包用 changelogen；monorepo 多包联动用
+              changesets（能显式声明「这次改动影响哪些包、升什么级别」）。
+            </li>
+            <li>
+              <strong>发布物验证</strong>：发布前 <code>npm pack</code> 检查
+              <code>files</code> 是否干净（绝不能把 src / 测试打进包）；
+              用 <code>npm publish --dry-run</code> 或 Verdaccio 本地演练。
+            </li>
+            <li>
+              <strong>预发布通道</strong>：改动大时发 <code>2.18.0-beta.1</code>，
+              让一两个先行业务接入验证后再转正。
+            </li>
+            <li>
+              <strong>锁定策略</strong>：内部库建议消费方用
+              <strong>固定版本</strong>（去掉 <code>^</code>），升级节奏由组件库团队统一推。
+            </li>
+          </ul>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · 联调期免发布</strong>
+          开发阶段用 <code>pnpm link</code> / workspace 直接引用源码包，
+          或发 <code>0.0.0-dev.x</code> 快照版本；<strong>不要</strong>为了联调把半成品
+          patch 版本发上 registry——版本号是不可逆的信用。
+        </div>
+      </div>
+
+      <!-- 八、面试问答 -->
+      <div class="section">
+        <h2>八、面试高频问答</h2>
+
+        <h3>Q1：让你从 0 搭一个 Vue 组件库，你的技术选型和步骤？</h3>
+        <div class="explanation">
+          先问两个问题定架构：<strong>是否基于现有 UI 库二次封装？是否有多包复用需求？</strong>
+          —— Element 系内部库：参考 element-plus 仓库结构（packages + play + docs），
+          Vite library mode 构建，VitePress 文档站，vitest 测试。
+          自研领域库：pnpm monorepo 分层（核心 / 适配 / UI），tsup + Vite 混合构建，
+          ESM+CJS+多子入口+style.css 出口，dependencies 为空 + peer 声明宿主能力，
+          测试前置为构建门禁，changelogen/changesets 管理 semver。
+        </div>
+
+        <h3>Q2：package.json 的 exports 字段解决了什么问题？</h3>
+        <div class="explanation">
+          它是包的<strong>路由表</strong>：① 收敛入口（内部文件不再可随意 import，只有声明的子路径可访问）；
+          ② 条件导出（import 走 ESM / require 走 CJS / types 指向 d.ts，TS 的
+          <code>moduleResolution: bundler/node16</code> 才能正确解析）；
+          ③ 多子入口支持按需加载（如 <code>@hsa-ai/ui/blocks</code>）。
+          注意：<code>main/module/types</code> 仍保留，兼容老打包器。
+        </div>
+
+        <h3>Q3：peerDependencies 和 dependencies 怎么选？</h3>
+        <div class="explanation">
+          判断标准：<strong>这个包是否必须和宿主「同一份实例」</strong>。
+          vue、element-plus、状态库必须是同一实例（双实例 = 灾难）→ peer；
+          库自洽的工具函数库（无实例概念）→ dependencies 也安全，
+          但原则上能 peer / 注入就不装。配套：peer 的具体版本进 devDependencies 供开发测试，
+          CI 校验 dependencies 白名单。
+        </div>
+
+        <h3>Q4：组件库怎么做主题定制和暗黑模式？</h3>
+        <div class="explanation">
+          视觉参数全部收敛为 <strong>CSS 变量令牌</strong>（颜色/圆角/字号/间距），
+          组件样式只引用变量；暗黑模式 = 作用域上加 <code>data-theme='dark'</code>
+          切换变量值；品牌定制提供 <code>createTheme</code> 工厂或
+          <strong>SCSS 变量编译期覆盖</strong>。二次封装 Element 时优先用官方
+          <code>--el-</code> 变量通道覆盖，避免深选择器 hack。
+        </div>
+
+        <h3>Q5：内部组件库如何处理「宿主升级 / 破坏性变更」？</h3>
+        <div class="explanation">
+          四道防线：① peer 版本区间 + CI 对宿主高版本冒烟构建，提前暴露；
+          ② 破坏性变更走 major + 迁移文档（codemod 能自动化最好）；
+          ③ 预发布 beta 通道让先行业务验证；④ 消费方锁死版本，
+          升级由组件库团队统一推进——<strong>版本节奏集中管理</strong>是内部库和开源库
+          最大的策略差异。
+        </div>
+
+        <h3>Q6：如何让组件库支持按需引入？</h3>
+        <div class="explanation">
+          三层手段：① <strong>多子入口 exports</strong>（scenes/blocks/theme 拆包）；
+          ② ESM + <code>sideEffects</code> 白名单让宿主编译器 tree-shaking（未用组件被摇掉）；
+          ③ unplugin-vue-components 之类的 resolver 做到「模板里写了才 import」。
+          样式跟随组件而非全局入口，配合 css 代码分割。
+        </div>
+      </div>
+
+      <!-- 九、最佳实践 -->
+      <div class="section">
+        <h2>九、最佳实践 &amp; 记忆口诀</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">分层先行</span>
+            核心逻辑（协议/算法/状态机）抽成零 UI 依赖的纯 TS 包，
+            UI 层只剩渲染——换框架、做测试、多端复用全靠它。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">API 即契约</span>
+            发布前多花一小时设计 props/slots/expose 命名，
+            好过发布后破坏性变更十次；扩展点（插槽/registry）宁多勿少。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">产物自证</span>
+            每次 release 前 npm pack 检查文件清单；
+            exports 三元组（types/import/require）齐全；
+            external 列表覆盖所有宿主依赖。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">治理自动化</span>
+            测试门禁前置到 build、pre-commit 跑核心包、ESLint 禁 any、
+            300 行拆分、index.ts 只 re-export——用机器守住团队品味。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>核心不碰 UI，宿主走 peer；出口 exports 管，样式带前缀；
+          门禁前置测，发版 semver 惜；扩展点留好，内部库才活得久</strong>」。
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
