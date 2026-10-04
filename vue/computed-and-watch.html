@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue computed vs watch 详细对比</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vue：computed 与 watch 详细对比</h1>
+    <p class="subtitle">缓存机制 · 底层原理 · 使用方式 · 面试高频坑点（图文并茂）</p>
+
+    <div class="container">
+      <!-- 一、一句话区别 + 总览 -->
+      <div class="section">
+        <h2>一、一句话区别 &amp; 总览对比</h2>
+        <div class="explanation">
+          <p>
+            <strong>computed</strong> 是「<strong>带缓存的派生值</strong>」——由已有响应式数据
+            <strong>计算出新值</strong>，依赖不变就复用缓存，模板里像普通变量一样用。
+          </p>
+          <p>
+            <strong>watch</strong> 是「<strong>数据变化的监听器</strong>」——当被监听的数据变化时，
+            <strong>执行一段副作用逻辑</strong>（发请求、操作 DOM、写日志等），它关注的是「做某件事」。
+          </p>
+          <p>
+            记住核心差异：<strong>computed 问「值是多少」，watch 问「数据变了我要干什么」</strong>。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>对比维度</th>
+              <th><code>computed</code></th>
+              <th><code>watch</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>定位</td>
+              <td><strong>派生 / 计算</strong>出一个新值（声明式）</td>
+              <td><strong>监听</strong>数据变化并执行副作用（命令式）</td>
+            </tr>
+            <tr>
+              <td>返回值</td>
+              <td>有，必须 <code>return</code> 一个值</td>
+              <td>无（回调函数没有返回值的意义）</td>
+            </tr>
+            <tr>
+              <td>缓存</td>
+              <td><strong>有缓存</strong>：依赖不变时多次访问只算一次</td>
+              <td><strong>无缓存</strong>：数据一变回调就执行</td>
+            </tr>
+            <tr>
+              <td>是否立即执行</td>
+              <td>首次访问时同步求值（lazy 惰性）</td>
+              <td>默认不执行，<code>immediate: true</code> 时立即执行一次</td>
+            </tr>
+            <tr>
+              <td>新旧值</td>
+              <td>不提供新旧值</td>
+              <td>回调提供 <code>(newVal, oldVal)</code></td>
+            </tr>
+            <tr>
+              <td>异步操作</td>
+              <td><strong>不适合</strong>（getter 应是纯同步函数）</td>
+              <td><strong>适合</strong>：防抖、发请求、定时器</td>
+            </tr>
+            <tr>
+              <td>模板中的使用</td>
+              <td><code>{{ double }}</code> 像变量一样</td>
+              <td>不直接在模板使用</td>
+            </tr>
+            <tr>
+              <td>典型场景</td>
+              <td>过滤列表、总价计算、格式化拼接</td>
+              <td>路由变化、表单联动、异步请求、深度监听</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">TIP</strong>
+          官方建议：能被<strong>已有状态推导</strong>出来的，一律用 <code>computed</code>；
+          只有「变化时需要<strong>执行副作用</strong>」的场景才用 <code>watch</code>。
+          大量 <code>watch</code> 往往是代码坏味道——很可能本该写成 <code>computed</code>。
+        </div>
+      </div>
+
+      <!-- 二、computed 原理 -->
+      <div class="section">
+        <h2>二、computed 原理：缓存是怎么实现的？</h2>
+        <div class="explanation">
+          <p>
+            <code>computed</code> 底层是一个 <strong>lazy（惰性）的副作用函数（effect）</strong>：
+          </p>
+          <ul>
+            <li>
+              创建时<strong>不立即执行</strong> getter，而是生成一个带 <code>dirty</code>
+              标记的 <code>ComputedRefImpl</code>。
+            </li>
+            <li>
+              首次读取 <code>.value</code> 时 <code>dirty === true</code>，才执行 getter，
+              并<strong>收集 getter 里用到的响应式依赖</strong>。
+            </li>
+            <li>
+              依赖变化时<strong>不马上重算</strong>，只把 <code>dirty</code> 置回
+              <code>true</code>（触发 <code>triggerRefValue</code> 通知订阅者）。
+            </li>
+            <li>
+              下次再读取时发现 <code>dirty === true</code> 才重算，否则<strong>直接返回缓存值</strong>。
+            </li>
+          </ul>
+          <p>
+            这就是「<strong>依赖不变 → 直接吃缓存</strong>」的来源，也是它和
+            <code>methods</code> 最大的区别。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["访问 computed.value"] --> B{"dirty === true ?"}
+    B -->|"false（依赖没变）"| C["直接返回缓存值<br/>⚡ 零计算开销"]
+    B -->|"true（首次/依赖变了）"| D["执行 getter"]
+    D --> E["getter 内读取响应式数据"]
+    E --> F["track 依赖收集<br/>谁被读了就订阅谁"]
+    F --> G["缓存结果 + dirty 置为 false"]
+    G --> H["返回新值"]
+    I["某依赖被修改 trigger"] --> J["scheduler 被触发<br/>不重算，只把 dirty 置回 true"]
+    J --> K["通知依赖该 computed 的订阅者<br/>（如渲染 effect）"]
+    K --> A
+    style C fill:#c8e6c9,stroke:#2e7d32
+    style G fill:#fff9c4,stroke:#fbc02d
+    style J fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">lazy 惰性求值</span>
+            创建时不执行，第一次被<strong>读取</strong>才执行。若组件根本没用到某个
+            computed，getter 永远不会跑。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">dirty 缓存标记</span>
+            <code>dirty</code> 是「脏位」：依赖变了只标记脏，不重算；
+            真正被读取时才按需重算——这就是<strong>缓存</strong>的本质。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">本身就是 ref</span>
+            <code>computed</code> 返回一个只读的 <code>ComputedRef</code>，同样有
+            <code>.value</code>，同样能被其它 computed / 渲染函数依赖，形成<strong>依赖链</strong>。
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 两个经典坑</strong>
+          <ul style="margin: 8px 0 0">
+            <li>
+              getter 里<strong>不要写异步逻辑</strong>（setTimeout / await），computed
+              要求同步返回，异步结果无法被响应式追踪。
+            </li>
+            <li>
+              getter 必须是<strong>纯函数</strong>：不要在里面修改其它状态或发请求。
+              「在 computed 里改数据」会导致循环更新警告
+              <em>“Maximum recursive updates exceeded”</em>。
+            </li>
+          </ul>
+        </div>
+
+        <div class="code-title">缓存效果验证：computed vs methods</div>
+        <pre class="code-block"><code class="language-js">import { ref, computed } from 'vue'
+
+const count = ref(0)
+let computedLogCount = 0
+let methodLogCount = 0
+
+const double = computed(() =&gt; {
+  computedLogCount++        // 只有依赖变化后【再次被读取】时才会 +1
+  return count.value * 2
+})
+
+function getDouble() {
+  methodLogCount++          // 每次调用都执行，无缓存
+  return count.value * 2
+}
+
+double.value // 执行 1 次 getter
+double.value // 命中缓存，不再执行 ❗
+double.value // 还是缓存 → computedLogCount === 1
+
+count.value = 10   // 依赖变了，这里只是把 dirty 标记为 true，并不重算
+double.value // 此时才重算 → computedLogCount === 2</code></pre>
+      </div>
+
+      <!-- 三、watch 原理 -->
+      <div class="section">
+        <h2>三、watch 原理：监听是怎么触发的？</h2>
+        <div class="explanation">
+          <p>
+            <code>watch</code> 底层同样是 <strong>effect</strong>，但和 computed 不同：
+          </p>
+          <ul>
+            <li>
+              它会<strong>立即执行一次</strong>getter（内部为 <code>traverse</code>），
+              目的仅仅是<strong>收集依赖</strong>，拿到结果后丢弃。
+            </li>
+            <li>
+              依赖变化时，通过 <strong>scheduler（调度器）</strong> 把回调放进
+              <strong>job 队列</strong>，以 <code>flush</code> 指定的时机执行
+              （<code>pre</code> 组件更新前 / <code>post</code> 更新后 / <code>sync</code> 同步）。
+            </li>
+            <li>
+              回调执行时把<strong>新值、旧值</strong>传给你。
+            </li>
+          </ul>
+          <p>
+            一句话：<strong>computed 是「被读取才重算」，watch 是「变化了就主动跑回调」</strong>。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["watch(source, cb)"] --> B["立即执行一次 traverse(source)<br/>仅为收集依赖，结果丢弃"]
+    B --> C["source 的每个属性被 track<br/>订阅到该 watcher"]
+    D["依赖数据被修改"] --> E["trigger 触发 watcher 的 scheduler"]
+    E --> F{"flush 模式 ?"}
+    F -->|pre（默认）| G["回调加入队列<br/>组件更新【前】执行"]
+    F -->|post| H["回调加入队列<br/>组件更新【后】执行<br/>此时可安全访问 $el / DOM"]
+    F -->|sync| I["同步立即执行<br/>（不等队列）"]
+    G --> J["执行 cb(newVal, oldVal, onCleanup)"]
+    H --> J
+    I --> J
+    style B fill:#e1f5fe,stroke:#01579b
+    style E fill:#f3e5f5,stroke:#7b1fa2
+    style J fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">INFO · 为什么直接 watch reactive 对象深层属性要小心？</strong>
+          给 <code>watch</code> 传一个 <strong>reactive 对象</strong>时会自动开启
+          <code>deep: true</code>；但传一个 <strong>getter 函数</strong>（如
+          <code>() =&gt; state.obj.key</code>）时默认<strong>不深度</strong>——
+          只有 <code>key</code> 本身被替换才触发，内部嵌套变化不会。需要深度时显式加
+          <code>{ deep: true }</code> 或让 getter 返回解构后的值。
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">traverse 收集深层依赖</span>
+            内部通过递归遍历对象所有属性来建立深度依赖，所以
+            <code>deep: true</code> 在大对象上<strong>有性能开销</strong>，能精确监听就别开 deep。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">flush 控制时机</span>
+            默认 <code>pre</code>：回调在组件更新前跑，里面拿到的还是旧 DOM；
+            需要「等 DOM 更新完」用 <code>flush: 'post'</code>（等价 <code>watchPostEffect</code>）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">副作用清理 onCleanup</span>
+            回调第三个参数 <code>onCleanup(fn)</code>：注册的函数会在
+            <strong>下次回调执行前 / watcher 停止时</strong>调用——用于取消上一次未完成的请求、清定时器。
+          </div>
+        </div>
+      </div>
+
+      <!-- 四、使用方式 -->
+      <div class="section">
+        <h2>四、基本用法对比（Composition API）</h2>
+
+        <div class="code-title">computed：派生值</div>
+        <pre class="code-block"><code class="language-js">import { ref, computed } from 'vue'
+
+const price = ref(100)
+const quantity = ref(2)
+
+// 可写（推荐）：getter 形式
+const total = computed(() =&gt; price.value * quantity.value)
+
+// 完整形式：可写 computed（少见，双向派生时用）
+const fullName = computed({
+  get: () =&gt; `${firstName.value} ${lastName.value}`,
+  set: (val) =&gt; {
+    ;[firstName.value, lastName.value] = val.split(' ')
+  },
+})</code></pre>
+
+        <div class="code-title">watch：监听多种数据源</div>
+        <pre class="code-block"><code class="language-js">import { ref, reactive, watch } from 'vue'
+
+const count = ref(0)
+const state = reactive({ name: 'vue' })
+
+// 1) 单个 ref
+watch(count, (n, o) =&gt; console.log(n, o))
+
+// 2) getter 函数（精确监听某个属性）
+watch(() =&gt; state.name, (n, o) =&gt; console.log(n, o))
+
+// 3) reactive 对象（自动 deep: true）
+watch(state, (n) =&gt; console.log(n))
+
+// 4) 多个源 → 回调收到数组形式的新旧值
+watch([count, () =&gt; state.name], ([nc, nn], [oc, on]) =&gt; {
+  console.log(nc, nn, oc, on)
+})</code></pre>
+
+        <div class="code-title">watch 的四个常用选项</div>
+        <pre class="code-block"><code class="language-js">watch(
+  () =&gt; state.list,
+  (newList) =&gt; {
+    console.log('list 变了', newList)
+  },
+  {
+    immediate: true, // 创建时立即执行一次回调（拿初始值做初始化很常用）
+    deep: true,      // 深度监听（getter 形式默认不深度；reactive 源自动为 true）
+    flush: 'post',   // 'pre'（默认，更新前）| 'post'（更新后，可拿 DOM）| 'sync'（同步）
+    once: true,      // 3.4+：只触发一次后自动停止
+  }
+)</code></pre>
+
+        <div class="code-title">停止监听 &amp; 副作用清理</div>
+        <pre class="code-block"><code class="language-js">// watch 在 setup / &lt;script setup&gt; 中创建时，组件卸载会自动停止；
+// 异步回调中创建（如 setTimeout 里）则必须手动停止！
+const stop = watch(count, (n) =&gt; console.log(n))
+stop() // 手动停止
+
+// onCleanup：处理竞态（搜索输入的经典场景）
+watch(keyword, async (val, old, onCleanup) =&gt; {
+  const controller = new AbortController()
+  onCleanup(() =&gt; controller.abort()) // 新请求发出前，中止上一次
+  const res = await fetch(`/api/search?q=${val}`, { signal: controller.signal })
+})</code></pre>
+      </div>
+
+      <!-- 五、watchEffect -->
+      <div class="section">
+        <h2>五、补充：watchEffect —— watch 的「自动依赖」兄弟</h2>
+        <div class="explanation">
+          <p>
+            <code>watchEffect</code> 不用声明监听谁——它<strong>立即执行一次回调</strong>，
+            回调里<strong>用到哪些响应式数据，就自动监听哪些</strong>。适合「多个状态、同一段逻辑」的场景。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    subgraph watch["watch：显式声明依赖"]
+        W1["watch(source, cb)"] --> W2["依赖写死在 source"]
+        W2 --> W3["变化 → 执行 cb<br/>有 新旧值"]
+    end
+    subgraph WE["watchEffect：自动收集依赖"]
+        E1["watchEffect(cb)"] --> E2["立即执行 cb 一次<br/>用到谁就 track 谁"]
+        E2 --> E3["任一依赖变化 → 重跑 cb<br/>无 新旧值"]
+    end
+    style W3 fill:#c8e6c9,stroke:#2e7d32
+    style E3 fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>特性</th>
+              <th><code>watch</code></th>
+              <th><code>watchEffect</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>依赖来源</td>
+              <td>显式指定 source</td>
+              <td>回调执行过程中<strong>自动收集</strong></td>
+            </tr>
+            <tr>
+              <td>立即执行</td>
+              <td>默认不执行（<code>immediate</code> 可选）</td>
+              <td><strong>总是立即执行一次</strong></td>
+            </tr>
+            <tr>
+              <td>新旧值</td>
+              <td>提供 <code>(newVal, oldVal)</code></td>
+              <td>不提供</td>
+            </tr>
+            <tr>
+              <td>惰性</td>
+              <td>依赖变化才跑回调</td>
+              <td>创建时就跑一次（适合初始化副作用）</td>
+            </tr>
+            <tr>
+              <td>适用</td>
+              <td>明确知道监听谁、需要旧值、需要惰性</td>
+              <td>多个依赖触发同一段逻辑、且需要首次就执行</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">watchEffect 示例</div>
+        <pre class="code-block"><code class="language-js">import { ref, watchEffect } from 'vue'
+
+const keyword = ref('')
+const page = ref(1)
+
+// keyword 或 page 任一变化都会重新请求；创建时也立即请求一次
+watchEffect(async () =&gt; {
+  const res = await fetch(`/api/list?kw=${keyword.value}&amp;page=${page.value}`)
+})</code></pre>
+      </div>
+
+      <!-- 六、面试高频问答 -->
+      <div class="section">
+        <h2>六、面试高频问答</h2>
+
+        <h3>Q1：computed 和 methods 的区别？</h3>
+        <div class="explanation">
+          <strong>computed 有缓存</strong>：依赖不变时反复访问只算一次；<strong>methods
+          每次调用都重新执行</strong>。渲染场景下若模板中多处使用同一派生值，
+          computed 只算一次，methods 会执行多次。
+        </div>
+
+        <h3>Q2：computed 和 watch 的区别？该怎么选？</h3>
+        <div class="explanation">
+          <ul style="margin: 4px 0 0">
+            <li>
+              <strong>computed</strong>：由数据<strong>算出一个值</strong>，有缓存、必须同步、不能做副作用。适合：求和、过滤、格式化。
+            </li>
+            <li>
+              <strong>watch</strong>：数据变化时<strong>执行副作用</strong>，无缓存、可异步、有新旧值。适合：请求接口、操作 DOM、路由监听。
+            </li>
+            <li>
+              判断标准：如果这段逻辑<strong>最终是为了得到一个值</strong> → computed；
+              如果是<strong>为了做一件事</strong> → watch。
+            </li>
+          </ul>
+        </div>
+
+        <h3>Q3：为什么 computed 里不能写异步？</h3>
+        <div class="explanation">
+          getter 必须<strong>同步返回</strong>结果——依赖收集和缓存机制都建立在同步求值上。
+          异步结果返回时早已脱离本次求值流程，无法写回缓存，模板也拿不到。
+          需要「异步派生值」应该用 <code>watch + ref</code>（或 <code>watchEffect</code>），
+          把结果存进一个普通 ref。
+        </div>
+
+        <h3>Q4：watch 监听 reactive 对象的属性没触发？</h3>
+        <div class="explanation">
+          三种正确姿势：
+          <ol style="margin: 6px 0 0">
+            <li>getter：<code>watch(() =&gt; state.obj, cb, { deep: true })</code></li>
+            <li>getter 返回具体值：<code>watch(() =&gt; state.obj.key, cb)</code></li>
+            <li>整个对象：<code>watch(state.obj, cb)</code>（自动深度）</li>
+          </ol>
+          注意：<code>watch(() =&gt; state.obj, cb)</code> 不加 deep 时，
+          只有 <code>state.obj</code> 被<strong>整体替换</strong>才触发，内部属性变化不触发。
+        </div>
+
+        <h3>Q5：computed 的缓存什么时候失效？</h3>
+        <div class="explanation">
+          依赖的<strong>响应式数据发生变化</strong>时只是「标记脏」（<code>dirty = true</code>），
+          并不立刻重算；等<strong>下一次被读取</strong>时才真正重新执行 getter 并更新缓存。
+          这种「按需重算」避免了依赖高频变化但没人读取时的无效计算。
+        </div>
+      </div>
+
+      <!-- 七、最佳实践 -->
+      <div class="section">
+        <h2>七、最佳实践 &amp; 记忆口诀</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">能用 computed 就别用 watch</span>
+            「<code>a 变了就去改 b</code>」这种代码十有八九应该写成
+            <code>b = computed(() =&gt; f(a))</code>，声明式更不易出 bug。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">computed 保持纯 &amp; 同步</span>
+            getter 里不修改状态、不发请求、不写异步；需要异步结果就用
+            watch/watchEffect + ref 存结果。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">watch 记得清理副作用</span>
+            异步请求 / 定时器用 <code>onCleanup</code> 清理，防止竞态和内存泄漏；
+            组件外（异步中）创建的 watcher 手动 <code>stop()</code>。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">deep 慎用</span>
+            大对象深度监听开销大；优先用精确的 getter 监听具体属性。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>算值用 computed（有缓存、要同步），干活用 watch（能异步、有新旧）；
+          一堆依赖一段逻辑，watchEffect 一把梭</strong>」。
+        </div>
+
+        <div class="code-title">综合示例：购物车（三者各司其职）</div>
+        <pre class="code-block"><code class="language-js">import { ref, computed, watch, watchEffect } from 'vue'
+
+const items = ref([
+  { name: '键盘', price: 199, count: 1 },
+  { name: '鼠标', price: 99, count: 2 },
+])
+
+// 1) 派生值 → computed（自动跟随 items，有缓存）
+const total = computed(() =&gt;
+  items.value.reduce((sum, it) =&gt; sum + it.price * it.count, 0)
+)
+
+// 2) 值变化要做「一件事」（上报埋点）→ watch
+watch(total, (n, o) =&gt; {
+  console.log(`总价从 ${o} 变为 ${n}`)
+  analytics.report('cart_total_change', { from: o, to: n })
+})
+
+// 3) 多依赖同一逻辑 + 需要立即执行一次 → watchEffect
+const keyword = ref('')
+watchEffect(() =&gt; {
+  document.title = `购物车(${items.value.length}) - ${keyword.value || '全部商品'}`
+})</code></pre>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
