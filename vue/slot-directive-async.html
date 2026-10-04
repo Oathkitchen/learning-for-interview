@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue 插槽、自定义指令、异步组件详解</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Vue 插槽、自定义指令、异步组件</h1>
+    <p class="subtitle">
+      三种「组件扩展机制」：内容分发 · DOM 能力复用 · 按需加载（图文并茂）
+    </p>
+
+    <div class="container">
+      <!-- 总览 -->
+      <div class="section">
+        <h2>〇、总览：它们分别解决什么问题？</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>机制</th>
+              <th>一句话定位</th>
+              <th>典型场景</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>插槽 Slot</strong></td>
+              <td>
+                <strong>内容分发</strong>：父组件往子组件的「预留位置」塞模板，
+                且渲染逻辑（变量）归父组件管
+              </td>
+              <td>弹窗内容、列表项自定义渲染、布局组件</td>
+            </tr>
+            <tr>
+              <td><strong>自定义指令</strong></td>
+              <td>
+                <strong>DOM 能力复用</strong>：把「直接操作 DOM 的逻辑」封装成可复用的
+                <code>v-xxx</code>
+              </td>
+              <td>自动聚焦、图片懒加载、按钮权限控制</td>
+            </tr>
+            <tr>
+              <td><strong>异步组件</strong></td>
+              <td>
+                <strong>按需加载</strong>：组件代码拆成独立 chunk，用到时才下载
+              </td>
+              <td>路由懒加载、重组件（图表/富文本）延迟加载</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <strong class="tag">记忆定位</strong>
+          插槽是「<strong>内容层面</strong>」的扩展，指令是「<strong>DOM 行为层面</strong>」的扩展，
+          异步组件是「<strong>加载时机层面</strong>」的优化——三者共同点都是<strong>组件复用的增强手段</strong>。
+        </div>
+      </div>
+
+      <!-- 一、插槽 -->
+      <div class="section">
+        <h2>一、插槽（Slot）：内容分发</h2>
+
+        <h3>1.1 三种插槽</h3>
+        <div class="explanation">
+          <p>
+            插槽本质：子组件用 <code>&lt;slot&gt;</code> 挖「坑」，父组件往坑里填内容；
+            填的内容在<strong>父组件作用域</strong>编译（能用父组件的数据），但渲染位置在子组件。
+          </p>
+          <ul>
+            <li><strong>默认插槽</strong>：<code>&lt;slot&gt;</code>，只有一个不具名出口。</li>
+            <li><strong>具名插槽</strong>：<code>&lt;slot name="header"&gt;</code>，父组件用 <code>#header</code> 填。</li>
+            <li><strong>作用域插槽</strong>：子组件把内部数据通过 slot props 「递」给父组件的插槽内容使用。</li>
+          </ul>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["父组件模板"] -->|"编译时：能访问父组件作用域数据"| B["插槽内容（vnode 工厂）"]
+    B -->|"作为 children 传给子组件"| C["子组件"]
+    C --> D["&lt;slot name='header' :item='x'&gt;<br/>预留出口（可带数据）"]
+    D -->|"① 具名：按 name 匹配"| E["header 出口 ← #header 内容"]
+    D -->|"② 默认：未匹配的内容全进这里"| F["默认出口 ← 无名内容"]
+    D -->|"③ 作用域：出口把子组件数据<br/>作为参数传回插槽函数"| G["#default='{ item }' 使用子组件数据"]
+    style D fill:#42b983,stroke:#2e7d32,color:#fff
+    style G fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <div class="code-title">三种插槽的完整用法</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 子组件 BaseLayout.vue：定义出口 --&gt;
+&lt;template&gt;
+  &lt;header&gt;
+    &lt;slot name="header"&gt;默认标题&lt;/slot&gt;  &lt;!-- 具名出口，含后备内容 --&gt;
+  &lt;/header&gt;
+  &lt;main&gt;
+    &lt;slot&gt;没有传内容时显示我&lt;/slot&gt;       &lt;!-- 默认出口 --&gt;
+  &lt;/main&gt;
+  &lt;footer&gt;
+    &lt;slot name="footer" :year="2026"&gt;&lt;/slot&gt;
+  &lt;/footer&gt;
+&lt;/template&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件：填坑 --&gt;
+&lt;template&gt;
+  &lt;BaseLayout&gt;
+    &lt;!-- 具名插槽：template + #name（v-slot:name 的缩写） --&gt;
+    &lt;template #header&gt;
+      &lt;h1&gt;{{ pageTitle }}&lt;/h1&gt;  &lt;!-- ✅ 用的是【父组件】的数据 --&gt;
+    &lt;/template&gt;
+
+    &lt;!-- 默认插槽：内容直接写（省略 template #default） --&gt;
+    &lt;p&gt;主体内容&lt;/p&gt;
+
+    &lt;!-- 作用域插槽：解构子组件传来的 slot props --&gt;
+    &lt;template #footer="{ year }"&gt;
+      &lt;span&gt;© {{ year }} my-app&lt;/span&gt;
+    &lt;/template&gt;
+  &lt;/BaseLayout&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="code-title">作用域插槽的经典场景：子组件给数据，父组件管渲染</div>
+        <pre class="code-block"><code class="language-html">&lt;!-- 子组件 List.vue --&gt;
+&lt;template&gt;
+  &lt;ul&gt;
+    &lt;li v-for="(item, index) in items" :key="item.id"&gt;
+      &lt;slot :item="item" :index="index"&gt;{{ item.name }}&lt;/slot&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/template&gt;</code></pre>
+
+        <pre class="code-block"><code class="language-html">&lt;!-- 父组件 --&gt;
+&lt;template&gt;
+  &lt;List :items="users"&gt;
+    &lt;template #default="{ item, index }"&gt;
+      &lt;!-- el-table 的 { row } 就是这个机制 --&gt;
+      &lt;b&gt;{{ index + 1 }}.&lt;/b&gt; {{ item.name }}
+    &lt;/template&gt;
+  &lt;/List&gt;
+&lt;/template&gt;</code></pre>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">编译作用域规则</span>
+            插槽内容在<strong>父组件作用域</strong>编译：里面只能用父组件的数据；
+            子组件的数据必须<strong>显式通过 slot props 传出来</strong>，不能直接引用。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">动态插槽名</span>
+            <code>v-slot:[dynamicSlotName]</code>，与动态指令参数同规则
+            （模板内表达式小写）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Vue2 → Vue3 语法变化</span>
+            Vue2 的 <code>slot="header"</code> + <code>slot-scope</code> 已废弃，
+            Vue2.6+ / Vue3 统一为 <code>v-slot</code>（<code>#</code>），且
+            <strong>v-slot 只能写在 &lt;template&gt; 上</strong>（默认插槽可写在组件标签上）。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">INFO · 插槽的底层原理（面试加分）</strong>
+          编译后，插槽内容会变成 <strong>返回 vnode 的函数</strong>，挂在子组件 vnode 的
+          <code>children</code> 对象上（如 <code>{ header: () =&gt; h(...), default: (props) =&gt; h(...) }</code>）。
+          子组件渲染 <code>&lt;slot&gt;</code> 时就是<strong>调用对应函数</strong>——
+          作用域插槽传数据，就是把这个函数<strong>以子组件数据为参数调用</strong>。
+          这也解释了「插槽内容是惰性的：父组件数据变了才重新执行插槽函数」。
+        </div>
+      </div>
+
+      <!-- 二、自定义指令 -->
+      <div class="section">
+        <h2>二、自定义指令：封装 DOM 操作</h2>
+
+        <h3>2.1 什么时候用指令？</h3>
+        <div class="explanation">
+          <p>
+            判断标准：这段逻辑<strong>只关心 DOM 元素本身</strong>（聚焦、监听滚动、进入视口），
+            不产生状态、不参与模板逻辑 → 封装成指令；
+            如果需要<strong>返回数据给模板用</strong>（如 IntersectionObserver 的结果要显示）→
+            封装成<strong>组合式函数</strong>更合适。
+          </p>
+        </div>
+
+        <h3>2.2 钩子函数与参数</h3>
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["v-my-dir 挂到元素上"] --> H1["created：元素属性初始化前<br/>（放不需要 DOM 的初始化）"]
+    H1 --> H2["beforeMount"]
+    H2 --> H3["mounted：元素插入 DOM<br/>★ 最常用：聚焦/监听/ observer 都在这"]
+    H3 --> H4{"依赖值更新 ?"}
+    H4 -->|是| H5["beforeUpdate → updated<br/>★ 拿 oldValue 对比"]
+    H5 --> H4
+    H3 --> H6["beforeUnmount"]
+    H6 --> H7["unmounted：清理副作用<br/>★ 移除监听 / disconnect"]
+    style H3 fill:#c8e6c9,stroke:#2e7d32
+    style H7 fill:#ffcdd2,stroke:#c62828
+          </pre>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>钩子</th>
+              <th>时机</th>
+              <th>典型用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>created</code></td>
+              <td>元素属性初始化前</td>
+              <td>读取静态属性、事件预绑定</td>
+            </tr>
+            <tr>
+              <td><code>beforeMount</code></td>
+              <td>插入 DOM 前</td>
+              <td>最后的机会修改元素属性</td>
+            </tr>
+            <tr>
+              <td><code>mounted</code></td>
+              <td><strong>元素插入 DOM 后</strong></td>
+              <td>focus()、addEventListener、observer.observe</td>
+            </tr>
+            <tr>
+              <td><code>beforeUpdate / updated</code></td>
+              <td>绑定值变化前后</td>
+              <td>对比 <code>binding.oldValue</code> 做增量处理</td>
+            </tr>
+            <tr>
+              <td><code>beforeUnmount / unmounted</code></td>
+              <td>元素卸载前 / 后</td>
+              <td>removeEventListener、disconnect（<strong>必做</strong>）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">钩子参数详解（binding 对象）</div>
+        <pre class="code-block"><code class="language-js">app.directive('demo', {
+  mounted(el, binding, vnode) {
+    // el       : 指令绑定的真实 DOM 元素
+    // binding  : {
+    //   value     : v-demo="1 + 1" → 2（表达式求值结果）
+    //   oldValue  : 上一次的 value（仅在 beforeUpdate/updated 中可用）
+    //   arg       : v-demo:foo → 'foo'
+    //   modifiers : v-demo.foo.bar → { foo: true, bar: true }
+    //   instance  : 使用该指令的组件实例
+    // }
+    // vnode    : 元素对应的 vnode
+  },
+})</code></pre>
+
+        <h3>2.3 实战：三个最常用的自定义指令</h3>
+
+        <div class="code-title">① v-focus 自动聚焦</div>
+        <pre class="code-block"><code class="language-js">// 全局注册：app.directive('focus', ...)
+const vFocus = {
+  mounted: (el) =&gt; el.focus(), // 元素上直接写 v-focus 即可（setup 内局部指令）
+}
+// &lt;script setup&gt; 里命名规则：变量必须叫 vXxx，模板用 v-xxx</code></pre>
+
+        <div class="code-title">② v-lazy 图片懒加载</div>
+        <pre class="code-block"><code class="language-js">const lazyMap = new WeakMap() // 元素 → observer，防重复创建
+
+export default {
+  mounted(el, binding) {
+    el.src = '占位图.png' // 先用占位图
+    const io = new IntersectionObserver((entries) =&gt; {
+      if (entries[0].isIntersecting) {
+        el.src = binding.value // 进入视口才加载真实地址
+        io.unobserve(el)
+      }
+    })
+    io.observe(el)
+    lazyMap.set(el, io)
+  },
+  updated(el, binding) {
+    if (binding.value !== binding.oldValue) el.src = binding.value
+  },
+  unmounted(el) {
+    lazyMap.get(el)?.disconnect() // 必须清理
+  },
+}
+// 用法：&lt;img v-lazy="item.cover" /&gt;</code></pre>
+
+        <div class="code-title">③ v-permission 按钮权限</div>
+        <pre class="code-block"><code class="language-js">import { useUserStore } from '@/stores/user'
+
+export default {
+  mounted(el, binding) {
+    const { roles } = useUserStore()
+    // v-permission="['admin']"：无权限直接移除元素
+    if (!binding.value.some((r) =&gt; roles.includes(r))) {
+      el.parentNode?.removeChild(el)
+    }
+  },
+}
+// 用法：&lt;button v-permission="['admin']"&gt;删除&lt;/button&gt;</code></pre>
+
+        <div class="code-title">简写形式与函数式指令</div>
+        <pre class="code-block"><code class="language-js">// 1) 对象字面量简写：mounted + updated 用同一个函数
+const vColor = (el, binding) =&gt; {
+  el.style.color = binding.value
+}
+
+// 2) 带修饰符的解析：v-loading.fullscreen="show"
+function mounted(el, binding) {
+  if (binding.modifiers.fullscreen) {
+    /* 全屏遮罩逻辑 */
+  }
+}
+
+// 3) 传对象字面量：v-pos="{ x: 10, y: 20 }"
+function mounted(el, binding) {
+  el.style.transform = `translate(${binding.value.x}px, ${binding.value.y}px)`
+}</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 两条铁律</strong>
+          <ul style="margin: 8px 0 0">
+            <li>
+              <code>mounted</code> 里加的监听 / observer，<strong>必须在
+              <code>unmounted</code> 里清理</strong>，否则内存泄漏 + 重复回调。
+            </li>
+            <li>
+              指令只在<strong>真实 DOM</strong> 上工作：组件上使用指令时（极少）
+              拿到的是组件根元素，且 Vue3 已<strong>移除组件级指令</strong>的隐式透传，慎用。
+            </li>
+          </ul>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">INFO · Vue2 → Vue3 钩子改名对照</strong>
+          <code>bind → mounted</code>、<code>inserted → beforeMount 附近</code>、
+          <code>update / componentUpdated → beforeUpdate / updated</code>、
+          <code>unbind → unmounted</code>，并新增 <code>created / beforeUnmount</code>，
+          与组件生命周期完全对齐。
+        </div>
+      </div>
+
+      <!-- 三、异步组件 -->
+      <div class="section">
+        <h2>三、异步组件：按需加载</h2>
+
+        <div class="explanation">
+          <p>
+            <code>defineAsyncComponent</code> 把组件定义包装成「<strong>用到时才去加载</strong>」：
+            底层基于动态 <code>import()</code>，构建时该组件会被拆成
+            <strong>独立 chunk</strong>，首次渲染到它时才发起网络请求下载并渲染。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    A["父组件渲染 AsyncComp"] --> B["defineAsyncComponent 返回包装组件"]
+    B --> C{"delay（默认 200ms）内<br/>加载完成 ?"}
+    C -->|"是（缓存命中/极快）"| D["直接渲染目标组件<br/>⇒ 不闪 loading"]
+    C -->|"否"| E["显示 loadingComponent"]
+    E --> F{加载结果}
+    F -->|"成功"| G["渲染目标组件<br/>（之后复用，不再重新加载）"]
+    F -->|"失败"| H["渲染 errorComponent<br/>可 retry() 重试"]
+    F -->|"超时 timeout"| H
+    style D fill:#c8e6c9,stroke:#2e7d32
+    style E fill:#fff9c4,stroke:#fbc02d
+    style H fill:#ffcdd2,stroke:#c62828
+          </pre>
+        </div>
+
+        <div class="code-title">基础用法</div>
+        <pre class="code-block"><code class="language-js">import { defineAsyncComponent } from 'vue'
+
+// 简写：工厂函数返回 Promise
+const HeavyChart = defineAsyncComponent(() =&gt;
+  import('./components/HeavyChart.vue')
+)
+
+// 完整选项：loading / error / delay / timeout
+const HeavyEditor = defineAsyncComponent({
+  loader: () =&gt; import('./components/HeavyEditor.vue'),
+  loadingComponent: Spinner,       // 加载中组件
+  errorComponent: ErrorBox,        // 加载失败组件
+  delay: 200,    // 默认 200ms：网络快时不闪 loading
+  timeout: 10000, // 超时判定为失败（可配 retry）
+  onError(err, retry, fail, attempts) {
+    if (attempts &lt;= 3) retry() // 失败自动重试 3 次
+    else fail()
+  },
+})</code></pre>
+
+        <div class="code-title">配合 Suspense（实验性）统一处理异步边界</div>
+        <pre class="code-block"><code class="language-html">&lt;template&gt;
+  &lt;Suspense&gt;
+    &lt;AsyncPage /&gt;  &lt;!-- 内部有异步 setup 的组件 --&gt;
+    &lt;template #fallback&gt;
+      &lt;Skeleton /&gt;  &lt;!-- 等待时的占位 --&gt;
+    &lt;/template&gt;
+  &lt;/Suspense&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+// AsyncPage 内部可以直接 await（顶层 await，组件变成异步 setup）
+// const data = await fetchDetail()
+&lt;/script&gt;</code></pre>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>对比</th>
+              <th><code>defineAsyncComponent</code></th>
+              <th><code>Suspense</code></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>作用层次</td>
+              <td>单个组件级别的按需加载</td>
+              <td>子树级别的异步协调（多个异步组件统一 fallback）</td>
+            </tr>
+            <tr>
+              <td>触发方式</td>
+              <td>渲染到该组件时才 import</td>
+              <td>组件 setup 含顶层 await 即视为异步</td>
+            </tr>
+            <tr>
+              <td>状态</td>
+              <td>稳定，生产可用</td>
+              <td><strong>仍为实验性</strong>，API 可能变化</td>
+            </tr>
+            <tr>
+              <td>典型搭配</td>
+              <td>重组件、弹窗内容</td>
+              <td>整页级加载骨架屏</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">路由懒加载的本质</span>
+            <code>component: () =&gt; import('...')</code> 就是把「异步组件工厂」交给
+            vue-router，进入路由时才加载 chunk——<strong>同一个机制</strong>。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">弹窗 + 异步组件组合</span>
+            弹窗内容用异步组件 + <code>v-if</code> 控制：不打开就不下载代码，
+            首屏体积明显减小。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">delay 的意义</span>
+            默认 200ms 内加载完成就<strong>不显示 loading</strong>，
+            防止快速网络下 loading 闪烁（layout shift）。
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · Vue2 写法差异</strong>
+          Vue2 中是 <code>components: { Comp: () =&gt; import('...') }</code>，
+          高级选项传对象 <code>{ component, loading, error, delay, timeout }</code>；
+          Vue3 统一收敛到 <code>defineAsyncComponent</code>。
+        </div>
+      </div>
+
+      <!-- 四、面试问答 -->
+      <div class="section">
+        <h2>四、面试高频问答</h2>
+
+        <h3>Q1：插槽的作用？作用域插槽解决了什么问题？</h3>
+        <div class="explanation">
+          插槽实现<strong>内容分发</strong>，让组件的「结构」可定制。
+          普通插槽只能用<strong>父组件的数据</strong>（编译作用域）；
+          作用域插槽让子组件把<strong>内部数据</strong>作为参数传回插槽函数，
+          实现「<strong>数据归子组件、渲染归父组件</strong>」——列表、表格组件自定义单元格的基础。
+        </div>
+
+        <h3>Q2：插槽在编译后是什么？（原理）</h3>
+        <div class="explanation">
+          插槽内容编译成<strong>返回 vnode 的函数</strong>，挂在子组件 vnode 的
+          <code>children</code> 上。子组件渲染 <code>&lt;slot&gt;</code> 出口时调用对应函数；
+          作用域插槽就是把子组件数据作为<strong>函数参数</strong>传入。
+          默认插槽内容惰性求值——父组件依赖变化时才重新执行生成新 vnode。
+        </div>
+
+        <h3>Q3：自定义指令有哪些钩子？和组件生命周期的关系？</h3>
+        <div class="explanation">
+          Vue3 共 7 个：<code>created / beforeMount / mounted / beforeUpdate / updated /
+          beforeUnmount / unmounted</code>，与组件生命周期一一对齐。
+          最常用的是 <code>mounted</code>（绑定 DOM 能力）和
+          <code>unmounted</code>（清理监听）。参数核心是
+          <code>binding</code>：<code>value / oldValue / arg / modifiers / instance</code>。
+        </div>
+
+        <h3>Q4：异步组件的原理？defineAsyncComponent 各选项含义？</h3>
+        <div class="explanation">
+          基于<strong>动态 import()</strong> + Promise 状态机：渲染时调用 loader 拿到 Promise，
+          pending 期间超过 <code>delay</code> 显示 loading，resolve 后渲染目标组件并缓存，
+          reject 或超过 <code>timeout</code> 显示 errorComponent（支持 <code>retry()</code> 重试）。
+          构建层面由打包器把目标组件拆成<strong>独立 chunk</strong>，实现按需加载。
+        </div>
+
+        <h3>Q5：路由懒加载和异步组件什么关系？</h3>
+        <div class="explanation">
+          路由懒加载 <code>component: () =&gt; import('...')</code> 的值正是一个
+          异步组件工厂函数——vue-router 内部就是用异步组件机制实现的。
+          区别只在触发时机：路由懒加载在<strong>导航确认时</strong>加载，
+          组件级异步在<strong>渲染到该组件时</strong>加载。
+        </div>
+      </div>
+
+      <!-- 五、最佳实践 -->
+      <div class="section">
+        <h2>五、最佳实践 &amp; 记忆口诀</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">插槽：出口给后备内容</span>
+            <code>&lt;slot&gt;</code> 里写默认内容，防止父组件没传时空白；
+            作用域插槽 props 尽量解构 + 命名清晰（<code>{ item, index }</code>）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">指令：加监听必清理</span>
+            mounted 里注册的 listener / observer 必须在 unmounted 移除；
+            只操作 DOM 不产状态，需要状态就用组合式函数。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">异步组件：用在刀刃上</span>
+            重组件（图表/编辑器/大表格）与弹窗内容做按需加载；
+            delay 200ms 防闪烁，error 组件给 retry。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">弹窗 + v-if + 异步</span>
+            打开才挂载 + 才下载 chunk，首屏体积最小化。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>插槽挖坑填内容（数据子传父渲染），指令挂 DOM 封行为（加监听必清理），
+          异步组件 import()（delay 防闪错重试）</strong>」。
+        </div>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
