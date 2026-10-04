@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pinia 与状态管理设计详解</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #42b983;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #42b983;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #42b983;
+        margin-top: 28px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #42b983;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+      }
+      .diagram-container:hover {
+        border-color: #42b983;
+        box-shadow: 0 0 10px rgba(66, 185, 131, 0.2);
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: hidden;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #42b983;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #42b983;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #42b983;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Pinia 与状态管理设计详解</h1>
+    <p class="subtitle">
+      为什么需要 Store · Pinia 核心机制 · Vuex 对比 · 状态分层设计 · 面试高频（图文并茂）
+    </p>
+
+    <div class="container">
+      <!-- 一、为什么需要状态管理 -->
+      <div class="section">
+        <h2>一、为什么需要状态管理？</h2>
+        <div class="explanation">
+          <p>
+            当应用变大，<strong>多组件共享的状态</strong>（登录态、购物车、权限、字典）会遇到三个问题：
+          </p>
+          <ul>
+            <li>
+              <strong>props 层层钻孔</strong>（prop drilling）：A 的数据要传给五层之下的 E，
+              中间组件被迫「帮忙搬运」。
+            </li>
+            <li>
+              <strong>数据流混乱</strong>：事件总线满天飞，改了谁、谁在用，完全追踪不到。
+            </li>
+            <li>
+              <strong>多副本不同步</strong>：同一份数据被多处复制，改了一处忘了另一处。
+            </li>
+          </ul>
+          <p>
+            状态管理的思路：把共享状态<strong>抽到组件树之外的单例 Store</strong>，
+            谁需要谁订阅，修改入口收敛——<strong>单一数据源 + 可预测的数据流</strong>。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    subgraph Bad["❌ 无状态管理：props 钻孔 + 总线混乱"]
+        B1["App"] -->|props| B2["Layout"]
+        B2 -->|props 转发| B3["Sidebar"]
+        B3 -->|props 再转发| B4["UserMenu 🎯 真正用数据的组件"]
+        B1 -.->|emit 层层上抛| B2
+    end
+    subgraph Good["✅ 有状态管理：Store 单例"]
+        S["Store<br/>user / cart / permission"]
+        G1["组件 A"] -->|读 / 订阅| S
+        G2["组件 B"] -->|读 / 订阅| S
+        G3["深层组件 C"] -->|读 / 订阅| S
+        S -->|响应式更新| G1
+        S -->|响应式更新| G2
+        S -->|响应式更新| G3
+    end
+    Bad ~~~ Good
+    style B4 fill:#ffcdd2,stroke:#c62828
+    style S fill:#42b983,stroke:#2e7d32,color:#fff
+          </pre>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">INFO · 什么时候才需要 Store？</strong>
+          Store 不是银弹。父子传值用 props/emit 就够了；
+          <strong>「跨页面、跨组件树共享」或「需要被多个不相关组件订阅」</strong>的状态才值得进
+          Store。把所有状态一股脑塞进 Store 是常见的反模式。
+        </div>
+      </div>
+
+      <!-- 二、Pinia 核心概念 -->
+      <div class="section">
+        <h2>二、Pinia 核心概念：state / getters / actions</h2>
+        <div class="explanation">
+          <p>
+            Pinia 是 Vue 官方推荐的状态管理库（Vue2/Vue3 均可用），核心模型只有三件事：
+          </p>
+          <ul>
+            <li><strong>state</strong>：存数据的地方（响应式对象）</li>
+            <li><strong>getters</strong>：派生值（就是 store 里的 computed，有缓存）</li>
+            <li><strong>actions</strong>：修改状态的方法（同步 + 异步都可以，<strong>没有 mutation</strong>）</li>
+          </ul>
+          <p>
+            数据流是单向的：<strong>组件调 action → action 改 state → getters 派生 →
+            所有订阅组件自动更新</strong>。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph LR
+    C["组件 Component"] -->|"调用 action"| A["Actions<br/>（业务逻辑 / 异步请求）"]
+    A -->|"修改"| S["State<br/>（单一数据源）"]
+    S -->|"派生（缓存）"| G["Getters<br/>（computed 派生值）"]
+    G -->|订阅| C
+    S -->|订阅| C
+    D["Devtools / 持久化插件"] -.->|追踪每次变更| S
+    style S fill:#42b983,stroke:#2e7d32,color:#fff
+    style A fill:#f3e5f5,stroke:#7b1fa2
+    style G fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <h3>定义 Store 的两种风格</h3>
+
+        <div class="code-title">Setup Store（组合式写法，推荐）</div>
+        <pre class="code-block"><code class="language-js">// stores/counter.js
+import { ref, computed } from 'vue'
+import { defineStore } from 'pinia'
+
+// 参数1：唯一 id（devtools 识别用）；参数2：setup 函数
+export const useCounterStore = defineStore('counter', () =&gt; {
+  // ref()  → state
+  const count = ref(0)
+  const history = ref([])
+
+  // computed()  → getter（自动缓存）
+  const double = computed(() =&gt; count.value * 2)
+  const isEven = computed(() =&gt; count.value % 2 === 0)
+
+  // function()  → action（同步异步都行）
+  function increment(step = 1) {
+    count.value += step
+    history.value.push(count.value)
+  }
+  async function fetchInit() {
+    const res = await fetch('/api/counter')
+    count.value = (await res.json()).count
+  }
+  function $reset() {
+    // Setup Store 需要自己实现 $reset（见下文）
+    count.value = 0
+    history.value = []
+  }
+
+  // 返回的内容就是 state / getters / actions
+  return { count, history, double, isEven, increment, fetchInit, $reset }
+})</code></pre>
+
+        <div class="code-title">Options Store（选项式写法，类 Vuex）</div>
+        <pre class="code-block"><code class="language-js">export const useCounterStore = defineStore('counter', {
+  state: () =&gt; ({ count: 0, history: [] }),
+  getters: {
+    double: (state) =&gt; state.count * 2,
+    // getter 里访问其它 getter：用 this（需要标注返回类型或显式 return）
+    quad(): number {
+      return this.double * 2
+    },
+  },
+  actions: {
+    increment(step = 1) {
+      this.count += step // this 就是 store 实例
+    },
+    // Options Store 自带 $reset()，无需手写
+  },
+})</code></pre>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>Setup Store</th>
+              <th>Options Store</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>写法</td>
+              <td>ref / computed / function</td>
+              <td>state / getters / actions 选项</td>
+            </tr>
+            <tr>
+              <td>组合式函数复用</td>
+              <td><strong>直接在 setup 里调用 composable</strong>，能力更强</td>
+              <td>不方便，需要借助插件</td>
+            </tr>
+            <tr>
+              <td>TS 推导</td>
+              <td>天然友好</td>
+              <td>getter 用 this 时需手动标类型</td>
+            </tr>
+            <tr>
+              <td>$reset</td>
+              <td>需自己实现（Pinia 不自动生成）</td>
+              <td>自动生成，恢复到初始 state</td>
+            </tr>
+            <tr>
+              <td>建议</td>
+              <td>新项目首选</td>
+              <td>从 Vuex 迁移时过渡顺手</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 三、组件中使用 -->
+      <div class="section">
+        <h2>三、组件中使用 Store：易错点都在这</h2>
+
+        <div class="code-title">基本使用 &amp; storeToRefs</div>
+        <pre class="code-block"><code class="language-js">import { useCounterStore } from '@/stores/counter'
+import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
+
+const store = useCounterStore()
+
+// ❌ 直接解构会丢失响应式（拿到的是当时的值快照）
+const { count, double } = store
+
+// ✅ 正确：storeToRefs 只把 state / getter 转成 ref
+const { count, double } = storeToRefs(store)
+
+// ✅ action 是函数，直接从 store 上解构没问题
+const { increment } = store
+
+// 也可以不解构，直接 store.count / store.increment()</code></pre>
+
+        <div class="code-title">修改 state 的 N 种方式</div>
+        <pre class="code-block"><code class="language-js">// 1) 推荐：走 action（逻辑收敛、可追踪）
+store.increment(2)
+
+// 2) 直接改（Pinia 允许，简单场景可用）
+store.count++
+
+// 3) $patch 对象：批量修改，只触发一次订阅
+store.$patch({ count: 100, history: [] })
+
+// 4) $patch 函数：批量修改集合类状态（性能好）
+store.$patch((state) =&gt; {
+  state.history.push(state.count)
+  state.count = 0
+})
+
+// 5) $reset：重置回初始值（Setup Store 需自己实现）
+store.$reset()</code></pre>
+
+        <div class="code-title">监听 store：$subscribe 与 $onAction</div>
+        <pre class="code-block"><code class="language-js">// 订阅 state 变化（类似 watch 整个 store）
+store.$subscribe((mutation, state) =&gt; {
+  // mutation.type: 'direct' | 'patch object' | 'patch function'
+  localStorage.setItem('cart', JSON.stringify(state))
+}, { detached: true }) // detached: 组件卸载后仍保留订阅
+
+// 订阅 action（埋点、日志、错误上报）
+store.$onAction(({ name, args, after, onError }) =&gt; {
+  const start = Date.now()
+  after((result) =&gt; {
+    console.log(`action ${name} 耗时 ${Date.now() - start}ms`)
+  })
+  onError((err) =&gt; {
+    reportError(`action ${name} 失败`, err)
+  })
+})</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 解构丢响应式</strong>
+          这是 Pinia 最高频的坑：<code>const { count } = store</code> 拿到的是
+          <strong>普通值</strong>，之后 store 更新它不会变。规则记一条：
+          <strong>state/getter 用 storeToRefs 解构，action 直接解构</strong>。
+        </div>
+      </div>
+
+      <!-- 四、Store 组织与互调 -->
+      <div class="section">
+        <h2>四、Store 的组织：按业务域拆分 + 互相调用</h2>
+        <div class="explanation">
+          <p>
+            不要建一个巨大的 <code>index.js</code> 塞所有状态。按
+            <strong>业务域</strong> 拆成多个 store（user / cart / permission / dict…），
+            每个 store 内聚自己的 state、getter、action。store 之间可以互相引用
+            （在 action / getter 内部调用另一个 <code>useXxxStore()</code>）。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    subgraph Stores["stores/ 目录（按业务域拆分）"]
+        U["user.js<br/>token / userInfo / login()"]
+        P["permission.js<br/>menus / hasPermission()"]
+        C["cart.js<br/>items / totalPrice / checkout()"]
+        D["dict.js<br/>枚举字典 / loadDict()"]
+    end
+    U -->|被引用| P
+    U -->|被引用| C
+    D -->|被引用| C
+    style U fill:#e1f5fe,stroke:#01579b
+    style P fill:#c8e6c9,stroke:#2e7d32
+    style C fill:#fff9c4,stroke:#fbc02d
+    style D fill:#f3e5f5,stroke:#7b1fa2
+          </pre>
+        </div>
+
+        <div class="code-title">Store 之间互相调用</div>
+        <pre class="code-block"><code class="language-js">// stores/cart.js
+import { useUserStore } from './user'
+
+export const useCartStore = defineStore('cart', () =&gt; {
+  const items = ref([])
+
+  async function checkout() {
+    // 在 action 内部调用其它 store —— 注意：必须「调用时」才 useXxxStore()，
+    // 不要在模块顶层调用（那时可能还没有活跃的 Pinia 实例）
+    const userStore = useUserStore()
+    if (!userStore.isLogin) {
+      throw new Error('请先登录')
+    }
+    await api.post('/checkout', { userId: userStore.id, items: items.value })
+    items.value = []
+  }
+  return { items, checkout }
+})</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · 循环引用怎么办？</strong>
+          A 的顶层 import B、B 的顶层又 import A 会出问题。
+          解法就是上面的写法：<strong>把 <code>useXxxStore()</code> 放到函数体内</strong>，
+          运行时才解析依赖，天然规避循环引用。
+        </div>
+      </div>
+
+      <!-- 五、Pinia vs Vuex -->
+      <div class="section">
+        <h2>五、Pinia vs Vuex（面试必背）</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>对比维度</th>
+              <th>Pinia</th>
+              <th>Vuex（3.x / 4.x）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>mutation</td>
+              <td><strong>没有</strong>，action 直接改 state</td>
+              <td>必须走 <code>commit → mutation → state</code>，样板代码多</td>
+            </tr>
+            <tr>
+              <td>模块化</td>
+              <td>天生<strong>多 store</strong>，扁平、按需引入</td>
+              <td>单一 store + modules 嵌套，namespace 心智负担大</td>
+            </tr>
+            <tr>
+              <td>TypeScript</td>
+              <td>原生友好，类型自动推导</td>
+              <td>类型支持薄弱，需要大量声明文件</td>
+            </tr>
+            <tr>
+              <td>Composition API</td>
+              <td>Setup Store 直接复用 composable</td>
+              <td>支持有限</td>
+            </tr>
+            <tr>
+              <td>分包加载</td>
+              <td>store 可随路由懒加载</td>
+              <td>所有模块注册进同一实例</td>
+            </tr>
+            <tr>
+              <td>Devtools</td>
+              <td>完整支持（含 $patch / 时间旅行）</td>
+              <td>支持</td>
+            </tr>
+            <tr>
+              <td>SSR</td>
+              <td>官方支持（Nuxt 3 默认）</td>
+              <td>Vuex 4 支持，配置繁琐</td>
+            </tr>
+            <tr>
+              <td>体积</td>
+              <td>约 1KB</td>
+              <td>更大</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <strong class="tag">一句话总结</strong>
+          Pinia = 「去掉 mutation 和嵌套 modules 的 Vuex + 完整 TS 支持」。
+          Vue 官方已将 Pinia 列为<strong>默认推荐</strong>，Vuex 只用于老项目维护。
+        </div>
+      </div>
+
+      <!-- 六、插件与持久化 -->
+      <div class="section">
+        <h2>六、插件体系：持久化等横切能力</h2>
+        <div class="explanation">
+          <p>
+            Pinia 的插件可以拦截每个 store 的创建过程，给它<strong>追加能力</strong>：
+            持久化、日志、路由同步等。最常用的是
+            <code>pinia-plugin-persistedstate</code>（一行配置把指定 store 同步到
+            localStorage，刷新不丢）。
+          </p>
+        </div>
+
+        <div class="code-title">接入持久化插件</div>
+        <pre class="code-block"><code class="language-js">// main.js
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)</code></pre>
+
+        <pre class="code-block"><code class="language-js">// 某个 store 开启持久化（Setup Store 写法）
+export const useUserStore = defineStore(
+  'user',
+  () =&gt; {
+    const token = ref('')
+    const userInfo = ref(null)
+    return { token, userInfo }
+  },
+  {
+    persist: {
+      key: 'app-user',
+      pick: ['token'], // 只持久化 token，敏感大对象不要全存
+    },
+  }
+)</code></pre>
+
+        <div class="code-title">自己写一个最简 Pinia 插件（理解原理）</div>
+        <pre class="code-block"><code class="language-js">// 插件就是一个函数，接收 store 上下文，可以随意扩展 store
+function loggerPlugin({ store }) {
+  store.$subscribe((mutation, state) =&gt; {
+    console.log(`[store:${store.$id}]`, mutation.type, state)
+  })
+}
+pinia.use(loggerPlugin)</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">WARNING · 持久化的坑</strong>
+          <ul style="margin: 8px 0 0">
+            <li>持久化数据要<strong>声明式挑选</strong>（<code>pick</code>），别把整个 store 存进去。</li>
+            <li>恢复时注意<strong>版本兼容</strong>：字段结构变了要做迁移或版本号校验。</li>
+            <li>token 持久化要考虑 XSS 风险，敏感场景优先 HttpOnly Cookie。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 七、状态管理设计 -->
+      <div class="section">
+        <h2>七、状态管理设计（进阶 &amp; 加分项）</h2>
+        <div class="explanation">
+          <p>
+            面试官问「你怎么设计状态管理」时，真正想听的是<strong>分层和取舍</strong>，
+            而不是 API。可以按这个金字塔来答：
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <pre class="mermaid">
+graph TD
+    L1["第一层：服务端状态（Server State）<br/>列表、详情、分页缓存<br/>→ 优先用请求库缓存（TanStack Query / SWR 思想）<br/>特点：会过期、可重新获取、不该手抄进 store"]
+    L2["第二层：全局客户端状态（Global State）<br/>登录态 / 权限 / 主题 / 字典 / 购物车<br/>→ Pinia store（按业务域拆分）<br/>特点：多页面共享、生命周期 = 整个应用"]
+    L3["第三层：局部 UI 状态（Local State）<br/>弹窗开关、表单草稿、loading<br/>→ 组件内 ref / reactive<br/>特点：离开页面即销毁，进 store 反而是负担"]
+    L1 ~~~ L2 ~~~ L3
+    style L1 fill:#e1f5fe,stroke:#01579b
+    style L2 fill:#42b983,stroke:#2e7d32,color:#fff
+    style L3 fill:#fff9c4,stroke:#fbc02d
+          </pre>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">判断标准：状态的「归属」</span>
+            问三个问题：谁用？（一个组件 → local；跨树 → store）<br />
+            活多久？（页面级 → local；应用级 → store）<br />
+            谁是源头？（来自服务端 → 请求缓存；纯前端 → store/local）
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">修改入口收敛</span>
+            能通过 action 改就不要让组件散改 state；
+            store 返回 <code>readonly(state) + actions</code> 是更严格的团队规范。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">服务端状态不要复制进 store</span>
+            把接口数据抄进 Pinia 会带来「缓存失效」难题（何时重取？ stale 了怎么办？）。
+            用请求库的缓存（key + staleTime）管理，store 只存
+            <strong>真正的客户端状态</strong>。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Store 是单例，注意隔离</span>
+            同一 store 在所有组件间共享。需要「每个组件一份」的状态（如多个
+            并存的下拉面板），用<strong>组合式函数</strong>而不是全局 store。
+          </div>
+        </div>
+
+        <div class="code-title">用组合式函数承载「组件级共享逻辑」（非全局状态）</div>
+        <pre class="code-block"><code class="language-js">// composable：每次调用都是独立的一份状态，随组件销毁
+// 对比 store：全局唯一一份
+export function useDropdown() {
+  const open = ref(false)
+  const toggle = () =&gt; (open.value = !open.value)
+  return { open, toggle }
+}</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">TIP · 选型速查</strong>
+          <ul style="margin: 8px 0 0">
+            <li>组件树内传值 → <code>props / emit / provide-inject</code></li>
+            <li>全局客户端状态 → <strong>Pinia</strong></li>
+            <li>服务端状态缓存 → <strong>TanStack Query（Vue Query）/ SWRV</strong>，Pinia 只做补充</li>
+            <li>表单状态 → <code>reactive</code> 局部对象，别进 store</li>
+            <li>URL 可表达的状态（筛选、分页、tab）→ <strong>放路由 query</strong>，可分享可回退</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 八、面试高频问答 -->
+      <div class="section">
+        <h2>八、面试高频问答</h2>
+
+        <h3>Q1：Pinia 为什么取消了 mutation？</h3>
+        <div class="explanation">
+          Vuex 要求 mutation 是同步的、action 负责异步，目的是让 devtools 能追踪变更来源，
+          但代价是每个修改都要写两遍（commit + mutation），样板代码多。
+          Pinia 借助 <strong>Proxy + $subscribe 机制</strong>，直接改 state 也能被完整追踪，
+          于是把「同步/异步修改」统一收敛到 action，API 更简洁且不牺牲可调试性。
+        </div>
+
+        <h3>Q2：storeToRefs 的作用？为什么直接解构会丢响应式？</h3>
+        <div class="explanation">
+          store 实例是一个 reactive 代理，<code>const { count } = store</code> 是普通解构，
+          拿到的是<strong>当时的值</strong>（脱离代理）。
+          <code>storeToRefs</code> 会为每个 state/getter 创建对应的 ref，
+          保持与 store 的双向链接；action 是函数不受影响，可直接解构。
+        </div>
+
+        <h3>Q3：Pinia 的 store 之间如何通信？会有循环引用问题吗？</h3>
+        <div class="explanation">
+          在 action / getter 函数体内调用 <code>useOtherStore()</code> 即可读写对方。
+          把调用放在<strong>函数体内（运行时）</strong>而非模块顶层，
+          就规避了 ES Module 循环引用导致的 undefined 问题。
+        </div>
+
+        <h3>Q4：哪些状态该放全局 store？哪些不该？</h3>
+        <div class="explanation">
+          放 store：<strong>跨页面共享、生命周期与应用相同</strong>的客户端状态
+          （登录态、权限、主题、字典、购物车）。
+          不放：组件私有 UI 状态（放 ref）；服务端数据（放请求缓存库，store 只存「应用必须持有」的少数几份）；
+          URL 可表达的筛选/分页（放路由 query）。
+          判断口诀：<strong>「谁用、活多久、源头是谁」</strong>。
+        </div>
+
+        <h3>Q5：Pinia 如何实现持久化？$subscribe 是什么时机触发？</h3>
+        <div class="explanation">
+          通过插件在 store 创建时注册 <code>$subscribe</code>（state 变更后触发，
+          支持批量 $patch 合并触发一次），把<strong>白名单字段</strong>序列化进
+          localStorage；应用启动时由持久化插件读回并合并进初始 state。
+          组件内的 $subscribe 默认随组件卸载而停止，插件中用
+          <code>{ detached: true }</code> 保持常驻。
+        </div>
+      </div>
+
+      <!-- 九、最佳实践 -->
+      <div class="section">
+        <h2>九、最佳实践 &amp; 记忆口诀</h2>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">按业务域拆 store</span>
+            user / cart / permission / dict 各一个文件，拒绝巨型 index.js；
+            store 只依赖别的 store，不依赖组件。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">修改走 action</span>
+            组件不散改 state；getter 做派生，action 做修改，职责分明。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">Setup Store 优先</span>
+            可复用 composable、TS 友好；记得手写 <code>$reset</code>（如果需要）。
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">三层分治</span>
+            服务端状态交给请求缓存，URL 状态交给路由，Pinia 只管「全局客户端状态」。
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">记忆口诀</strong>
+          「<strong>state 存数据，getter 算派生，action 管修改；解构要用 storeToRefs；
+          store 互调放函数里；服务端状态进缓存，全局状态进 Pinia，局部状态留组件</strong>」。
+        </div>
+
+        <div class="code-title">综合示例：登录 → 权限 → 页面消费的完整链路</div>
+        <pre class="code-block"><code class="language-js">// stores/user.js —— 全局客户端状态
+export const useUserStore = defineStore(
+  'user',
+  () =&gt; {
+    const token = ref('')
+    const roles = ref([])
+    const isLogin = computed(() =&gt; !!token.value)
+
+    async function login(form) {
+      const { token: t, roles: r } = await api.post('/login', form)
+      token.value = t
+      roles.value = r
+    }
+    function logout() {
+      token.value = ''
+      roles.value = []
+    }
+    return { token, roles, isLogin, login, logout }
+  },
+  { persist: { pick: ['token'] } }
+)
+
+// 组件中消费
+const userStore = useUserStore()
+const { isLogin, roles } = storeToRefs(userStore)
+await userStore.login({ username: 'a', password: 'b' })</code></pre>
+      </div>
+    </div>
+
+    <!-- 模态框（放大流程图） -->
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      hljs.highlightAll();
+    </script>
+
+    <!-- 引入 Mermaid -->
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        flowchart: {
+          curve: "basis",
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // 简单的模态框逻辑（点击放大流程图）
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
