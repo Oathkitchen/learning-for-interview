@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CLI 工具设计：从 ncp-cli 到 create-vue 的工程方法</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        background: transparent;
+      }
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #2e7d32;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #2e7d32;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>CLI 工具设计</h1>
+    <p class="subtitle">
+      分发与入口 · 命令与参数 · 交互体验 · 健壮性 · 脚手架模式 · 真实 ncp-cli 解剖 ·
+      开源标杆对照 · 追问链（面试向 · 精炼图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇 -->
+      <div class="section" id="s0">
+        <h2>〇、30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            CLI 设计的本质是<strong>把一个工具的能力，组织成「可发现、可组合、可脚本化」的命令面</strong>。
+            我把它拆成五层，面试按这个顺序讲就稳：
+          </p>
+          <p style="margin: 0">
+            ① <strong>分发层</strong>：<code>bin</code> + shebang + <code>npx</code>，让任何机器一条命令装上、跑起来；
+            ② <strong>命令层</strong>：子命令 / 选项 / 默认值 / <code>--help</code>，决定「怎么用」；
+            ③ <strong>交互层</strong>：交互式问答补全缺失参数，同时保留纯参数的「脚本友好」路径；
+            ④ <strong>执行层</strong>：版本门禁、错误处理、进度反馈、退出码——决定「敢不敢在 CI 里用」；
+            ⑤ <strong>模板/插件层</strong>（脚手架类）：模板来源、生成流程、可扩展性。
+            我做过一个真实脚手架 <code>ncp-cli</code>（commander + inquirer + npm 模板包），
+            下面结合 vue-cli、create-vue、vite 等开源标杆展开。
+          </p>
+        </div>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">📦 分发：bin + npx</span>
+            <p style="margin: 0; font-size: 14px">
+              <code>package.json</code> 的 <code>bin</code> 字段把文件映射成全局命令；<code>npx</code> 则免安装直接跑——这是 CLI 的「上架通道」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">⌨️ 命令面：可发现</span>
+            <p style="margin: 0; font-size: 14px">
+              子命令 + 长短选项 + 示例级 help。用户不看文档也能靠 <code>--help</code> 摸出门道。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">💬 交互与脚本双轨</span>
+            <p style="margin: 0; font-size: 14px">
+              参数给全了就静默执行；给不全就问答补全。两条路都要通，否则 CI 用不了。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🛡 门禁与退出码</span>
+            <p style="margin: 0; font-size: 14px">
+              Node 版本检查、失败即非零退出、进度可见——工程化的底线，也是我 ncp-cli 里真实做了的事。
+            </p>
+          </div>
+        </div>
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、分发与入口：bin、shebang、npx</a></li>
+          <li><a href="#s2">二、命令与参数：命令面怎么设计</a></li>
+          <li><a href="#s3">三、交互体验：问答、反馈、观感</a></li>
+          <li><a href="#s4">四、健壮性：门禁、错误、退出码</a></li>
+          <li><a href="#s5">五、脚手架模式：模板从哪来、怎么生成</a></li>
+          <li><a href="#s6">六、真实解剖：ncp-cli 与开源标杆</a></li>
+          <li><a href="#s7">七、面试追问链</a></li>
+          <li><a href="#s8">八、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、分发与入口 -->
+      <div class="section" id="s1">
+        <h2>一、分发与入口：bin、shebang、npx——一条命令怎么来的</h2>
+        <p>用户敲下 <code>ncp create my-app</code> 之前，工具得先「上架」。这层的全部机关就三样东西：</p>
+
+        <h3>1.1 三件套</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>机关</th>
+              <th>干什么</th>
+              <th>我在 ncp-cli 里的写法</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>shebang</strong></td>
+              <td>文件第一行 <code>#!/usr/bin/env node</code>，告诉 Unix「用 node 跑我」；Windows 上 npm 会生成 .cmd/.ps1 垫片，行为对齐</td>
+              <td class="win"><code>bin/index.js</code> 第一行原样写了</td>
+            </tr>
+            <tr>
+              <td><strong>bin 字段</strong></td>
+              <td>package.json 里 <code>{"ncp": "bin/index.js"}</code>：安装时把这个文件链接到全局/node_modules/.bin，命令名就是 key</td>
+              <td class="win"><code>"bin": { "ncp": "bin/index.js" }</code></td>
+            </tr>
+            <tr>
+              <td><strong>files 白名单</strong></td>
+              <td>发布到 registry 时只带上需要的目录，npm 包体积小、边界清晰</td>
+              <td class="win"><code>"files": ["bin", "util"]</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.2 shebang 是什么：内核为什么认得 <code>#!</code></h3>
+        <p>
+          先从一个你肯定见过但没细想的现象说起：<strong>一个 <code>.js</code> 文件，凭什么能像程序一样被「执行」？</strong>
+          JavaScript 又不是机器码，系统内核更不认识什么 <code>console.log</code>。答案就藏在文件第一行那两个字符
+          <code>#!</code> 里。
+        </p>
+
+        <h4>名字的来历：pound + bang</h4>
+        <ul>
+          <li><code>#</code> 在英文圈叫 <strong>pound</strong>（也叫 sharp，吉他升号同款）；<code>!</code> 叫 <strong>bang</strong>（惊叹号的行话）。</li>
+          <li><code>#!</code> 连读就是 <strong>shebang</strong>（也写作 sha-bang、hash-bang、pound-bang——发音和「容器 shebang」同一个词）。</li>
+          <li>它是一行<strong>魔法注释</strong>：对普通解释器（node、python、sh）来说，<code>#</code> 开头就是注释，无害；
+            但对<strong>操作系统内核</strong>来说，它是「请用这个解释器来跑我」的执行委托书。</li>
+        </ul>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 320" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowShe" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+
+            <text x="520" y="34" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">敲下 ./ncp create my-app 之后，操作系统做了什么</text>
+
+            <rect x="16" y="64" width="184" height="96" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="108" y="94" font-size="13.5" font-weight="bold" fill="#35495e" text-anchor="middle">① 你敲命令</text>
+            <text x="108" y="118" font-size="12" fill="#7a8aa0" text-anchor="middle" font-family="Consolas,monospace">./ncp create my-app</text>
+            <text x="108" y="140" font-size="11.5" fill="#7a8aa0" text-anchor="middle">（文件要有 x 执行权限）</text>
+
+            <rect x="232" y="64" width="184" height="96" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="324" y="94" font-size="13.5" font-weight="bold" fill="#35495e" text-anchor="middle">② 内核 execve</text>
+            <text x="324" y="118" font-size="12" fill="#35495e" text-anchor="middle">发现文件不是 ELF 二进制，</text>
+            <text x="324" y="140" font-size="12" fill="#35495e" text-anchor="middle">读开头两字节是不是 #!</text>
+
+            <rect x="448" y="64" width="184" height="96" rx="10" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="540" y="94" font-size="13.5" font-weight="bold" fill="#35495e" text-anchor="middle">③ 拆 shebang 行</text>
+            <text x="540" y="116" font-size="11.5" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">#!/usr/bin/env node</text>
+            <text x="540" y="138" font-size="12" fill="#35495e" text-anchor="middle">→ 解释器=env，参数=node</text>
+
+            <rect x="664" y="64" width="184" height="96" rx="10" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="756" y="94" font-size="13.5" font-weight="bold" fill="#35495e" text-anchor="middle">④ env 查 PATH</text>
+            <text x="756" y="116" font-size="12" fill="#35495e" text-anchor="middle">在 PATH 里找到</text>
+            <text x="756" y="138" font-size="12" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">node 的真实路径</text>
+
+            <rect x="880" y="64" width="144" height="96" rx="10" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="952" y="94" font-size="13.5" font-weight="bold" fill="#35495e" text-anchor="middle">⑤ node 接管</text>
+            <text x="952" y="116" font-size="11.5" fill="#1b5e20" text-anchor="middle">node /path/ncp</text>
+            <text x="952" y="136" font-size="11.5" fill="#1b5e20" text-anchor="middle">create my-app …</text>
+
+            <path d="M200,112 L226,112" stroke="#646cff" stroke-width="2" marker-end="url(#arrowShe)" />
+            <path d="M416,112 L442,112" stroke="#646cff" stroke-width="2" marker-end="url(#arrowShe)" />
+            <path d="M632,112 L658,112" stroke="#646cff" stroke-width="2" marker-end="url(#arrowShe)" />
+            <path d="M848,112 L874,112" stroke="#646cff" stroke-width="2" marker-end="url(#arrowShe)" />
+
+            <rect x="16" y="196" width="1008" height="104" rx="8" fill="#f8f9fa" />
+            <text x="40" y="226" font-size="13" fill="#35495e" font-weight="bold">两个关键细节：</text>
+            <text x="40" y="252" font-size="12.5" fill="#35495e">· 第③步内核实际执行的是：env node /绝对路径/ncp create my-app —— 你的脚本被当作「参数」递给了解释器</text>
+            <text x="40" y="276" font-size="12.5" fill="#35495e">· 所以 Node 启动后 process.argv = [node路径, 脚本路径, create, my-app, …]——commander 解析的正是 argv.slice(2)</text>
+            <text x="40" y="300" font-size="12" fill="#9aa7b8">对比：python 脚本里 sys.argv[1:] 是同一个道理——shebang 决定了「谁」来读你的代码，argv 结构决定了解析库怎么取参数</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 内核只做「转手」：拆行 → 找解释器 → 把原文件路径和参数原样递过去</p>
+
+        <div class="code-title">自己动手验证（30 秒）</div>
+        <pre class="code-block"><code class="language-bash"># 写一个最小脚本
+cat &gt; hi.sh &lt;&lt; 'EOF'
+#!/usr/bin/env bash
+echo "hello from $0"
+EOF
+
+chmod +x hi.sh   # 加执行权限——没有 x，直接执行会 Permission denied
+./hi.sh          # 内核读第一行 shebang，用 env 找 bash 来跑 → 成功
+sh hi.sh         # 绕过 shebang，手动指定解释器 → 也能跑（shebang 被当成注释）
+
+# Node 的同款对照：
+# 有 shebang 时：./bin/index.js 直接执行 → 内核委托给 node
+# 没有 shebang：Linux 会报 bash: ./bin/index.js: cannot execute binary file
+#               （或 Permission denied）——文件「存在」不等于「可执行」</code></pre>
+
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>为什么用 /usr/bin/env node，而不是写死 #!/usr/bin/node？</h4>
+            <ul>
+              <li><code>#!/usr/bin/node</code> 是<strong>绝对路径</strong>：机器上 node 不在那个位置（nvm/fnm/volta 装的都在 ~/.nvm/… 或 ~/.local/…）就直接失败。</li>
+              <li><code>env node</code> 是<strong>间接层</strong>：env 拿着 <code>node</code> 去 PATH 里现查——你用 nvm 切到 v18，它就找到 v18 的 node。</li>
+              <li>「跟人走而不是跟路径走」——多版本管理器时代，env 是唯一稳的写法。<strong>所有现代 CLI 的标准姿势。</strong></li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>Windows 上 shebang 失效怎么办？</h4>
+            <ul>
+              <li>Windows 内核<strong>不解析</strong> <code>#!</code>——那套 execve 约定是 Unix 的。</li>
+              <li>解法：<strong>npm 安装时替你生成垫片</strong>：在 <code>node_modules/.bin</code>（以及全局 bin 目录）里生成
+                <code>ncp.cmd</code>（cmd 用）、<code>ncp.ps1</code>（PowerShell 用）、以及 bash 的 <code>ncp</code> 脚本；
+                垫片内容就是「找到 node，跑这个 js 文件，转发参数」。</li>
+              <li>所以 <code>package.json</code> 的 <code>bin</code> 只写一个 JS 文件，三平台都能跑——<strong>跨平台是 npm 替你抹平的</strong>，不是 shebang 的功劳。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">你其实早就见过它</strong>
+          <code>.husky/pre-commit</code>、<code>.git/hooks/*.sample</code> 第一行的
+          <code>#!/usr/bin/env sh</code>——git hooks 就是靠 shebang 决定钩子用什么 shell 跑。
+          Linux 服务的 <code>/etc/init.d/</code> 脚本、Python 爬虫的第一行，全是同一个机关。
+          一句话：<strong>shebang 是「可执行脚本」和「普通文本」之间的界碑。</strong>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">面试浓缩版</strong>
+          「shebang 是文件第一行的 <code>#!解释器</code> 委托书：Unix 内核发现目标不是二进制时，
+          会读第一行，把解释器路径和脚本路径拼起来执行——所以 <code>./cli.js</code> 本质是
+          <code>env node /path/cli.js</code>，Node 收到的 argv 里脚本占 argv[1]，用户参数从 argv[2] 起，
+          commander 解析的就是这一段。现代 CLI 一律写 <code>#!/usr/bin/env node</code> 而非绝对路径，
+          是为了让 nvm 这类 PATH 切换的多版本管理器生效。Windows 不解析 shebang，
+          npm 通过给每个 bin 生成 .cmd/.ps1 垫片来对齐——所以一份 bin 配置三平台通用。」
+        </div>
+
+        <div class="code-title">用户视角的三种使用方式（全都要支持得好）</div>
+        <pre class="code-block"><code class="language-bash"># ① 全局安装——老用户 / 固定工具人
+npm install -g ncp
+ncp create my-app
+
+# ② npx 免安装——一次性 / 尝鲜（create-* 家族的标准姿势）
+npx ncp create my-app
+# 开源对照：npm create vite@latest my-app  ≡  npm exec create-vite@latest my-app
+
+# ③ 本地开发自测——npm link，把本地包链到全局
+npm link        # 在 CLI 仓库里
+ncp create demo # 直接就是你刚改的代码</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">npx 的本质（面试常考）</strong>
+          npx 做三件事：找到可执行文件（本地 node_modules/.bin 优先，没有就临时下载这个包）→
+          拼上参数执行 → 结束后不污染全局。所以 <code>npm create vite</code>
+          只是 <code>npm exec create-vite</code> 的<strong>语法糖</strong>（把 <code>create-x</code> 自动补出来）。
+          脚手架命名成 <code>create-*</code> 就是为了吃到这个糖——这是「产品命名服从于分发机制」的典型例子。
+        </div>
+
+        <div class="code-title">发布侧：registry 与引擎声明（ncp-cli 真实配置）</div>
+        <pre class="code-block"><code class="language-json">{
+  "name": "ncp-cli",
+  "bin": { "ncp": "bin/index.js" },
+  "files": ["bin", "util"],
+  "publishConfig": {
+    "registry": "http://内网nexus/repository/npm-snapshots/"
+  },
+  "engines": { "node": ">=10.0" }
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>三个细节说明我考虑过生产：① <code>files</code> 白名单控制 tar 包内容；
+          ② <code>publishConfig.registry</code> 指向内网私服（和外网公共包隔离）；
+          ③ <code>engines</code> 声明 Node 下限——它不只是文档，我的入口代码会拿它做<strong>运行时校验</strong>（见第四章）。
+        </div>
+      </div>
+
+      <!-- 二、命令与参数 -->
+      <div class="section" id="s2">
+        <h2>二、命令与参数：命令面怎么设计</h2>
+        <p>
+          命令面（command surface）= 用户能敲出来的所有合法形态。设计目标三个词：
+          <strong>可发现（discoverable）、可组合（composable）、可脚本化（scriptable）</strong>。
+        </p>
+
+        <h3>2.1 解析库选型</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>库</th>
+              <th>风格</th>
+              <th>谁在用</th>
+              <th>适合</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>commander</strong></td>
+              <td>声明式：.command().option().action()，子命令树清晰</td>
+              <td class="win">我的 ncp-cli、create-next-app 等大量脚手架</td>
+              <td>多子命令的「工具箱」型 CLI</td>
+            </tr>
+            <tr>
+              <td><strong>cac</strong></td>
+              <td>轻量、链式、启动快</td>
+              <td class="win">vite / vitest / vueuse 的 CLI</td>
+              <td>单命令 + 少量选项，追求冷启动速度</td>
+            </tr>
+            <tr>
+              <td><strong>yargs</strong></td>
+              <td>功能最全：校验、中间件、自动生成 help</td>
+              <td>eslint（历史）、pm2 等</td>
+              <td>复杂配置校验、插件化的老工具</td>
+            </tr>
+            <tr>
+              <td>手写 process.argv</td>
+              <td>零依赖</td>
+              <td>极小型脚本</td>
+              <td>别为 3 个选项引入框架——但超过就换库</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>2.2 选项设计的「军规」</h3>
+        <ul>
+          <li><strong>长短并存</strong>：<code>-t, --template &lt;type&gt;</code>——短的给高频手敲，长的给脚本可读（脚本里永远用长选项）。</li>
+          <li><strong>给默认值，可覆盖</strong>：默认路径 <code>./</code>、默认模板——能一条命令跑通的，绝不逼用户答题。</li>
+          <li><strong>布尔开关用「开/关」对</strong>：<code>--install / --no-install</code>；否定式 <code>--no-*</code> 是 commander 的惯用法。</li>
+          <li><strong>help 里放例子</strong>：用户忘语法时第一反应是 <code>--help</code>，不是翻文档。</li>
+          <li><strong>版本出口</strong>：<code>-v/--version</code> 输出版本——排障第一问「你用的哪个版本」。</li>
+        </ul>
+
+        <div class="code-title">ncp-cli 的命令面（真实代码）</div>
+        <pre class="code-block"><code class="language-javascript">program
+  .version(pkg.version, '-v, --version', '输出版本号')
+  .helpOption('-h, --help', '帮助查看信息，使用命令行等操作。')
+  .usage('&lt;command&gt; [projectName]')
+  .on('--help', () => {
+    console.log('执行命令:');
+    console.log('  ncp create projectName 创建工程模板');
+  });
+
+program
+  .command('create [projectName]')                       // 子命令 + 可选位置参数
+  .option('-t, --template &lt;templateType&gt;', '指定模板工程，例如："vue-seed"、"hsa-seed"等')
+  .description('初始化一个模板项目')
+  .action((name, cmd) => { /* 参数齐了走快捷路径，缺了走交互路径 */ })
+  .on('--help', () => {
+    console.log('例如：');
+    console.log('  ncp create');                                  // 全交互
+    console.log('  ncp create projectName -t hsa-seed');          // 全参数，可进脚本
+  });
+
+program.parse(process.argv);</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>这里的关键设计是<strong>位置参数 + 选项都可选</strong>——
+          <code>ncp create</code> 进交互问答，<code>ncp create my-app -t vue-seed</code> 一步到位。
+          同一命令的「探索模式」和「脚本模式」并存，help 里两种示例都写。这是我对
+          create-vue / create-next-app「flags + prompts 混合」模式的实践。
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">开源标杆的进阶玩法</strong>
+          create-vue（Vite 官方脚手架）的选择题（Router/Pinia/测试/ESLint…）本质是<strong>把「选项」搬进交互界面</strong>；
+          同时每个能力都有对应的 <code>--router</code> / <code>--pinia</code> 等 flag，
+          在 CI 或预设脚本里一键生成。<strong>交互面 = flag 面的可视化</strong>，两面必须一致——不一致就是文档事故。
+        </div>
+      </div>
+
+      <!-- 三、交互体验 -->
+      <div class="section" id="s3">
+        <h2>三、交互体验：问答、反馈、观感</h2>
+        <p>
+          CLI 的 UX 也有设计。原则一句话：<strong>不问已经知道的，不问能推断的，问的时候给校验和默认值</strong>。
+        </p>
+
+        <h3>3.1 问答：只问缺的那块拼图</h3>
+        <div class="code-title">ncp-cli 的动态 prompts（真实代码逻辑）</div>
+        <pre class="code-block"><code class="language-javascript">// 已知的不再问：给了项目名就不问名字；给了 -t 就不问模板
+if (!name) {
+  prompts = nameInit.concat(descriptionInit);
+  if (!paramObj.templateType) prompts = prompts.concat(tempTypeChange);
+} else {
+  if (!paramObj.templateType) prompts = descriptionInit.concat(tempTypeChange);
+  else prompts = descriptionInit;
+}
+inquirer.prompt(prompts).then(answers => { /* 开始创建 */ });</code></pre>
+        <div class="code-title">每个问题自带校验（util/repl.js）</div>
+        <pre class="code-block"><code class="language-javascript">{
+  name: 'projectName',
+  type: 'input',
+  message: '请输入项目名称：',
+  validate(input) {
+    if (!input.length) return '项目名不能为空，请输入项目名称！';
+    if (fs.existsSync(input)) return '当前目录已经存在同名项目，请换一个项目名！';
+    return true;
+  }
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>问答不是「把配置念一遍」，而是<strong>补全缺口</strong>：
+          位置参数/flag 已给出的字段直接跳过；每个问题在 <code>validate</code> 里做「空值、重名」检查，
+          报错就地重输而不是启动后炸——错误修复成本越早越低。
+        </div>
+
+        <h3>3.2 三类反馈：进度、成功、失败</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>反馈</th>
+              <th>做什么</th>
+              <th>工具</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>进度</strong></td>
+              <td>下载模板、装依赖这种「要等」的步骤必须有 spinner/进度，否则用户以为死了</td>
+              <td class="win">ora（现代）、clui（我 ncp-cli 用的 Spinner）</td>
+            </tr>
+            <tr>
+              <td><strong>成功</strong></td>
+              <td>告诉用户「下一步干嘛」：cd my-app &amp;&amp; npm run dev——出口要有行动指引</td>
+              <td>console.log 配颜色（picocolors / chalk）</td>
+            </tr>
+            <tr>
+              <td><strong>失败</strong></td>
+              <td>说清楚<strong>哪一步</strong>、<strong>为什么</strong>、<strong>怎么救</strong>；然后非零退出</td>
+              <td>catch 里结构化输出，不裸吞</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout warn">
+          <strong class="tag">颜色库换代小知识</strong>
+          chalk 是老将，但 ESM/CJS 兼容折腾过一轮；现代 CLI（vite/create-vue 一族）多用
+          <code>picocolors</code>（零依赖、极小）。选型时「轻、稳、无告警」比「功能多」重要——
+          CLI 的冷启动时间是体感的生死线。
+        </div>
+
+        <h3>3.3 脚本友好：CI 怎么用你</h3>
+        <ul>
+          <li>检测 <code>process.env.CI</code> 或 <code>--yes/-y</code> / <code>--defaults</code>：跳过问答、全用默认值。</li>
+          <li>非 TTY 环境（管道/CI）自动降级：关掉 spinner 动画、用纯文本输出。</li>
+          <li><strong>交互是加速器，不是必经之路</strong>——任何能力都要有纯参数表达。</li>
+        </ul>
+      </div>
+
+      <!-- 四、健壮性 -->
+      <div class="section" id="s4">
+        <h2>四、健壮性：门禁、错误、退出码——敢进 CI 的底线</h2>
+
+        <h3>4.1 版本门禁（我的真实实现）</h3>
+        <div class="code-title">bin/index.js 开头就拦</div>
+        <pre class="code-block"><code class="language-javascript">const requiredVersion = pkg.engines.node;   // ">=10.0"，单一事实来源
+function checkNodeVersion(wanted, id) {
+  if (!semver.satisfies(process.version, wanted)) {
+    console.log(chalk.red(
+      'You are using Node ' + process.version + ', but this version of ' + id +
+      ' requires Node ' + wanted + '.\nPlease upgrade your Node version.'
+    ));
+    process.exit(1);   // 不匹配就别跑，错误信息给出「当前 vs 需要」
+  }
+}
+checkNodeVersion(requiredVersion, 'ncp-cli');</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>两个点：① 版本下限<strong>写在 engines，读也在代码里</strong>——
+          配置和校验同源，不会漂移；② 失败信息把「你的版本 / 需要的版本」都打印出来，用户不需要猜。
+          这是 vue-cli 时代就被验证的标准姿势。
+        </div>
+
+        <h3>4.2 退出码与错误处理公约</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>公约</th>
+              <th>含义</th>
+              <th>反例（别这么干）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>process.exit(0)</code></td>
+              <td>成功——或者干脆正常走完</td>
+              <td>成功了也 exit(1)，CI 直接红</td>
+            </tr>
+            <tr>
+              <td><code>process.exit(1)</code></td>
+              <td>失败——参数错、目录冲突、下载失败、装依赖失败</td>
+              <td class="win">我的 ncp-cli：同名目录、模板下载失败、install 失败全部 exit(1)</td>
+            </tr>
+            <tr>
+              <td>错误信息三要素</td>
+              <td>哪一步 + 为什么 + 怎么办</td>
+              <td><code>catch(e) { console.log('error') }</code>——什么线索都没有</td>
+            </tr>
+            <tr>
+              <td>异常不裸吞</td>
+              <td>Promise 要有 .catch；shell 调用要看 code</td>
+              <td>不处理 rejection → Node 打一屏警告，用户更懵</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>4.3 执行子进程的姿势</h3>
+        <div class="code-title">我用 shelljs（可行），更现代的对照</div>
+        <pre class="code-block"><code class="language-javascript">// ncp-cli：shelljs 调 npm（简单直接）
+shell.exec(`npm i ${pkgName}`, { async: true }, (code) => {
+  if (code === 0) resolve(1);
+  else { shell.echo('模板下载失败！'); shell.exit(1); }
+});
+
+// 现代标杆更常用 execa：拿 stdout/stderr、抛异常、更好跨平台
+// import { execa } from 'execa';
+// await execa('npm', ['i', pkgName]);   // 失败自动 throw，退出码自然传下去</code></pre>
+        <div class="callout info">
+          <strong class="tag">跨平台提醒</strong>
+          别拼 <code>rm -rf</code> 这类 shell 秀逗语法：Windows cmd 不认。路径用
+          <code>path.join</code>、删除/复制用 <code>fs-extra</code> 或 Node 原生 <code>fs.cp</code>（16.7+），
+          子进程优先 execa/child_process 传参数数组而不是字符串命令——顺带防命令注入。
+        </div>
+      </div>
+
+      <!-- 五、脚手架模式 -->
+      <div class="section" id="s5">
+        <h2>五、脚手架模式：模板从哪来、怎么生成</h2>
+        <p>脚手架类 CLI（create-* / init）多一个核心问题：<strong>模板的来源与生成流水线</strong>。</p>
+
+        <h3>5.1 模板来源四方案</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>方案</th>
+              <th>做法</th>
+              <th>优点</th>
+              <th>代价</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>npm 模板包</strong>（我的 ncp-cli）</td>
+              <td>模板发成 npm 包，CLI 里 <code>npm i 模板包</code> 再拷出来</td>
+              <td class="win">走 registry、有版本、可私有源托管；团队模板即私有包</td>
+              <td>多一次 install 开销（我在创建末尾还要再装一次项目依赖）</td>
+            </tr>
+            <tr>
+              <td><strong>git 仓库</strong></td>
+              <td>clone/download tarball（vue-cli 早期模板、degit）</td>
+              <td>模板作者友好，不限语言</td>
+              <td>依赖 git/网络；私有仓库要鉴权；缓存要自己管</td>
+            </tr>
+            <tr>
+              <td><strong>本地内嵌模板</strong></td>
+              <td>CLI 包里直接塞 template/ 目录（create-next-app 部分场景）</td>
+              <td class="win">零网络、最快、最稳</td>
+              <td>模板更新 = 发布 CLI；包体积变大</td>
+            </tr>
+            <tr>
+              <td><strong>生成器插件</strong></td>
+              <td>模板 = 代码生成逻辑（vue-cli 的 plugin 体系、create-vue 的 feature 拼装）</td>
+              <td class="win">可组合、可改配置、能按选项拼装</td>
+              <td>实现复杂，抽象成本高</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>5.2 生成流水线（脚手架的标准五步）</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 300" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowPipe" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+            <text x="520" y="36" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">脚手架生成流水线（ncp-cli / create-vue 通用形态）</text>
+
+            <rect x="16" y="80" width="180" height="88" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="106" y="112" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">① 收集输入</text>
+            <text x="106" y="138" font-size="12" fill="#7a8aa0" text-anchor="middle">flags 优先</text>
+            <text x="106" y="158" font-size="12" fill="#7a8aa0" text-anchor="middle">缺的用问答补</text>
+
+            <rect x="224" y="80" width="180" height="88" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="314" y="112" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">② 拉取模板</text>
+            <text x="314" y="138" font-size="12" fill="#7a8aa0" text-anchor="middle">npm 包 / git</text>
+            <text x="314" y="158" font-size="12" fill="#7a8aa0" text-anchor="middle">/ 内嵌目录</text>
+
+            <rect x="432" y="80" width="180" height="88" rx="10" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="522" y="112" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">③ 渲染落盘</text>
+            <text x="522" y="138" font-size="12" fill="#7a8aa0" text-anchor="middle">拷贝 + 重写</text>
+            <text x="522" y="158" font-size="12" fill="#7a8aa0" text-anchor="middle">package.json / 名称</text>
+
+            <rect x="640" y="80" width="180" height="88" rx="10" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="730" y="112" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">④ 安装依赖</text>
+            <text x="730" y="138" font-size="12" fill="#7a8aa0" text-anchor="middle">npm/pnpm install</text>
+            <text x="730" y="158" font-size="12" fill="#7a8aa0" text-anchor="middle">或提示用户自己装</text>
+
+            <rect x="848" y="80" width="176" height="88" rx="10" fill="#fffbeb" stroke="#f59e0b" />
+            <text x="936" y="112" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">⑤ 交接指引</text>
+            <text x="936" y="138" font-size="12" fill="#7a8aa0" text-anchor="middle">打印下一步命令</text>
+            <text x="936" y="158" font-size="12" fill="#7a8aa0" text-anchor="middle">cd xx &amp;&amp; npm run dev</text>
+
+            <path d="M196,124 L218,124" stroke="#646cff" stroke-width="2" marker-end="url(#arrowPipe)" />
+            <path d="M404,124 L426,124" stroke="#646cff" stroke-width="2" marker-end="url(#arrowPipe)" />
+            <path d="M612,124 L634,124" stroke="#646cff" stroke-width="2" marker-end="url(#arrowPipe)" />
+            <path d="M820,124 L842,124" stroke="#646cff" stroke-width="2" marker-end="url(#arrowPipe)" />
+
+            <rect x="16" y="210" width="1008" height="56" rx="8" fill="#f8f9fa" />
+            <text x="520" y="234" font-size="13" fill="#35495e" text-anchor="middle">设计要点：①② 失败要能优雅退出；③ 要幂等/干净（失败不留半成品目录）；④ 可选（--no-install）；⑤ 必须有</text>
+            <text x="520" y="254" font-size="12" fill="#7a8aa0" text-anchor="middle">开源对照：create-vue 用「内嵌模板 + feature 拼装」；vue-cli 用「git/npm 模板 + plugin 生成器」；ncp-cli 用「npm 模板包 + shell 拷贝」</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 五步流水线是所有脚手架的最大公约数</p>
+
+        <h3>5.3 生成的两种哲学：拷贝 vs 插件生成</h3>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>拷贝 + 重写（ncp-cli / create-next-app）</h4>
+            <ul>
+              <li>模板就是成品文件，拷出来再改 name/description。</li>
+              <li>实现简单、行为可预测、好排障。</li>
+              <li>改动模板 = 发模板新版本。</li>
+              <li><strong>适合</strong>：内部种子工程、形态固定的技术栈。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>插件/生成器（vue-cli / create-vue）</h4>
+            <ul>
+              <li>用户勾选能力（Router/测试/ESLint），生成器按需拼文件、写配置。</li>
+              <li>灵活、组合爆炸的可控性好。</li>
+              <li>实现与测试成本高，模板逻辑也是一套代码要维护。</li>
+              <li><strong>适合</strong>：生态型脚手架、选项组合多的场景。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 六、真实解剖 -->
+      <div class="section" id="s6">
+        <h2>六、真实解剖：我的 ncp-cli，和开源标杆差在哪</h2>
+
+        <h3>6.1 ncp-cli 全流程（一个命令的生命周期）</h3>
+        <div class="code-title">ncp create my-app -t vue-seed 发生了什么</div>
+        <pre class="code-block"><code class="language-text">1. 门禁    checkNodeVersion(engines.node) → 不满足直接 exit(1)
+2. 解析    commander 解析 create/my-app/-t vue-seed
+3. 防呆    fs.existsSync('my-app') → 同名目录存在则退出
+4. 交互    已给 name 与 -t → 只问 description（缺什么问什么）
+5. 拉模板  远程 template.config.json 查 vue-seed → npm i 模板包
+6. 搬运    shell.cp 模板包内容（含 .*）→ 项目根
+7. 本地化  重写 package.json：name/description，剔除 _ 开头的字段
+8. 装依赖  npm install（带 spinner）
+9. 收尾    「创建项目成功，请进入项目目录开始工作吧！」</code></pre>
+        <div class="code-title">模板清单是远程配置（内网服务），模板本体是 npm 包</div>
+        <pre class="code-block"><code class="language-javascript">// util/template.service.js —— 业务线动态维护模板映射
+const url = 'http://内网/document/ncp/.../template.config.json';
+// 返回形如 [{ templateType: 'vue-seed', templateName: '@xxx/vue-seed' }, ...]
+// CLI 不用发版即可上新模板——这是「配置与代码分离」的小实践</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>我的设计取舍：① 模板清单放远程 JSON——运营/平台方加模板不用发 CLI；
+          ② 模板本体走 npm 私服——有版本、可回滚；③ 流程六步全链路带失败退出；
+          ④ 已知参数跳过问答。如果重做，我会把 shelljs 换成 execa/fs-extra、加上
+          <code>--yes</code> CI 模式、生成失败时清理半成品目录、把本地模板缓存下来加速二次创建。
+        </div>
+
+        <h3>6.2 与开源标杆的能力对照</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>ncp-cli（我的）</th>
+              <th>vue-cli / create-vue</th>
+              <th>create-next-app 等</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>解析库</td>
+              <td>commander</td>
+              <td>create-vue：cac 系；vue-cli：commander</td>
+              <td>commander</td>
+            </tr>
+            <tr>
+              <td>交互</td>
+              <td>inquirer（input/list + validate）</td>
+              <td class="win">clack/prompts（现代观感：彩色步骤条、单选卡）</td>
+              <td>prompts</td>
+            </tr>
+            <tr>
+              <td>模板来源</td>
+              <td>npm 模板包 + 远程清单</td>
+              <td class="win">内嵌模板 + 按 feature 拼装/生成器插件</td>
+              <td>内嵌模板</td>
+            </tr>
+            <tr>
+              <td>参数/交互双轨</td>
+              <td class="win">有（create [name] -t）</td>
+              <td class="win">有（每项 feature 皆有 flag）</td>
+              <td>有（--ts/--eslint…）</td>
+            </tr>
+            <tr>
+              <td>版本门禁</td>
+              <td class="win">semver + engines 运行时校验</td>
+              <td>engines + 提示</td>
+              <td>engines + 提示</td>
+            </tr>
+            <tr>
+              <td>进度反馈</td>
+              <td>clui Spinner</td>
+              <td>clack 步骤条 / ora</td>
+              <td>ora / 静默</td>
+            </tr>
+            <tr>
+              <td>CI 友好</td>
+              <td>部分（纯参数路径可用）</td>
+              <td class="win">--defaults / 全 flag</td>
+              <td class="win">--yes / 全 flag</td>
+            </tr>
+            <tr>
+              <td>可扩展</td>
+              <td>换模板即扩展（清单驱动）</td>
+              <td class="win">插件/生成器体系</td>
+              <td>约定大于配置</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">一句话总结差距</strong>
+          我的 ncp-cli 覆盖了「分发 → 解析 → 交互 → 生成 → 安装」的<strong>完整闭环</strong>，这是面试讲「我做过」的底气；
+          与 create-vue 的差距主要在<strong>观感现代化</strong>（clack）、<strong>CI 完备性</strong>（--yes/defaults）、
+          <strong>生成失败的原子性</strong>（清理半成品）和<strong>可扩展架构</strong>（插件化）。
+          能主动说出自己的差距与改造计划，比背开源源码更加分。
+        </div>
+      </div>
+
+      <!-- 七、追问链 -->
+      <div class="section" id="s7">
+        <h2>七、面试追问链</h2>
+
+        <details class="qa">
+          <summary>Q1 · 一个 npm 包怎么变成全局命令的？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：三件套——目标文件第一行 shebang <code>#!/usr/bin/env node</code> 声明解释器；
+            package.json 的 <code>bin</code> 字段把命令名映射到该文件；<code>npm i -g</code> 时 npm 把它链接进全局 bin 目录
+            （Windows 生成 .cmd/.ps1 垫片）。<code>npx</code> 则先找本地 <code>node_modules/.bin</code>，没有就临时下载执行，不污染全局。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · 你的 CLI 为什么要检查 Node 版本？engines 不是已经声明了吗？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：<code>engines</code> 默认只是「安装时的软约束」（npm 可以装得上），运行时不保证安全。
+            所以我在入口用 semver 对 <code>process.version</code> 做硬校验，不匹配就打印「当前 vs 需要」并 exit(1)——
+            配置与校验同源（都读 engines.node），不会漂移。这是把「文档约束」升级成「运行时门禁」。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · 交互式 CLI 怎么兼容 CI？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：双轨设计。所有问答项都要有对应的 flag/位置参数表达；检测到 <code>CI</code> 环境变量或
+            <code>--yes/--defaults</code> 时跳过问答走默认值；非 TTY 环境关掉 spinner 动画、用纯文本。
+            原则是「交互是加速器不是必经之路」——create-vue/create-next-app 都是这个模式。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · 脚手架生成到一半失败了怎么办？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：要「原子性」。先在临时目录生成完再移入，或失败时回滚删除半成品目录；
+            错误信息说清是哪一步（下载模板/写文件/装依赖）；exit code 非零让上层脚本能感知。
+            我早期版本没做回滚，失败会留残骸目录——这是我面试里可以主动说的改进点。
+            另外依赖安装可以做成可选（--no-install），把网络失败面收窄。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · 模板放 npm 包和放 git 仓库有什么区别？你为什么选 npm？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：npm 包自带版本语义与 registry 分发，公司有私服时天然可托管、可审计、可回滚；
+            git 仓库胜在不限语言、模板作者门槛低，但要处理鉴权、浅克隆和缓存。
+            我的场景是公司内多条业务线的种子工程——模板清单由平台方远程配置维护（加模板不用发 CLI），
+            模板本体发私有 npm 包，兼顾「热更新清单」与「版本可控」。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · 如何让 CLI 的冷启动变快？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：① 依赖瘦身：解析用 cac/commander 而不是全家桶，颜色用 picocolors 级别的零依赖库；
+            ② 入口先解析再懒加载重模块（交互库、网络模块按需 require）；
+            ③ 发布 files 白名单减小安装体积；④ 网络请求并行/缓存。
+            CLI 的体感生死线是「敲下回车到出第一行字」的间隔——vite 系 CLI 就是靠 cac + 懒加载撑起来的。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 八、速记卡 -->
+      <div class="section" id="s8">
+        <h2>八、一页速记卡</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>五层模型</strong>：分发（bin/shebang/npx）→ 命令面（commander/cac + 选项军规）→ 交互（补缺 + validate）→ 健壮性（版本门禁/退出码/子进程）→ 脚手架（模板来源 + 五步流水线）。</li>
+            <li><strong>命名服从分发</strong>：<code>create-*</code> 吃 <code>npm create</code> 的语法糖；<code>bin</code> 的 key 就是命令名。</li>
+            <li><strong>选项军规</strong>：长短并存、给默认值、help 放例子、脚本里永远用长选项。</li>
+            <li><strong>交互原则</strong>：缺什么问什么、问则校验、脚本路径永远通；CI 检测 <code>CI</code> / <code>--yes</code>。</li>
+            <li><strong>健壮性底线</strong>：engines + semver 运行时门禁；失败 exit(1)；错误信息「哪一步/为什么/怎么救」；子进程优先参数数组（execa）。</li>
+            <li><strong>脚手架五步</strong>：收集输入 → 拉模板 → 渲染落盘（重写 package.json）→ 装依赖（可 --no-install）→ 交接指引（下一步命令）。</li>
+            <li><strong>模板来源</strong>：npm 包（版本/私服）/ git（灵活）/ 内嵌（最快）/ 生成器插件（可组合）——按团队约束选。</li>
+            <li><strong>我的 ncp-cli</strong>：commander + inquirer + 远程模板清单 + npm 模板包 + engines 门禁 + Spinner；改进方向：execa、clack 观感、--yes、失败回滚。</li>
+            <li><strong>与 create-vue 差距</strong>：观感（clack）、CI 完备性、原子生成、插件化扩展——能说出差距的候选人更可信。</li>
+            <li><strong>金句</strong>：「好的 CLI 是可发现的命令面 + 可脚本化的接口 + 可预期的失败——交互只是加速器。」</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「CLI 设计不是把功能翻译成子命令，而是把工具的边界画清楚：
+          什么该问用户、什么该有默认、什么必须拒绝执行——一个好用的命令面，
+          是这个工具的第二份文档。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pnpm · Workspace · Monorepo 深度指南（面试向）</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+
+      /* 代码块 + highlight.js */
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+      }
+      /* CDN 挂了时代码仍然可读 */
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+
+      /* ASCII 目录树（浅底，好读） */
+      pre.tree {
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 5px solid #646cff;
+        border-radius: 8px;
+        padding: 18px 20px;
+        overflow: auto;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: #35495e;
+        margin: 14px 0;
+      }
+      pre.tree .dim {
+        color: #9aa7b8;
+      }
+      pre.tree .hl {
+        color: #e96900;
+        font-weight: bold;
+      }
+
+      /* 对比表 */
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+
+      /* 概念卡片 */
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .concept-title.amber {
+        color: #b45309;
+      }
+      .concept-title.green {
+        color: #2e7d32;
+      }
+
+      /* 目录卡片（TOC） */
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+
+      /* 左右并排对比面板 */
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-grid.stack {
+        grid-template-columns: 1fr;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #f59e0b;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #b45309;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* 提示框 */
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout.danger {
+        background: #fdecea;
+        border-color: #e53935;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+
+      /* 真实工程解剖：代码 + 面试话术 */
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+
+      /* 面试问答折叠块 */
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      details.qa .qa-body p {
+        margin: 8px 0;
+      }
+
+      /* 踩坑卡片 */
+      .pitfall-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+      .pitfall {
+        border: 1px solid #ffe0b2;
+        background: #fffaf2;
+        border-radius: 8px;
+        padding: 14px 16px;
+        font-size: 14px;
+      }
+      .pitfall .no {
+        display: inline-block;
+        background: #ef6c00;
+        color: #fff;
+        font-size: 12px;
+        font-weight: bold;
+        border-radius: 4px;
+        padding: 1px 8px;
+        margin-right: 8px;
+      }
+      .pitfall b {
+        color: #b45309;
+      }
+
+      /* 速记卡 */
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+
+      /* 模态框（放大流程图） */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <!-- highlight.js 代码高亮主题（与代码块底色一致） -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>pnpm · Workspace · Monorepo 深度指南</h1>
+    <p class="subtitle">
+      包管理器原理 · 幽灵依赖 · workspace 协议 · 任务编排与拓扑序 · 真实仓库解剖 ·
+      工具选型 · 缓存与增量 · 版本发布 · 踩坑清单 · 追问链（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇、30 秒结论 -->
+      <div class="section" id="s0">
+        <h2>〇、先给结论：30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            <strong>pnpm 解决的是「装」的问题</strong>：包内容先放进全局的内容寻址存储（content-addressable
+            store），再用<strong>硬链接</strong>接到 <code>node_modules/.pnpm</code>
+            虚拟存储、用<strong>符号链接</strong>暴露给项目——同一份文件物理上只存一份，所以快、省磁盘；同时
+            node_modules 严格按照 package.json 构建，<strong>依赖声明了才可见</strong>，天然没有幽灵依赖。
+          </p>
+          <p>
+            <strong>workspace 解决的是「连」的问题</strong>：根目录一个
+            <code>pnpm-workspace.yaml</code> 声明哪些目录是包，包与包之间用
+            <code>workspace:*</code> 协议互相引用——本地装依赖时是链接到仓库内的包，发布到 registry
+            时自动替换成真实版本号。
+          </p>
+          <p>
+            <strong>monorepo 解决的是「管」的问题</strong>：多个相关包放一个仓库，换来原子提交、跨包重构、共享
+            tsconfig / ESLint / 构建配置和统一发布节奏；代价是仓库治理与构建复杂度，所以需要
+            <code>--filter</code>、拓扑序、构建缓存这些编排能力来把「全量构建」变成「只构建改动的那条链」。
+          </p>
+          <p style="margin-bottom: 0">
+            <strong>落到我自己的实践</strong>：hsa-neu-ai-platform-fe 是 pnpm 10 workspace
+            单仓，8 个包 + 1 个联调示例；根 package.json 用 <code>--filter</code> / <code>-r</code>
+            统一构建与发布顺序，内部库用「peerDependencies 声明范围 + devDependencies 里
+            <code>workspace:*</code>」双写，<code>.npmrc</code> 做 scope registry 分流，发布链用
+            <code>pnpm build &amp;&amp; changelogen --release &amp;&amp; pnpm pack</code> 做门禁。
+          </p>
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title amber">📦 pnpm = Performance + Node</span>
+            <p style="margin: 0; font-size: 14px">
+              store（内容寻址存储）+ 硬链接 + 符号链接 = 快、省、严格。核心心智：<strong>物理上共享，逻辑上隔离</strong>。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🔗 Workspace = 单仓多包的链接约定</span>
+            <p style="margin: 0; font-size: 14px">
+              <code>pnpm-workspace.yaml</code> 划定包的范围，<code>workspace:</code> 协议负责「本地链接、发布替换」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title green">🗂 Monorepo = 组织形态</span>
+            <p style="margin: 0; font-size: 14px">
+              一个仓库管多个包：原子变更、共享工具链、统一依赖版本；换来的是治理成本，需要编排与缓存来驯服。
+            </p>
+          </div>
+        </div>
+
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、包管理器三世：npm / yarn / pnpm</a></li>
+          <li><a href="#s2">二、pnpm 原理：store · 硬链接 · 符号链接</a></li>
+          <li><a href="#s3">三、幽灵依赖与严格 node_modules</a></li>
+          <li><a href="#s4">四、workspace 与 workspace: 协议</a></li>
+          <li><a href="#s5">五、monorepo：动机、代价与真实目录</a></li>
+          <li><a href="#s6">六、任务编排：--filter 与拓扑序</a></li>
+          <li><a href="#s7">七、真实仓库解剖：hsa-neu-ai-platform-fe</a></li>
+          <li><a href="#s8">八、方案对比：pnpm / Lerna / Turbo / Nx / Rush</a></li>
+          <li><a href="#s9">九、构建缓存与增量：只构建改动的</a></li>
+          <li><a href="#s10">十、版本与发布：顺序、门禁与 changelog</a></li>
+          <li><a href="#s11">十一、踩坑清单</a></li>
+          <li><a href="#s12">十二、面试追问链</a></li>
+          <li><a href="#s13">十三、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、包管理器三世 -->
+      <div class="section" id="s1">
+        <h2>一、包管理器三世同堂：npm / yarn / pnpm 到底差在哪</h2>
+        <p>
+          面试里聊 pnpm，最好先拉一条时间线——很多「pnpm 的优势」其实是<strong>前两代包管理器的历史遗留问题</strong>：
+        </p>
+        <ol>
+          <li>
+            <strong>npm v2 及以前：嵌套安装。</strong>每个依赖在
+            <code>node_modules</code> 里各放一份自己的依赖树。好处是语义干净，坏处是同一个包被重复安装几十上百次，磁盘与安装时间爆炸。
+          </li>
+          <li>
+            <strong>npm v3 / yarn classic：扁平化提升（hoisting）。</strong>把依赖树「拍平」放到顶层
+            <code>node_modules</code>，同版本只留一份——重复问题解决了，但引入了新的病：
+            <strong>你的代码可以 import 一个你从没声明过的包</strong>（它只是某个间接依赖，被提升到了顶层）。这就是幽灵依赖。
+          </li>
+          <li>
+            <strong>yarn workspaces（2017）：</strong>把「单仓多包」做进包管理器，monorepo 从民间手艺变成官方能力。
+          </li>
+          <li>
+            <strong>pnpm（2017 至今）：换一条路。</strong>不提升、不复制——文件存全局
+            store，用硬链接/符号链接组装 node_modules。既去重，又严格。
+          </li>
+        </ol>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>npm（v6 时代）</th>
+              <th>yarn classic</th>
+              <th>pnpm</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>安装模型</td>
+              <td>拍平提升到顶层 node_modules</td>
+              <td>同 npm（提升更激进）+ 全局缓存</td>
+              <td class="win">全局 store + 硬链接 + 符号链接，不提升</td>
+            </tr>
+            <tr>
+              <td>幽灵依赖</td>
+              <td>存在（较轻）</td>
+              <td>存在（更常见）</td>
+              <td class="win">结构上杜绝：没声明就不可见</td>
+            </tr>
+            <tr>
+              <td>重复包</td>
+              <td>同版本去重，异版本嵌套</td>
+              <td>同左</td>
+              <td class="win">同内容全局只存一份，跨项目共享</td>
+            </tr>
+            <tr>
+              <td>node_modules 体积</td>
+              <td>大（每个项目一份完整拷贝）</td>
+              <td>大</td>
+              <td class="win">小（只存链接与少量元数据）</td>
+            </tr>
+            <tr>
+              <td>重复安装同一依赖</td>
+              <td>重新复制/解压</td>
+              <td>走缓存后仍要复制进项目</td>
+              <td class="win">直接建链接，几乎不落盘新字节</td>
+            </tr>
+            <tr>
+              <td>workspace 支持</td>
+              <td>npm 7+ 有 workspaces 字段，生态一般</td>
+              <td>yarn workspaces（开山之作）</td>
+              <td class="win">pnpm-workspace.yaml，内置且灵活（支持取反排除）</td>
+            </tr>
+            <tr>
+              <td>任务编排</td>
+              <td>需接 lerna/nx 等外部工具</td>
+              <td>需外部工具</td>
+              <td class="win">内置 <code>--filter</code> / <code>-r</code> 与拓扑序（但无构建缓存）</td>
+            </tr>
+            <tr>
+              <td>lockfile</td>
+              <td>package-lock.json</td>
+              <td>yarn.lock</td>
+              <td>pnpm-lock.yaml（唯一一份，全仓共享）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <strong class="tag">补充：第三条路线</strong>
+          yarn berry 的 PnP（Plug'n'Play）干脆<strong>不生成 node_modules</strong>，用
+          <code>.pnp.cjs</code> 解析表 + zip 包直接解析依赖——最彻底，但与多数存量工具链（老版
+          jest、部分原生模块、IDE 插件）兼容性代价大。pnpm 也提供
+          <code>node-linker=pnp</code>，同理属于「可选项而非默认」。回答这类题的姿势：<strong>三条路线分别是
+          「拷贝」「链接」「不建目录」，pnpm 选了兼容性与严格性的最大公约数。</strong>
+        </div>
+      </div>
+
+      <!-- 二、pnpm 原理 -->
+      <div class="section" id="s2">
+        <h2>二、pnpm 原理：store、硬链接、符号链接三件套</h2>
+        <p>
+          pnpm 安装一个包时<strong>不把文件内容复制进项目</strong>，而是分三层组装。理解这三层，80%
+          的 pnpm 面试题都能推导出来：
+        </p>
+        <ol>
+          <li>
+            <strong>全局 store（内容寻址存储）</strong>：所有下载过的包文件，按
+            <strong>内容的 hash</strong> 存放在全局目录（如 <code>~/.local/share/pnpm/store/</code>）。同一份内容
+            <strong>物理上只存一次</strong>——A 项目装过 <code>vue@3.5.32</code>，B 项目再装就不再下载、不再落盘。
+          </li>
+          <li>
+            <strong>硬链接（hard link）</strong>：<code>node_modules/.pnpm</code>（虚拟存储）里的文件与
+            store 里的文件是<strong>同一份磁盘数据的两个目录项、同一个 inode</strong>。不是复制，所以创建极快、不占双倍空间。
+          </li>
+          <li>
+            <strong>符号链接（symlink）</strong>：项目 <code>node_modules</code> 顶层那些「看起来正常的包目录」，
+            其实是指向 <code>.pnpm</code> 虚拟存储里对应版本的指针。你 <code>import 'vue'</code>
+            走的就是这条链接链。
+          </li>
+        </ol>
+
+        <h3>图 1：npm 的提升 vs pnpm 的严格结构（幽灵依赖的根源一目了然）</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 500" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <!-- 左：npm/yarn 提升 -->
+            <rect x="14" y="14" width="496" height="472" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="14" y="14" width="496" height="46" rx="10" fill="#cb3837" />
+            <rect x="14" y="44" width="496" height="16" fill="#cb3837" />
+            <text x="36" y="43" font-size="15" font-weight="bold" fill="#ffffff">npm / yarn classic：提升（hoisting）</text>
+            <text x="36" y="88" font-size="13" fill="#35495e">你的 package.json 声明：A、B</text>
+            <g font-family="Consolas,'Courier New',monospace" font-size="13">
+              <text x="36" y="126" fill="#35495e" font-weight="bold">node_modules/  ← 拍平到顶层</text>
+              <text x="36" y="154" fill="#2e7d32">├─ A@1.0.0     ✓ 已声明</text>
+              <text x="36" y="182" fill="#2e7d32">├─ B@1.0.0     ✓ 已声明</text>
+              <text x="36" y="210" fill="#e53935">├─ C@2.0.0     ✗ 未声明，被间接依赖提升上来</text>
+              <text x="36" y="238" fill="#35495e">└─ B/</text>
+              <text x="36" y="266" fill="#35495e">   └─ node_modules/</text>
+              <text x="36" y="294" fill="#35495e">      └─ A@2.0.0  （版本冲突才嵌套一层）</text>
+              <text x="36" y="336" fill="#e53935" font-weight="bold">import "C"  →  能跑！</text>
+              <text x="36" y="362" fill="#9aa7b8">（可你从来没装过 C）</text>
+            </g>
+            <rect x="36" y="384" width="452" height="78" rx="8" fill="#fdecea" stroke="#e53935" stroke-dasharray="4 3" />
+            <text x="54" y="412" font-size="13" fill="#8c1d18">幽灵依赖：C 只是 B 的依赖，却在顶层可见。</text>
+            <text x="54" y="436" font-size="13" fill="#8c1d18">间接依赖一升级/移除 → 本地好好的代码 CI 上突然崩。</text>
+
+            <!-- 右：pnpm 严格结构 -->
+            <rect x="530" y="14" width="496" height="472" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="530" y="14" width="496" height="46" rx="10" fill="#f59e0b" />
+            <rect x="530" y="44" width="496" height="16" fill="#f59e0b" />
+            <text x="552" y="43" font-size="15" font-weight="bold" fill="#ffffff">pnpm：严格结构（不提升）</text>
+            <text x="552" y="88" font-size="13" fill="#35495e">你的 package.json 声明：A、B</text>
+            <g font-family="Consolas,'Courier New',monospace" font-size="13">
+              <text x="552" y="126" fill="#35495e" font-weight="bold">node_modules/  ← 只放声明过的</text>
+              <text x="552" y="154" fill="#646cff">├─ A → .pnpm/A@2/node_modules/A</text>
+              <text x="552" y="182" fill="#646cff">├─ B → .pnpm/B@1/node_modules/B</text>
+              <text x="552" y="210" fill="#35495e">└─ .pnpm/   虚拟存储（所有版本共存）</text>
+              <text x="552" y="238" fill="#35495e">   ├─ A@1/node_modules/ A, B</text>
+              <text x="552" y="266" fill="#35495e">   ├─ A@2/node_modules/ A</text>
+              <text x="552" y="294" fill="#35495e">   └─ B@1/node_modules/ B, A@1</text>
+              <text x="552" y="336" fill="#2e7d32" font-weight="bold">import "C"  →  Cannot find module</text>
+              <text x="552" y="362" fill="#9aa7b8">A@1 还在，但只有 B 的内部解析能摸到它</text>
+            </g>
+            <rect x="552" y="384" width="452" height="78" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-dasharray="4 3" />
+            <text x="570" y="412" font-size="13" fill="#1b5e20">物理共享：同一文件全局只存一份（store + 硬链接）。</text>
+            <text x="570" y="436" font-size="13" fill="#1b5e20">逻辑隔离：没声明的依赖根本看不见 → 无幽灵依赖。</text>
+
+            <!-- 底部图例 -->
+            <text x="520" y="494" font-size="12" fill="#7a8aa0" text-anchor="middle">“→” 是符号链接：顶层 A 实际指向 .pnpm 里的目录；B 自己的依赖 A@1 只存在于 B 的虚拟存储条目中，应用代码摸不到</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 核心对比：左边「能跑但不可复现」，右边「跑不通但永远可复现」</p>
+
+        <h3>图 2：全局 store + 硬链接 = 同一份内容跨项目共享</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 960 450" width="960" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowOrange" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#e67e22" />
+              </marker>
+            </defs>
+            <!-- 全局 store -->
+            <rect x="180" y="24" width="600" height="130" rx="10" fill="#fffbeb" stroke="#f59e0b" />
+            <text x="480" y="52" font-size="15" font-weight="bold" fill="#b45309" text-anchor="middle">全局 store（内容寻址存储）</text>
+            <text x="480" y="74" font-size="12" fill="#9aa7b8" text-anchor="middle" font-family="Consolas,monospace">~/.local/share/pnpm/store/v10/</text>
+            <g>
+              <rect x="210" y="88" width="170" height="50" rx="8" fill="#ffffff" stroke="#e6c200" />
+              <text x="295" y="108" font-size="12" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">3f8a…c2e9</text>
+              <text x="295" y="128" font-size="11" fill="#9aa7b8" text-anchor="middle">内容 hash = vue 的某文件</text>
+              <rect x="400" y="88" width="170" height="50" rx="8" fill="#ffffff" stroke="#e6c200" />
+              <text x="485" y="108" font-size="12" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">91b7…4d0a</text>
+              <text x="485" y="128" font-size="11" fill="#9aa7b8" text-anchor="middle">内容 hash = 另一文件</text>
+              <rect x="590" y="88" width="170" height="50" rx="8" fill="#ffffff" stroke="#e6c200" />
+              <text x="675" y="108" font-size="12" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">c5d1…77af</text>
+              <text x="675" y="128" font-size="11" fill="#9aa7b8" text-anchor="middle">…按内容去重，只此一份</text>
+            </g>
+
+            <!-- 项目甲 -->
+            <rect x="40" y="240" width="400" height="150" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="60" y="268" font-size="14" font-weight="bold" fill="#646cff">项目甲 · 仓库 A</text>
+            <rect x="64" y="284" width="352" height="34" rx="6" fill="#ffffff" stroke="#646cff" />
+            <text x="80" y="306" font-size="12" fill="#35495e" font-family="Consolas,monospace">node_modules/vue → .pnpm/vue@3.5.32/…/vue</text>
+            <rect x="64" y="330" width="352" height="34" rx="6" fill="#ffffff" stroke="#f59e0b" />
+            <text x="80" y="352" font-size="12" fill="#b45309" font-family="Consolas,monospace">.pnpm/…/vue 文件 ─硬链接→ store/3f8a…c2e9</text>
+
+            <!-- 项目乙 -->
+            <rect x="520" y="240" width="400" height="150" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="540" y="268" font-size="14" font-weight="bold" fill="#646cff">项目乙 · 仓库 B（另一个 monorepo）</text>
+            <rect x="544" y="284" width="352" height="34" rx="6" fill="#ffffff" stroke="#646cff" />
+            <text x="560" y="306" font-size="12" fill="#35495e" font-family="Consolas,monospace">node_modules/vue → .pnpm/vue@3.5.32/…/vue</text>
+            <rect x="544" y="330" width="352" height="34" rx="6" fill="#ffffff" stroke="#f59e0b" />
+            <text x="560" y="352" font-size="12" fill="#b45309" font-family="Consolas,monospace">.pnpm/…/vue 文件 ─硬链接→ store/3f8a…c2e9</text>
+
+            <!-- 硬链接箭头 -->
+            <path d="M240,240 C240,200 270,170 292,140" fill="none" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowOrange)" />
+            <path d="M720,240 C720,200 500,170 372,140" fill="none" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowOrange)" />
+            <text x="150" y="196" font-size="13" fill="#e67e22" font-weight="bold">硬链接</text>
+            <text x="770" y="196" font-size="13" fill="#e67e22" font-weight="bold">硬链接</text>
+
+            <!-- 底部说明 -->
+            <rect x="40" y="408" width="880" height="34" rx="8" fill="#e8f5e9" />
+            <text x="480" y="430" font-size="13" fill="#1b5e20" text-anchor="middle">硬链接 = 同一 inode 的两个名字（不复制字节，删项目不会删 store）　·　符号链接 = 路径指针　·　pnpm store prune 可清理无人引用的 store 文件</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 两个项目、多个仓库共享同一份 vue：这就是「快」和「省」的全部来源</p>
+
+        <h3>2.3 硬链接与符号链接：从「文件名 ≠ 文件本身」讲起</h3>
+        <p>
+          很多人卡住的点在于：把「链接」想象成 Windows 快捷方式或 npm 的提升，于是永远讲不清。
+          正确的起点是文件系统的一个基本事实——<strong>目录里存的不是文件，是「名字 → 编号」的对照表</strong>：
+        </p>
+        <ul>
+          <li>
+            磁盘上的<strong>文件内容（字节）</strong>由 <strong>inode（索引节点）</strong>标识；inode 里存着权限、大小、
+            数据块位置等元数据——inode 是文件的「真身」。
+          </li>
+          <li>
+            <strong>目录项（dentry）</strong>只是「文件名 → inode 编号」的一行记录。名字是贴在真身上的标签，
+            可以不止一个标签。
+          </li>
+          <li>于是「链接」就有了两种截然不同的玩法：<strong>再贴一个标签（硬链接）</strong>，或者<strong>写一张指路条（符号链接）</strong>。</li>
+        </ul>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 520" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowHard" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#e67e22" />
+              </marker>
+              <marker id="arrowSym" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+
+            <!-- 左：硬链接 -->
+            <rect x="14" y="14" width="496" height="500" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="14" y="14" width="496" height="46" rx="10" fill="#e67e22" />
+            <rect x="14" y="44" width="496" height="16" fill="#e67e22" />
+            <text x="36" y="43" font-size="15" font-weight="bold" fill="#ffffff">硬链接（hard link）：两个名字，同一个真身</text>
+            <text x="36" y="88" font-size="13" font-weight="bold" fill="#35495e">核心：再贴一个标签 → 指向同一 inode，不复制字节</text>
+
+            <text x="36" y="118" font-size="12" fill="#9aa7b8">① 目录层 dentry：「名字 → inode 编号」</text>
+            <rect x="70" y="130" width="150" height="38" rx="6" fill="#fff7e6" stroke="#e67e22" />
+            <text x="145" y="154" font-size="13" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">A.txt</text>
+            <rect x="260" y="130" width="150" height="38" rx="6" fill="#fff7e6" stroke="#e67e22" />
+            <text x="335" y="154" font-size="13" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">B.txt</text>
+
+            <text x="36" y="200" font-size="12" fill="#9aa7b8">② inode 层：文件的真身（元数据）</text>
+            <rect x="70" y="212" width="340" height="78" rx="8" fill="#fffbeb" stroke="#e67e22" />
+            <text x="240" y="240" font-size="13" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">inode 2048 · nlink = 2</text>
+            <text x="240" y="266" font-size="12" fill="#9aa7b8" text-anchor="middle">（权限 / 大小 / 数据块指针…）</text>
+
+            <text x="36" y="322" font-size="12" fill="#9aa7b8">③ 数据层：字节本身</text>
+            <rect x="70" y="334" width="340" height="48" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+            <text x="240" y="363" font-size="13" fill="#35495e" text-anchor="middle">文件内容 = 磁盘数据块（只存一份）</text>
+
+            <path d="M145,172 L145,206" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowHard)" />
+            <path d="M335,172 L335,206" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowHard)" />
+            <path d="M240,294 L240,328" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowHard)" />
+
+            <text x="36" y="412" font-size="13" font-weight="bold" fill="#35495e">规则（面试必答）：</text>
+            <text x="36" y="436" font-size="12.5" fill="#35495e">· 只能在同一文件系统内建（跨盘/跨挂载点报 EXDEV）</text>
+            <text x="36" y="458" font-size="12.5" fill="#35495e">· 不能对目录建硬链接（防止目录成环）</text>
+            <text x="36" y="480" font-size="12.5" fill="#35495e">· 删掉 A.txt = nlink−1，B.txt 与数据完好；</text>
+            <text x="52" y="500" font-size="12.5" fill="#35495e">nlink 减到 0 且无人打开，数据才真正释放</text>
+
+            <!-- 右：符号链接 -->
+            <rect x="530" y="14" width="496" height="500" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="530" y="14" width="496" height="46" rx="10" fill="#646cff" />
+            <rect x="530" y="44" width="496" height="16" fill="#646cff" />
+            <text x="552" y="43" font-size="15" font-weight="bold" fill="#ffffff">符号链接（symlink）：一个存着路径的小文件</text>
+            <text x="552" y="88" font-size="13" font-weight="bold" fill="#35495e">核心：写一张指路条 → 内核读到它就顺着路径打开真身</text>
+
+            <text x="552" y="118" font-size="12" fill="#9aa7b8">① 你创建的链接（目录项）</text>
+            <rect x="600" y="130" width="200" height="38" rx="6" fill="#eef0ff" stroke="#646cff" />
+            <text x="700" y="154" font-size="13" fill="#646cff" text-anchor="middle" font-family="Consolas,monospace">shortcut.txt</text>
+
+            <text x="552" y="200" font-size="12" fill="#9aa7b8">② 它本身是个特殊文件，内容是路径字符串</text>
+            <rect x="600" y="212" width="340" height="78" rx="8" fill="#eef0ff" stroke="#646cff" stroke-dasharray="5 3" />
+            <text x="770" y="240" font-size="13" fill="#646cff" text-anchor="middle" font-family="Consolas,monospace">内容 = "target.txt" 字符串</text>
+            <text x="770" y="266" font-size="12" fill="#9aa7b8" text-anchor="middle">类型 = symlink（十几字节的指路条）</text>
+
+            <text x="552" y="322" font-size="12" fill="#9aa7b8">③ 目标在别处（真身走的是硬链接那套）</text>
+            <rect x="600" y="334" width="340" height="48" rx="8" fill="#f8f9fa" stroke="#e0e0e0" />
+            <text x="770" y="363" font-size="13" fill="#35495e" text-anchor="middle">target.txt → inode → 数据</text>
+
+            <path d="M700,172 L700,206" stroke="#646cff" stroke-width="2" marker-end="url(#arrowSym)" />
+            <path d="M770,294 L770,328" stroke="#646cff" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowSym)" />
+
+            <text x="552" y="412" font-size="13" font-weight="bold" fill="#35495e">规则（面试必答）：</text>
+            <text x="552" y="436" font-size="12.5" fill="#35495e">· 读 shortcut.txt 时内核自动按路径打开 target.txt</text>
+            <text x="552" y="458" font-size="12.5" fill="#35495e">· 目标删除 → 死链（dangling）；但可跨盘、可链接目录</text>
+            <text x="552" y="480" font-size="12.5" fill="#35495e">· ln -s target shortcut</text>
+            <text x="568" y="500" font-size="12.5" fill="#35495e">（Windows: mklink / mklink /D）</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 左边两个名字都通向同一份字节；右边一个名字通向「另一条路径」</p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>硬链接（hard link）</th>
+              <th>符号链接（symlink / soft link）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>本质</td>
+              <td class="win">同一 inode 的<strong>另一个名字</strong>（dentry 多了一行）</td>
+              <td>一个<strong>存着目标路径</strong>的特殊文件</td>
+            </tr>
+            <tr>
+              <td>读它得到什么</td>
+              <td>就是文件本身——和原名<strong>完全平等</strong>，没有「谁是原文件」</td>
+              <td>内核顺着路径打开目标，使用者无感（自动跳转）</td>
+            </tr>
+            <tr>
+              <td>复制字节吗</td>
+              <td class="win">不复制——建链接只是改目录项，毫秒级</td>
+              <td>不复制——只写几十字节的路径</td>
+            </tr>
+            <tr>
+              <td>跨文件系统/跨盘</td>
+              <td>✗ 不能（inode 编号只在本文件系统内有意义）</td>
+              <td class="win">✓ 可以（路径可以指向任何挂载点）</td>
+            </tr>
+            <tr>
+              <td>链接目录</td>
+              <td>✗ 不能（防目录环，各系统都禁）</td>
+              <td class="win">✓ 可以</td>
+            </tr>
+            <tr>
+              <td>目标/另一个名字删除后</td>
+              <td>另一个名字<strong>不受影响</strong>，数据仍在</td>
+              <td>变成<strong>死链</strong>（访问报 ENOENT）</td>
+            </tr>
+            <tr>
+              <td>pnpm 里的用途</td>
+              <td class="win">store 文件 ↔ <code>.pnpm</code> 里的文件：<strong>同一份字节</strong>，跨项目去重</td>
+              <td class="win">顶层 <code>node_modules/vue</code> → <code>.pnpm/…/vue</code>：<strong>只暴露声明过的</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <strong class="tag">为什么两个都要？一句话分工</strong>
+          <strong>硬链接解决「字节」</strong>：同一内容只落盘一份，建链接零拷贝——这是「快、省」的来源；
+          <strong>符号链接解决「形状」</strong>：让项目顶层的 node_modules 只长出声明过的依赖、其余藏进虚拟存储——这是「严格」的来源。
+          少任何一个，pnpm 的模型都不成立。
+        </div>
+
+        <h3>2.4 三大操作系统怎么支持？Windows 为什么麻烦</h3>
+        <p>
+          结论先说：<strong>Linux / macOS / Windows（NTFS）都原生支持硬链接和符号链接</strong>，
+          这不是 pnpm 自己发明的能力，而是文件系统层的东西。差异在于<strong>权限模型</strong>和<strong>降级策略</strong>：
+        </p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>Linux</th>
+              <th>macOS</th>
+              <th>Windows（NTFS）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>硬链接（文件）</td>
+              <td class="win"><code>ln a b</code>，同一挂载点内</td>
+              <td class="win">同 Unix，同卷内</td>
+              <td class="win"><code>mklink /H</code> / <code>CreateHardLink</code>；同卷内；<strong>无需管理员</strong></td>
+            </tr>
+            <tr>
+              <td>硬链接（目录）</td>
+              <td>✗ 禁止（防环）</td>
+              <td>✗ 禁止</td>
+              <td>✗ 禁止 → 用 junction 代替</td>
+            </tr>
+            <tr>
+              <td>符号链接</td>
+              <td class="win"><code>ln -s</code>，原生，无特权</td>
+              <td class="win">同 Unix，原生</td>
+              <td><code>mklink /D</code>；需要<strong>管理员</strong>或<strong>开发者模式</strong>（SeCreateSymbolicLinkPrivilege）</td>
+            </tr>
+            <tr>
+              <td>目录联接（junction）</td>
+              <td>（用 bind mount）</td>
+              <td>（用 bind mount）</td>
+              <td class="win"><code>mklink /J</code>：指向本地目录，<strong>无需管理员</strong></td>
+            </tr>
+            <tr>
+              <td>跨文件系统硬链接</td>
+              <td>失败 EXDEV</td>
+              <td>失败 EXDEV</td>
+              <td>失败（跨卷无效）</td>
+            </tr>
+            <tr>
+              <td>Node.js API</td>
+              <td><code>fs.link</code> / <code>fs.symlink</code></td>
+              <td>同左</td>
+              <td>同左，symlink 需声明类型：<code>'junction' | 'dir' | 'file'</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>pnpm 在 Windows 上的实际策略（面试加分点）</h4>
+        <ul>
+          <li>
+            <strong>目录链接优先用 junction</strong>：junction 指向本地目录时不需要管理员权限、行为稳定——
+            所以 Windows 上 <code>node_modules</code> 里的包目录常常是 junction 而不是「真正的符号链接」，
+            但对 Node 的模块解析来说效果等价（都是路径跳转）。
+          </li>
+          <li>
+            <strong>文件继续用硬链接</strong>：store ↔ <code>.pnpm</code> 的去重依赖它；同卷时无需任何特权，速度与 Linux 一致。
+          </li>
+          <li>
+            <strong>跨卷/跨盘自动降级为复制</strong>：store 在 D 盘、项目在 E 盘时，硬链接建不了（EXDEV），
+            pnpm 会<strong>把文件复制</strong>过去——安装变慢、磁盘翻倍。所以最佳实践是
+            <code>pnpm store path</code> 与项目放<strong>同一块盘</strong>。
+          </li>
+          <li>
+            <strong>符号链接特权不足时</strong>：开 Windows「开发者模式」即可让普通用户创建 symlink；
+            完全不支持的环境可退回 <code>node-linker=hoisted</code>（模拟 npm 提升，但失去严格性）。
+          </li>
+        </ul>
+
+        <div class="code-title">现场排查：怎么确认本地的链接长什么样</div>
+        <pre class="code-block"><code class="language-bash"># Linux / macOS
+ls -l node_modules | head          # symlinks 显示为 "vue -> .pnpm/vue@3.5.32/node_modules/vue"
+stat vue                           # 关注 "Links: N"（硬链接计数 nlink）
+readlink node_modules/vue          # 只看符号链接指向
+
+# Windows
+dir /AL                            # 列出目录下的符号链接/联接
+fsutil hardlink list <文件路径>     # 列出某文件的全部硬链接
+# PowerShell：Get-Item node_modules\vue | Select-Object LinkType, Target
+
+# pnpm 侧
+pnpm store path                    # store 位置；检查是否与项目同一块盘
+# .pnpm 里的文件与 store 是硬链接（同一 inode，ls -i / fsutil 可验证）</code></pre>
+
+        <div class="callout tip">
+          <strong class="tag">面试浓缩版（可直接背）</strong>
+          「硬链接是同一个 inode 的另一个名字，不复制字节、只能同盘、不能链目录，删掉一个名字数据还在——
+          pnpm 用它把 store 和各项目的 <code>.pnpm</code> 连成同一份字节；符号链接是存着目标路径的小文件，
+          可以跨盘、可以链目录、目标没了会成死链——pnpm 用它把声明过的依赖暴露到顶层 node_modules。
+          三系统文件系统层都支持：Linux/macOS 原生无特权；Windows 上文件用硬链接、目录优先 junction
+          （免管理员），symlink 需要管理员或开发者模式；store 和项目跨盘时硬链接失败会退化为复制，
+          所以 store 尽量和项目同盘。」
+        </div>
+
+        <h3>2.5 灵魂拷问：为什么不能只用硬链接，把 node_modules 拼出来？</h3>
+        <div class="explanation">
+          <p style="margin: 0">
+            <strong>一句话答案：硬链接的单位是「文件」，依赖图的单位是「包目录」。</strong>
+            硬链接只能给<strong>一个文件</strong>再贴一个名字，没法让<strong>同一个目录</strong>出现在两个路径下；
+            而 node_modules 的本质是「一堆包目录 + 目录之间的嵌套关系」。所以 pnpm
+            <strong>文件层用硬链接</strong>（共享字节），<strong>包层用符号链接</strong>（拼出依赖图）——
+            两层各用各的原语，谁也替代不了谁。
+          </p>
+        </div>
+
+        <h4>官方的构建过程：先硬链接文件，再用符号链接搭图</h4>
+        <p>
+          pnpm 官方文档（<code>pnpm.io/zh/symlinked-node-modules-structure</code>）把安装分成两步，
+          原文大意：<em>「node_modules 中每个包的每个文件都是来自内容可寻址存储的硬链接——这是 node_modules
+          里唯一的『真实』文件。<strong>一旦所有包都硬链接到 node_modules，就会创建符号链接来构建嵌套的依赖关系图。</strong>」</em>
+        </p>
+        <div class="code-title">官方示例布局（foo 依赖 bar，bar 依赖 qar）——注意哪些是硬链接、哪些是符号链接</div>
+        <pre class="code-block"><code class="language-text">node_modules
+├── foo -> ./.pnpm/foo@1.0.0/node_modules/foo          ← 符号链接：把「直接依赖」暴露到根
+└── .pnpm                                               ← 虚拟存储：所有包的真身都在这
+    ├── bar@1.0.0
+    │   └── node_modules
+    │       └── bar
+    │           ├── index.js     -&gt; &lt;store&gt;/001        ← 硬链接：来自 store 的真实文件
+    │           └── package.json -&gt; &lt;store&gt;/002        ← 硬链接
+    └── foo@1.0.0
+        └── node_modules
+            ├── foo
+            │   ├── index.js     -&gt; &lt;store&gt;/003        ← 硬链接
+            │   └── package.json -&gt; &lt;store&gt;/004        ← 硬链接
+            └── bar -&gt; ../../bar@1.0.0/node_modules/bar  ← 符号链接：把「依赖」嵌进来</code></pre>
+        <p>
+          官方还解释了为什么文件要放进 <code>包名/node_modules/包名</code> 这么「深」的一层：
+          ① <strong>允许包自己 import 自己</strong>（<code>require('foo/package.json')</code> 要能成立）；
+          ② <strong>避免循环符号链接</strong>。而 Node 的模块解析会<strong>顺着真实路径</strong>走——
+          foo 里的代码 <code>require('bar')</code> 时，bar 的真身在
+          <code>bar@1.0.0/node_modules/bar</code>，它的依赖就去自己旁边的 <code>node_modules</code> 找，
+          所以依赖图再深，目录层级也永远是平的。
+        </p>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 480" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowHard2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#e67e22" />
+              </marker>
+              <marker id="arrowSym2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+
+            <!-- 左：文件级 -->
+            <rect x="14" y="14" width="496" height="452" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="14" y="14" width="496" height="46" rx="10" fill="#e67e22" />
+            <rect x="14" y="44" width="496" height="16" fill="#e67e22" />
+            <text x="36" y="43" font-size="15" font-weight="bold" fill="#ffffff">文件级：硬链接干得漂亮</text>
+            <text x="36" y="88" font-size="13" font-weight="bold" fill="#35495e">单位 = 一个文件（字节）→ 多个名字，同一份数据</text>
+
+            <rect x="70" y="110" width="380" height="44" rx="8" fill="#fffbeb" stroke="#e67e22" />
+            <text x="260" y="137" font-size="13" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">store/3f8a…c2e9 （vue 的 index.js）</text>
+
+            <rect x="70" y="200" width="380" height="44" rx="8" fill="#fff7e6" stroke="#e67e22" stroke-dasharray="5 3" />
+            <text x="260" y="227" font-size="12.5" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">项目A/.pnpm/vue@3.5.32/…/index.js</text>
+            <rect x="70" y="268" width="380" height="44" rx="8" fill="#fff7e6" stroke="#e67e22" stroke-dasharray="5 3" />
+            <text x="260" y="295" font-size="12.5" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">项目B/.pnpm/vue@3.5.32/…/index.js</text>
+
+            <path d="M200,156 L180,196" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowHard2)" />
+            <path d="M320,156 L340,264" stroke="#e67e22" stroke-width="2" marker-end="url(#arrowHard2)" />
+
+            <text x="36" y="344" font-size="13" fill="#2e7d32" font-weight="bold">✓ 三个名字 → 同一份字节，零拷贝</text>
+            <text x="36" y="372" font-size="12.5" fill="#35495e">硬链接天生就是干「文件去重」的：</text>
+            <text x="36" y="394" font-size="12.5" fill="#35495e">建链接只写目录项，不读写数据；</text>
+            <text x="36" y="416" font-size="12.5" fill="#35495e">每个名字都是普通文件，所有工具无感。</text>
+            <rect x="36" y="432" width="452" height="22" rx="4" fill="#fdecea" />
+            <text x="262" y="448" font-size="12.5" fill="#8c1d18" text-anchor="middle">✗ 但它做不到：让「一个目录」同时出现在两个路径下</text>
+
+            <!-- 右：目录级 -->
+            <rect x="530" y="14" width="496" height="452" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="530" y="14" width="496" height="46" rx="10" fill="#646cff" />
+            <rect x="530" y="44" width="496" height="16" fill="#646cff" />
+            <text x="552" y="43" font-size="15" font-weight="bold" fill="#ffffff">目录级：只能符号链接 / junction</text>
+            <text x="552" y="88" font-size="13" font-weight="bold" fill="#35495e">单位 = 一个包目录 → 一个真身，多个「槽位」引用它</text>
+
+            <rect x="556" y="116" width="210" height="52" rx="8" fill="#eef0ff" stroke="#646cff" />
+            <text x="661" y="138" font-size="11.5" fill="#9aa7b8" text-anchor="middle" font-family="Consolas,monospace">foo@1.0.0/node_modules/</text>
+            <text x="661" y="156" font-size="13" fill="#646cff" text-anchor="middle" font-family="Consolas,monospace">bar  ← 槽位</text>
+
+            <rect x="556" y="204" width="210" height="52" rx="8" fill="#eef0ff" stroke="#646cff" />
+            <text x="661" y="226" font-size="11.5" fill="#9aa7b8" text-anchor="middle" font-family="Consolas,monospace">根 node_modules/</text>
+            <text x="661" y="244" font-size="13" fill="#646cff" text-anchor="middle" font-family="Consolas,monospace">bar  ← 槽位</text>
+
+            <rect x="820" y="150" width="180" height="88" rx="8" fill="#fffbeb" stroke="#e67e22" stroke-width="2" />
+            <text x="910" y="178" font-size="12" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">bar@1.0.0/</text>
+            <text x="910" y="198" font-size="12" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">node_modules/bar</text>
+            <text x="910" y="220" font-size="11" fill="#9aa7b8" text-anchor="middle">唯一真身（文件是硬链接）</text>
+
+            <path d="M770,132 C800,132 810,160 820,172" fill="none" stroke="#646cff" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowSym2)" />
+            <path d="M770,230 C800,230 810,210 820,198" fill="none" stroke="#646cff" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowSym2)" />
+            <text x="786" y="150" font-size="11" fill="#646cff" font-weight="bold">symlink</text>
+            <text x="786" y="262" font-size="11" fill="#646cff" font-weight="bold">symlink</text>
+
+            <text x="552" y="300" font-size="13" fill="#e53935" font-weight="bold">✗ 硬链接在这无能为力：</text>
+            <text x="552" y="324" font-size="12.5" fill="#35495e">硬链接只能给单个文件起别名；</text>
+            <text x="552" y="346" font-size="12.5" fill="#35495e">「bar 这个包目录」要在 foo 里出现一次、</text>
+            <text x="552" y="368" font-size="12.5" fill="#35495e">在根里再出现一次——这是目录级引用。</text>
+            <text x="552" y="398" font-size="13" fill="#2e7d32" font-weight="bold">✓ 符号链接（Windows 上是 junction）：</text>
+            <text x="552" y="422" font-size="12.5" fill="#35495e">一个真身目录 + N 个路径指针，</text>
+            <text x="552" y="444" font-size="12.5" fill="#35495e">正是依赖图需要的原语。</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 左：文件字节共享（硬链接）；右：包目录出现在多处（符号链接）</p>
+
+        <h4>如果强行「只用硬链接」会怎样？三种姿势全翻车</h4>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>假想方案</th>
+              <th>会发生什么</th>
+              <th>为什么不行</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>① 扁平 node_modules，包文件硬链接进去（npm 形状 + 去重）</td>
+              <td>字节确实省了，但顶层堆满提升上来的间接依赖</td>
+              <td>幽灵依赖<strong>原封不动地回来</strong>——硬链接只改「字节从哪来」，不改「目录长什么样」；pnpm 的严格性靠的是形状</td>
+            </tr>
+            <tr>
+              <td>② 在每个包的 node_modules 里，硬链接对方包的<strong>全部文件</strong></td>
+              <td>「bar 的文件」出现在 N 个包的 node_modules 下，每个都是真目录 + 硬链文件</td>
+              <td>目录身份/自引用混乱（<code>require('bar/package.json')</code> 该以谁为准？）；目录项数量爆炸；升级 bar 要同步改 N 处；更别提循环依赖</td>
+            </tr>
+            <tr>
+              <td>③ 只硬链接、不做任何「目录指针」，靠 Node 自己爬上去找</td>
+              <td>等价于放弃 node_modules 布局协议</td>
+              <td>Node 的解析算法约定就是「从当前文件的路径逐级向上找 node_modules/包名」——
+                没有「包目录」这个入口，解析根本无从谈起</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <strong class="tag">分工表（一句话记住）</strong>
+          <table class="map-table" style="margin: 8px 0 0">
+            <thead>
+              <tr>
+                <th>要解决的问题</th>
+                <th>用的原语</th>
+                <th>pnpm 里的落点</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>「同一份字节只存一次」（快、省）</td>
+                <td class="win">硬链接（文件级）</td>
+                <td><code>store</code> ↔ <code>.pnpm/包@版本/…/文件</code></td>
+              </tr>
+              <tr>
+                <td>「一个包目录出现在多个路径」（拼依赖图）</td>
+                <td class="win">符号链接 / junction（目录级）</td>
+                <td><code>foo/node_modules/bar → bar@1.0.0/node_modules/bar</code></td>
+              </tr>
+              <tr>
+                <td>「顶层只暴露声明过的依赖」（严格）</td>
+                <td class="win">符号链接（目录级）</td>
+                <td><code>node_modules/foo → .pnpm/foo@1.0.0/node_modules/foo</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">面试怎么答这题</strong>
+          「问得很好——硬链接确实能把字节去重，但它的粒度是<strong>文件</strong>，而 node_modules
+          的难点是<strong>包目录之间</strong>的引用关系：bar 要出现在 foo 的 node_modules 里、
+          还要出现在别处（比如根的直接依赖），这要求一个目录有多个路径入口，硬链接做不到
+          （硬链接禁止链接目录）。所以 pnpm 是两层分工：<strong>文件从 store 硬链接进
+          <code>.pnpm</code>（唯一真实文件），然后用符号链接把依赖嵌进每个包、把直接依赖挂到根</strong>——
+          这是官方文档明确写的构建顺序。Windows 上目录指针用免特权的 junction，角色一样。
+          如果只用硬链接、把 node_modules 拼成 npm 的扁平形状，幽灵依赖就又回来了——
+          pnpm 的严格性靠的是这个符号链接拼出来的「非扁平形状」，不是硬链接本身。」
+        </div>
+
+        <h3>2.6 pnpm runtime：项目级 Node.js 管理，为什么能取代 nvm</h3>
+        <div class="explanation">
+          <p style="margin: 0">
+            <strong>一句话定位</strong>：nvm 管的是「你这台机器上全局的 node」，靠 shell hook 和 PATH 切换；
+            <strong>pnpm runtime 管的是「这个项目要用的 node」</strong>——版本写进
+            <code>package.json</code>、精确版本和校验和锁进 <code>pnpm-lock.yaml</code>，
+            <code>pnpm install</code> 自动下载，项目的脚本（v12 起连裸 <code>node</code> 也是）自动走这个版本。
+            版本声明跟着仓库走，而不是跟着某台电脑的 shell 配置走。
+          </p>
+        </div>
+
+        <h4>用法一：项目里锁定 Node 版本（推荐，团队级）</h4>
+        <div class="code-title">package.json：devEngines.runtime（pnpm ≥ 10.14）</div>
+        <pre class="code-block"><code class="language-json">{
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^24.4.0",
+      "onFail": "download"
+    }
+  }
+}</code></pre>
+        <p>声明之后，pnpm 的行为（官方文档描述的流程）：</p>
+        <ol>
+          <li><code>pnpm install</code> 把 <code>^24.4.0</code> 这个<strong>范围解析成当时最新的匹配版本</strong>（比如 24.11.2）；</li>
+          <li>把这个<strong>精确版本号 + 校验和</strong>写进 <code>pnpm-lock.yaml</code>——下次所有人装到的是同一个 Node，不是「某个满足 ^24 的 Node」；</li>
+          <li><code>onFail: "download"</code> 表示本机没有就<strong>自动下载</strong>（还支持 <code>error</code> / <code>ignore</code> 等策略，可用 <code>runtimeOnFail</code> 全局覆盖）；</li>
+          <li>项目里的<strong>脚本自动用这份本地 runtime</strong>跑，和你机器上全局的 node 是谁无关；自 v12 起，项目内直接敲 <code>node xxx.js</code> 也跟随这个钉子（可用 <code>globalShims</code> 关掉，或单次 <code>PNPM_SHIM_BYPASS=1</code> 跳过）。</li>
+        </ol>
+        <div class="code-title">甚至可以一次钉多个运行时（node + deno）</div>
+        <pre class="code-block"><code class="language-json">{
+  "devEngines": {
+    "runtime": [
+      { "name": "node",  "version": "^24.4.0", "onFail": "download" },
+      { "name": "deno",  "version": "^2.4.3",  "onFail": "download" }
+    ]
+  }
+}</code></pre>
+        <p>
+          顺带一提：pnpm 自己的版本也有对应机制——<code>devEngines.packageManager</code> 支持<strong>版本范围</strong>
+          （比只能写死精确版本的 <code>packageManager</code> 字段更灵活），解析结果同样进 lockfile
+          （<code>packageManagerDependencies</code>）：
+        </p>
+        <div class="code-title">连 pnpm 自身也钉住</div>
+        <pre class="code-block"><code class="language-json">{
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": ">=11.0.0 <12.0.0",
+      "onFail": "download"
+    }
+  }
+}</code></pre>
+
+        <h4>用法二：命令行安装/切换（机器级，替代 nvm install / nvm use）</h4>
+        <div class="code-title">pnpm runtime（别名 rt）常用命令</div>
+        <pre class="code-block"><code class="language-bash">pnpm runtime set node 22 -g        # 全局安装 Node 22（机器级默认）
+pnpm runtime set node lts -g       # 装最新 LTS
+pnpm runtime set node latest -g    # 装最新稳定版
+pnpm runtime set node nightly -g   # 预发布通道（也支持 rc、rc/22、代号如 argon）
+pnpm runtime set deno 2 -g         # 不止 node：deno
+pnpm runtime set bun latest -g     # 以及 bun
+
+# 不加 -g 则装进当前上下文；支持的运行时统一是：node / deno / bun</code></pre>
+
+        <h4>用法三：依赖包声明「我需要什么 Node」（engines.runtime，pnpm ≥ 10.21）</h4>
+        <p>
+          这是给<strong>包作者</strong>用的：某个依赖对 Node 版本有硬要求，可以在自己的 package.json 里声明，
+          pnpm 会自动为它准备匹配的运行时——CLI 应用会被绑定到所需版本执行，<code>postinstall</code>
+          也会用指定版本跑。这在 nvm 体系里根本没法表达（nvm 只管你机器的全局 node，管不了某个依赖的偏好）。
+        </p>
+        <div class="code-title">依赖包里的声明</div>
+        <pre class="code-block"><code class="language-json">{
+  "engines": {
+    "runtime": {
+      "name": "node",
+      "version": "^24.11.0",
+      "onFail": "download"
+    }
+  }
+}</code></pre>
+
+        <h4>为什么说它能取代 nvm？逐条对比</h4>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>nvm / n / fnm</th>
+              <th>pnpm runtime</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>版本声明在哪</td>
+              <td><code>.nvmrc</code> / <code>.node-version</code>（单独文件，靠人记得执行 <code>nvm use</code>）</td>
+              <td class="win"><code>package.json</code> 的 <code>devEngines.runtime</code>——就在清单里，和依赖声明同级，进版本库</td>
+            </tr>
+            <tr>
+              <td>精确到哪个版本</td>
+              <td>范围或别名（lts/*），装完是「当时匹配的某个」</td>
+              <td class="win">解析后<strong>精确版本 + 校验和写入 lockfile</strong>，全团队/CI 装到同一个 Node</td>
+            </tr>
+            <tr>
+              <td>何时生效</td>
+              <td>进目录要记得 <code>nvm use</code>；忘了就是全局 node 在跑</td>
+              <td class="win"><code>pnpm install</code> 自动解析/下载；脚本自动用本地 runtime（v12 裸 <code>node</code> 也跟随）</td>
+            </tr>
+            <tr>
+              <td>shell 依赖</td>
+              <td>要往 <code>.bashrc/.zshrc</code> 写 hook，改 PATH；新开终端/CI 都要初始化</td>
+              <td class="win">无 shell hook、不改全局 PATH；CI 只需要「装好 pnpm 然后 install」</td>
+            </tr>
+            <tr>
+              <td>「谁的版本」</td>
+              <td>机器级：一台电脑一个「当前 node」，多项目并发时容易串</td>
+              <td class="win">项目级：每个项目钉自己的，互不干扰；机器级需要时再 <code>-g</code> 装一个默认</td>
+            </tr>
+            <tr>
+              <td>可复现性</td>
+              <td>lockfile 锁了依赖，但 node 本身不进 lockfile——「依赖锁了、运行时没锁」</td>
+              <td class="win">依赖和运行时<strong>一起锁</strong>，真正端到端可复现</td>
+            </tr>
+            <tr>
+              <td>多运行时</td>
+              <td>只管 Node（deno/bun 要另装管理器）</td>
+              <td class="win">node / deno / bun 统一同一套机制</td>
+            </tr>
+            <tr>
+              <td>给依赖用</td>
+              <td>✗ 表达不了「这个依赖需要 node ≥24」</td>
+              <td class="win"><code>engines.runtime</code> 可按包声明并自动满足</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <strong class="tag">本质差别（面试答到这一层就赢了）</strong>
+          nvm 是<strong>环境管理器</strong>：它假设「Node 是机器上的全局资源」，用 PATH 魔术切换「当前」是谁——
+          版本选择发生在<strong>你按回车的那一刻</strong>，和项目无关。
+          pnpm runtime 是<strong>依赖管理的延伸</strong>：它假设「Node 也是这个项目的一份依赖」，
+          声明进清单、锁定进 lockfile、由 install 分发——版本选择发生在<strong>解析依赖图的时候</strong>，
+          自动且可复现。包管理器比 shell hook 更有资格管运行时，因为只有它知道 lockfile 里锁了什么。
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">实战注意</strong>
+          ① 首次 <code>onFail: "download"</code> 会拉一份 Node 发行版（几十 MB），CI 上记得缓存 pnpm 的
+          缓存目录（<code>pnpm cache path</code>）；② 老项目想渐进迁移：可以先只用
+          <code>pnpm runtime set node lts -g</code> 当「更好的 nvm」，再把 <code>devEngines.runtime</code>
+          补进 package.json；③ 官方从 v11 起安装 Node 不再捆绑 npm/npx/corepack
+          （文件数减半），需要 npm 的话 <code>pnpm add -g npm</code> 单独装——这反而是个加分考点：
+          「连 npm 都成了可选件」。
+        </div>
+
+        <div class="callout tip">
+          <strong class="tag">面试怎么答这题</strong>
+          「pnpm runtime 能取代 nvm，是因为它把 Node 从『机器的全局状态』变成了『项目的依赖』——
+          版本写在 <code>devEngines.runtime</code> 里，<code>pnpm install</code> 解析后把精确版本和校验和
+          锁进 lockfile，脚本（v12 起连裸 node）自动用这份运行时。相比 nvm：不用 shell hook、
+          不用记得 nvm use、CI 不用额外初始化、多项目不串版本，而且依赖和运行时一起锁、真正可复现。
+          它还能管 deno/bun，并通过 <code>engines.runtime</code> 让依赖声明自己的 Node 需求——
+          这是 nvm 这类环境管理器在架构上做不到的。一句话：<strong>包管理器比 shell 更有资格管运行时，
+          因为只有它掌握 lockfile。</strong>」
+        </div>
+
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title amber">为什么快？</span>
+            <p style="margin: 0; font-size: 14px">
+              命中 store 的包<strong>不下载、不解压、不复制</strong>，只是创建链接与写元数据；冷启动首次下载后，后续项目安装接近「秒装」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title amber">为什么省？</span>
+            <p style="margin: 0; font-size: 14px">
+              同内容跨项目只存一份。几十个前端仓库都装 <code>vue@3.5.x</code>，磁盘上只有一份 vue。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title amber">为什么严格？</span>
+            <p style="margin: 0; font-size: 14px">
+              顶层 <code>node_modules</code> 只有你声明的依赖；其余全部藏在 <code>.pnpm</code> 虚拟存储里，由各自的依赖链解析。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title amber">逃生舱口</span>
+            <p style="margin: 0; font-size: 14px">
+              老项目兼容可临时开 <code>node-linker=hoisted</code>（模拟 npm 提升）；不建议长期开——等于主动放弃严格性。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">pnpm 10 的新考点</strong>
+          pnpm 10 起<strong>默认拦截依赖包的构建脚本</strong>（install/postinstall 等），需要在配置里用
+          <code>onlyBuiltDependencies</code> 白名单显式放行（或 <code>pnpm approve-builds</code> 交互批准）。理由：供应链安全——
+          不可信包不该在安装时随意执行任意代码。回答时可顺带一句：<strong>这是包管理器近年最重要的安全默认值变化。</strong>
+        </div>
+      </div>
+
+      <!-- 三、幽灵依赖 -->
+      <div class="section" id="s3">
+        <h2>三、幽灵依赖（Phantom Dependency）：npm 生态的集体阴影</h2>
+
+        <div class="explanation">
+          <p style="margin: 0">
+            <strong>先看一段「最短破案故事」。</strong>你的 <code>package.json</code> 里只装了
+            <code>webpack</code>，但你的业务代码里写着 <code>import semver from 'semver'</code>——
+            <code>semver</code> 你从来没装过，可它<strong>本地能跑、CI 能跑、上线也能跑</strong>。
+            直到某天升级了 webpack，构建突然报 <code>Cannot find module 'semver'</code>，
+            报错栈指向你的业务代码，可你一个依赖都没删过。这不是玄学，是
+            <strong>hoisting（提升）埋下的时间炸弹</strong>。
+          </p>
+        </div>
+
+        <p>
+          <strong>定义</strong>：代码里 <code>import</code> 了 <code>package.json</code> 里<strong>没有声明</strong>的包，
+          却依然能正常运行——因为它只是你某个间接依赖的依赖，被提升到了顶层 <code>node_modules</code>，
+          恰好「看起来像」你的直接依赖。没声明却可见，像不像一只住在你家的幽灵？
+        </p>
+
+        <h3>3.1 它是怎么长出来的：安装过程逐步拆解</h3>
+        <p>设定一个最小场景。你的声明很简单，只有 A、B 两个包——注意 <strong>C 从头到尾没出现在你的 package.json 里</strong>：</p>
+        <div class="code-title">你的 package.json（声明层——这是「唯一的事实」）</div>
+        <pre class="code-block"><code class="language-json">{
+  "dependencies": {
+    "A": "1.0.0",
+    "B": "1.0.0"
+  }
+}</code></pre>
+        <p>但 A 和 B 自己都依赖了 C（这很正常，它们各自的 package.json 里写着）：</p>
+        <div class="code-title">间接依赖的声明（你看不见这层，但 npm 会照做）</div>
+        <pre class="code-block"><code class="language-text">A@1.0.0 的 package.json → { "dependencies": { "C": "2.0.0" } }
+B@1.0.0 的 package.json → { "dependencies": { "C": "2.0.0" } }</code></pre>
+        <p>
+          npm/yarn 安装时发现 A、B 都要 <code>C@2.0.0</code>，为了不重复安装两份，把 C
+          <strong>提升（hoist）到顶层</strong> node_modules——「去重」的初衷是好的，副作用却要命：
+        </p>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 470" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowGhost" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+
+            <!-- 步骤1 -->
+            <rect x="14" y="14" width="320" height="360" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="14" y="14" width="320" height="46" rx="10" fill="#646cff" />
+            <rect x="14" y="44" width="320" height="16" fill="#646cff" />
+            <text x="36" y="43" font-size="14" font-weight="bold" fill="#ffffff">① 你只声明了 A、B</text>
+            <g font-family="Consolas,'Courier New',monospace" font-size="13">
+              <text x="36" y="92" fill="#35495e">{</text>
+              <text x="36" y="116" fill="#35495e">  "dependencies": {</text>
+              <text x="36" y="140" fill="#2e7d32">    "A": "1.0.0",   ✓ 你写的</text>
+              <text x="36" y="164" fill="#2e7d32">    "B": "1.0.0"    ✓ 你写的</text>
+              <text x="36" y="188" fill="#35495e">  }</text>
+              <text x="36" y="212" fill="#35495e">}</text>
+            </g>
+            <text x="36" y="258" font-size="13" fill="#e53935" font-weight="bold">C 从未出现在这里</text>
+            <text x="36" y="286" font-size="12.5" fill="#7a8aa0">但 A、B 的 package.json 里</text>
+            <text x="36" y="308" font-size="12.5" fill="#7a8aa0">都声明了 "C": "2.0.0"</text>
+            <text x="36" y="346" font-size="12" fill="#9aa7b8">你对这一层是无感的——</text>
+            <text x="36" y="366" font-size="12" fill="#9aa7b8">这就是「间接」的含义</text>
+
+            <!-- 步骤2 -->
+            <rect x="358" y="14" width="320" height="360" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="358" y="14" width="320" height="46" rx="10" fill="#ef6c00" />
+            <rect x="358" y="44" width="320" height="16" fill="#ef6c00" />
+            <text x="380" y="43" font-size="14" font-weight="bold" fill="#ffffff">② npm install：C 被提升到顶层</text>
+            <text x="380" y="88" font-size="12.5" fill="#7a8aa0">A、B 都要 C@2.0.0 → 去重，放顶层一份</text>
+            <g font-family="Consolas,'Courier New',monospace" font-size="13">
+              <text x="380" y="124" fill="#35495e" font-weight="bold">node_modules/</text>
+              <text x="380" y="152" fill="#2e7d32">├─ A/          ✓ 已声明</text>
+              <text x="380" y="180" fill="#2e7d32">├─ B/          ✓ 已声明</text>
+              <text x="380" y="208" fill="#e53935">└─ C/          ✗ 幽灵！被提升到顶层</text>
+            </g>
+            <rect x="380" y="236" width="276" height="110" rx="8" fill="#fdecea" stroke="#e53935" stroke-dasharray="4 3" />
+            <text x="396" y="262" font-size="12.5" fill="#8c1d18">关键：C 躺在顶层，对 Node 来说</text>
+            <text x="396" y="284" font-size="12.5" fill="#8c1d18">和「你自己的依赖」长得一模一样。</text>
+            <text x="396" y="306" font-size="12.5" fill="#8c1d18">没有任何机制区分「谁声明了它」</text>
+            <text x="396" y="328" font-size="12.5" fill="#8c1d18">——提升抹掉了这层信息。</text>
+
+            <!-- 步骤3 -->
+            <rect x="702" y="14" width="320" height="360" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <rect x="702" y="14" width="320" height="46" rx="10" fill="#cb3837" />
+            <rect x="702" y="44" width="320" height="16" fill="#cb3837" />
+            <text x="724" y="43" font-size="14" font-weight="bold" fill="#ffffff">③ 你的代码 import C，居然成功</text>
+            <g font-family="Consolas,'Courier New',monospace" font-size="13">
+              <text x="724" y="92" fill="#35495e">// src/user.js</text>
+              <text x="724" y="116" fill="#646cff">import "C";</text>
+            </g>
+            <text x="724" y="156" font-size="12.5" fill="#35495e" font-weight="bold">Node 的解析路径：</text>
+            <text x="724" y="184" font-size="12" fill="#7a8aa0" font-family="Consolas,monospace">src/node_modules/C        ✗ 没有</text>
+            <text x="724" y="208" font-size="12" fill="#2e7d32" font-family="Consolas,monospace">项目/node_modules/C       ✓ 找到了！</text>
+            <text x="724" y="240" font-size="12" fill="#7a8aa0">（它只是 A、B 的依赖，被提升上来了）</text>
+            <rect x="724" y="262" width="276" height="88" rx="8" fill="#fff3e0" stroke="#ef6c00" stroke-dasharray="4 3" />
+            <text x="740" y="288" font-size="12.5" fill="#b45309">运行成功 → 你永远不会主动发现</text>
+            <text x="740" y="310" font-size="12.5" fill="#b45309">这就是幽灵：不请自来、</text>
+            <text x="740" y="332" font-size="12.5" fill="#b45309">不告而别、出事时才现身。</text>
+
+            <!-- 底部时间线 -->
+            <path d="M334,180 L352,180" stroke="#646cff" stroke-width="2" marker-end="url(#arrowGhost)" />
+            <path d="M678,180 L696,180" stroke="#646cff" stroke-width="2" marker-end="url(#arrowGhost)" />
+            <rect x="14" y="396" width="1008" height="52" rx="8" fill="#fdecea" />
+            <text x="518" y="418" font-size="13" fill="#8c1d18" text-anchor="middle" font-weight="bold">时间炸弹：某天升级 B@2.0（它不再依赖 C）→ C 从顶层消失 → 你的 import "C" 突然崩了</text>
+            <text x="518" y="438" font-size="12.5" fill="#8c1d18" text-anchor="middle">报错栈指向你的业务文件，但真正变的东西是你看不见的「间接依赖」——排查半天才想起：我根本就没声明过 C</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 幽灵诞生的三个条件：有人间接依赖它 + 提升把它放到了你够得着的地方 + 你写了 import</p>
+
+        <h3>3.2 Node 为什么「配合演出」：解析算法没毛病，提升有毛病</h3>
+        <p>
+          Node 的模块解析（简化版）：从 <code>require/import</code> 那个文件所在目录开始，
+          <strong>逐级向上找 node_modules/包名</strong>，找到第一个就停——找不到就一路向上爬到磁盘根。
+        </p>
+        <div class="code-title">一次完整的解析（你的 src/user.js 里 import "C"）</div>
+        <pre class="code-block"><code class="language-text">/项目/src/node_modules/C          ← ① 没有，继续向上
+/项目/node_modules/C              ← ② 有！（C 被提升到这了）→ 命中，解析成功
+# 如果这里也没有：
+/node_modules/C                   ← ③ 继续向上……一般到项目根就该报错了</code></pre>
+        <p>
+          「向上找」这个设计本身是为<strong>嵌套 node_modules</strong>服务的（内层依赖优先，找不到再找外层），
+          没毛病。问题出在 <strong>hoisting 把「别人的依赖」放到了你够得着的位置</strong>——
+          Node 只认「node_modules 里有没有叫这个名字的目录」，它根本不知道、也不关心
+          <strong>是谁把 C 放在那里的</strong>。于是：提升决定了你能看见谁，而你的代码以为「看见的 = 我声明的」。
+        </p>
+        <div class="callout info">
+          <strong class="tag">一个比喻</strong>
+          npm 的 node_modules 像一个<strong>开放式货架仓库</strong>：为了省空间把所有货物平铺在地上，
+          你拿自己清单上的货没问题，但也会「顺手」拿到别人的货——而且拿得理直气壮，因为架子上没有标签写「这是谁的」。
+          pnpm 的 node_modules 像<strong>带门禁的货架</strong>：你的柜子里只有你声明过的东西，别人的货在别人的柜子里（虚拟存储），你刷不开。
+        </div>
+
+        <h3>3.3 为什么叫「幽灵」：三个特征</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>特征</th>
+              <th>具体表现</th>
+              <th>后果</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>不请自来</strong></td>
+              <td>从没声明，却在 node_modules 顶层可见</td>
+              <td>依赖图失真：<code>package.json</code> 不再是事实来源，真实可用集 = 声明 ∪ 被提升的集合，没人说得清有多大</td>
+            </tr>
+            <tr>
+              <td><strong>来路不明</strong></td>
+              <td>你说不清 C 是被谁、因为什么带进来的</td>
+              <td>无法评估风险：不知道它为什么在，也就不知道它什么时候会走</td>
+            </tr>
+            <tr>
+              <td><strong>不告而别</strong></td>
+              <td>只要间接依赖变了、lockfile 重生成、换台机器 install，它就可能消失</td>
+              <td>时间炸弹：「我什么都没改」却突然崩，且报错指向无辜的业务代码</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>3.4 真实翻车时间线（最常见的三种）</h3>
+        <div class="pitfall-grid">
+          <div class="pitfall">
+            <span class="no">场景 1</span><b>换台机器 / CI 挂了</b><br />
+            你本地 node_modules 是上次装的，C 还在。同事 clone 后重新 install，
+            npm 版本或提升结果不同，C 没上顶层——他的构建立刻报
+            <code>Cannot find module 'C'</code>。<strong>「我本地是好的」是幽灵依赖案件的标准开场白。</strong>
+          </div>
+          <div class="pitfall">
+            <span class="no">场景 2</span><b>升级一个「完全不相关」的依赖</b><br />
+            把 B 从 1.0 升到 2.0。B@2 不再依赖 C（或换了内部实现）。
+            C 从顶层消失 → 你 import 的 C 崩了。报错栈指向你的业务文件，
+            可你升级的明明是 B——<strong>故障点和变更点隔着一整层依赖树。</strong>
+          </div>
+          <div class="pitfall">
+            <span class="no">场景 3</span><b>卸掉「看起来没用」的包</b><br />
+            package.json 里发现 A 好像没被 import 了，<code>npm uninstall A</code>。
+            但其实你代码里的 <code>import C</code> 一直靠 A 的依赖树把 C 带上来——
+            A 一走，C 也走了。<strong>卸包卸出了连环命案。</strong>
+          </div>
+        </div>
+
+        <h3>3.5 同一段代码，npm 和 pnpm 两种命运</h3>
+        <div class="code-title">业务代码 src/user.js（你从来没有安装过 lodash）</div>
+        <pre class="code-block"><code class="language-javascript">// package.json 里只有 { "dependencies": { "webpack": "^5" } }
+// 而 webpack（或它的某个间接依赖）恰好带了 lodash
+
+import debounce from 'lodash/debounce';   // lodash 你从来没声明过
+
+// npm / yarn 下：跑得飞快，测试全绿，没人报警
+// pnpm 下：Error: Cannot find module 'lodash'
+//          ← 安装完第一次构建就抓住你，而不是三个月后</code></pre>
+        <div class="callout tip">
+          <strong class="tag">正确姿势只有一个</strong>
+          用到了就显式声明：<code>pnpm add lodash</code>（或 <code>npm i lodash</code>）。
+          不要嫌麻烦——多写一行 <code>package.json</code>，换的是「三个月后不炸」。
+          需要排查时：<code>pnpm why lodash</code> 一眼看到是谁带进来的、版本是多少。
+        </div>
+
+        <h3>3.6 危害清单 &amp; pnpm 怎么根治</h3>
+        <div class="vs-grid stack">
+          <div class="vs-panel bad">
+            <h4>为什么危险</h4>
+            <ul>
+              <li><strong>不可复现</strong>：本机能跑，CI / 新同事机器挂——取决于间接依赖的版本与提升结果。</li>
+              <li><strong>升级地雷</strong>：间接依赖大版本一升，你「偷偷用着」的 API 没了，报错却指向你的业务代码。</li>
+              <li><strong>依赖图失真</strong>：package.json 不再是事实来源，真实可用集合 = 声明 ∪ 被提升的集合，没人说得清。</li>
+              <li><strong>删除依赖不等于移除</strong>：你以为卸干净了，其实还在 import 别人的依赖。</li>
+              <li><strong>安全面扩大</strong>：你能 import 到的包，理论上也是攻击面的一部分（尤其被供应链投毒时）。</li>
+            </ul>
+          </div>
+          <div class="vs-panel good">
+            <h4>pnpm 怎么解决（回到第二章的结构）</h4>
+            <ul>
+              <li><strong>结构上不可见</strong>：顶层 <code>node_modules</code> 只有你声明过的包（符号链接）；没声明 → <code>Cannot find module</code>，当场暴露。</li>
+              <li><strong>别人的依赖关在虚拟存储里</strong>：C 只存在于 <code>.pnpm/A@1/node_modules/</code> 这种「A 自己的视角」下，你的代码解析不到。</li>
+              <li><strong>立刻可修</strong>：报错逼你把用到的包写进 dependencies，依赖图恢复诚实——第一天就修，而不是上线后。</li>
+              <li><strong>可审计</strong>：<code>pnpm why &lt;pkg&gt;</code> 一键看「谁引入了它、为什么」。</li>
+              <li><strong>兼容开关</strong>：<code>.npmrc</code> 里 <code>shamefully-hoist=true</code> 可临时退回 npm 行为（慎用，等于放幽灵回屋）。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>3.7 自检与排查：怎么把幽灵揪出来</h3>
+        <div class="code-title">典型现场：一个「缺失依赖」的排查过程</div>
+        <pre class="code-block"><code class="language-bash"># 现象：升级某个依赖后，构建突然报 Cannot find module 'semver'
+# npm/yarn 下：semver 明明没装，却一直能 import（被提升的幽灵依赖）
+
+pnpm why semver        # 看它被谁带进来的（依赖链）
+pnpm add -D semver     # 用到就显式声明——这才是正确姿势
+# 若确需全局提升（老插件/二进制场景）才在 .npmrc 打开：
+# shamefully-hoist=true   # 等价于把 node_modules 拍平成 npm 的样子</code></pre>
+        <ul>
+          <li><strong>最粗暴的体检</strong>：清掉 node_modules 和 lockfile 重新 install，还能跑的 import 都要打问号（前提是安装结果可复现）。</li>
+          <li><strong>迁移检测器</strong>：把项目切到 pnpm 跑一遍 build/test——幽灵依赖会集中报错暴露，一次性清干净再切回来或常驻 pnpm。</li>
+          <li><strong>工具辅助</strong>：<code>depcheck</code>、<code>knip</code> 等可以扫描「代码里 import 了但 package.json 没声明」的包，纳入 CI 定期跑。</li>
+          <li><strong>预防</strong>：新项目直接用 pnpm（严格结构是默认值）；存量项目把「显式声明缺失依赖」当成一次性的技术债清理。</li>
+        </ul>
+
+        <div class="callout tip">
+          <strong class="tag">面试金句</strong>
+          幽灵依赖的本质是「<strong>依赖声明与运行时可见集不一致</strong>」。npm/yarn 用提升换安装效率，付出了语义失真的代价——
+          Node 的解析算法只看「node_modules 里有没有这个目录」，不看「是谁声明的」，于是被提升的间接依赖就冒充了直接依赖；
+          pnpm 用链接结构保证「package.json 即真相」：顶层只有声明过的包，别人的依赖锁在各自的虚拟存储条目里。
+          代价是个别不规范的老包要显式补声明或临时开兼容开关——但这是<strong>第一天就付的账</strong>，不是三个月后连本带利。
+        </div>
+      </div>
+
+      <!-- 四、workspace 协议 -->
+      <div class="section" id="s4">
+        <h2>四、workspace：pnpm-workspace.yaml 与 workspace: 协议</h2>
+
+        <h3>4.1 workspace 声明：哪些目录算「包」</h3>
+        <div class="code-title">根目录 pnpm-workspace.yaml（我项目的真实写法）</div>
+        <pre class="code-block"><code class="language-yaml">packages:
+  - 'packages/*'        # 8 个库/组件包
+  - 'examples/*'        # 联调示例应用（也纳入统一安装与 filter）
+  - '!packages/dev-starter'   # 取反：把 dev-starter 排除出本 workspace</code></pre>
+        <ul>
+          <li>glob 声明范围；<strong>支持 <code>!</code> 取反排除</strong>——这是 pnpm 相比 yarn workspaces 更灵活的一点。</li>
+          <li>根目录执行 <code>pnpm install</code> 时，所有命中的包共享<strong>同一份 lockfile</strong>、同一个虚拟 store，依赖版本天然对齐。</li>
+          <li>配置文件可再放 <code>overrides</code>（强制统一某依赖版本）、<code>catalogs</code>（pnpm 9.5+ 的「目录级版本清单」，多包共用一套版本号）等。</li>
+        </ul>
+
+        <h3>4.2 workspace: 协议——本地链接、发布替换</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>写法</th>
+              <th>本地（workspace 内）</th>
+              <th>发布到 registry 后</th>
+              <th>适用场景</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>workspace:*</code></td>
+              <td>链接到仓库内的包（任意版本）</td>
+              <td class="win">替换成精确版本，如 <code>2.17.0</code></td>
+              <td>内部库之间最常用</td>
+            </tr>
+            <tr>
+              <td><code>workspace:^</code> / <code>workspace:~</code></td>
+              <td>同上</td>
+              <td>替换成 <code>^2.17.0</code> / <code>~2.17.0</code></td>
+              <td>发布后希望下游吃补丁更新</td>
+            </tr>
+            <tr>
+              <td><code>link:../pkg</code></td>
+              <td>软链接到目录</td>
+              <td>原样保留（危险）</td>
+              <td>workspace 外的本地引用，慎用</td>
+            </tr>
+            <tr>
+              <td><code>file:../pkg.tgz</code></td>
+              <td>安装 tar 包副本</td>
+              <td>原样保留</td>
+              <td>不走 registry 的离线分发</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout danger">
+          <strong class="tag">高频追问：workspace:* 发布后会不会坏？</strong>
+          不会——<strong>publish 时 pnpm 会把 <code>workspace:*</code> 重写成真实版本号</strong>再打 tar 包（<code>pnpm pack</code>
+          / <code>pnpm publish</code> 都会做）。你可以解包验证。所以发布产物里永远看不到 workspace 字样，npm 上的消费者无感知。
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">关键区别：链接到的是「源码目录」，不是「构建产物」</strong>
+          本地链接后，别人 import 你时走的是你 package.json 的 <code>exports/main</code> 指向——如果指向
+          <code>./dist/…</code>，那<strong>必须先 build</strong> 才能被消费。这就是为什么很多 monorepo 要么用
+          <code>publishConfig</code> + 源码出口做开发态，要么像我项目一样在发布/联调前显式跑构建链（见第七章）。
+        </div>
+      </div>
+
+      <!-- 五、monorepo -->
+      <div class="section" id="s5">
+        <h2>五、monorepo：动机、代价与真实目录形态</h2>
+        <p>
+          <strong>monorepo（单仓多包）是一种组织形态，不是某个工具</strong>：把多个强相关的包放进一个仓库，
+          用统一的依赖安装、构建、测试、发布流程治理。与之相对的是 polyrepo（多仓多包）。
+        </p>
+
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>收益（为什么值得）</h4>
+            <ul>
+              <li><strong>原子变更</strong>：改接口 + 改所有调用方 = 一个 commit，code review 一次看全。</li>
+              <li><strong>跨包重构安全</strong>：重命名/改签名后全仓编译测试兜底。</li>
+              <li><strong>一份工具链</strong>：tsconfig / ESLint / Prettier / CI 定义一次，全包生效。</li>
+              <li><strong>依赖版本天然统一</strong>：单 lockfile，杜绝「A 仓 vue3.4、B 仓 vue3.5」的幽灵分裂。</li>
+              <li><strong>复用与拆分自由</strong>：先抽包后发版，内部迭代不必走发布流程。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>代价（面试必须主动说）</h4>
+            <ul>
+              <li><strong>仓库治理</strong>：权限边界模糊、历史膨胀、所有人 clone 全量。</li>
+              <li><strong>构建复杂度</strong>：包之间有依赖图，全量构建变慢 → 需要 filter/拓扑/缓存。</li>
+              <li><strong>耦合风险</strong>：改哪儿都牵一发 → 需要清晰的包边界与分层。</li>
+              <li><strong>CI 挑战</strong>：不能「全量跑到底」，要用 affected 思维只跑改动链。</li>
+              <li><strong>版本策略</strong>：独立版本 vs 锁步版本，发布顺序要编排。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>我项目的真实目录（可直接当面试板书）</h3>
+        <pre class="tree">hsa-neu-ai-platform-fe/                  <span class="dim"># 纯 TS 共享库 monorepo</span>
+├─ <span class="hl">pnpm-workspace.yaml</span>                  <span class="dim"># workspace 声明：packages/*、examples/*，排除 dev-starter</span>
+├─ <span class="hl">package.json</span>                         <span class="dim"># 根：统一 filter 脚本 + packageManager: pnpm@10.32.1</span>
+├─ pnpm-lock.yaml                     <span class="dim"># 全仓唯一 lockfile（依赖版本的唯一事实）</span>
+├─ tsconfig.base.json                 <span class="dim"># 共享 TS 编译约束，各包 extends</span>
+├─ .npmrc                             <span class="dim"># 严格提升 + scope registry 分流（内网 Nexus / 官方源）</span>
+├─ eslint.config.mjs / .prettierrc.json
+├─ packages/
+│  ├─ ai-chat/           <span class="dim"># @hsa-ai/chat           纯 TS：SSE 流式客户端（零框架）</span>
+│  ├─ chat-vue/          <span class="dim"># @hsa-ai/chat-vue      Vue3 composables 适配层 → 依赖 chat</span>
+│  ├─ data-query/        <span class="dim"># @hsa-ai/data-query    查询参数组装 + 结果转换</span>
+│  ├─ page-context/      <span class="dim"># @hsa-ai/page-context  子页面上下文采集</span>
+│  ├─ ui/                <span class="dim"># @hsa-ai/ui            Vue3 组件库 → 依赖 chat + chat-vue</span>
+│  ├─ portal-assistant/  <span class="dim"># @hsa-ai/portal-assistant 悬浮窗 → 组合 ui + page-context</span>
+│  ├─ drg-insight/       <span class="dim"># @hsa-ai/drg-insight</span>
+│  └─ dev-starter/       <span class="dim"># 独立 workspace：被根排除，自带 pnpm-workspace.yaml</span>
+└─ examples/
+   └─ ai-test-app/       <span class="dim"># 联调测试应用（pnpm --filter ai-test-app dev）</span></pre>
+
+        <div class="callout tip">
+          <strong class="tag">怎么判断「要不要 monorepo」</strong>
+          三个信号满足两个就上：① 包之间<strong>频繁联动变更</strong>（改接口要同步改 3 个仓库）；
+          ② 需要<strong>共享构建/规范配置</strong>且多仓复制粘贴已经失控；③ 存在<strong>内部依赖链</strong>（A 发版依赖 B 先发）。
+          反之：包之间几乎零耦合、发布节奏与团队边界完全独立——多仓更省心。
+        </div>
+      </div>
+
+      <!-- 六、任务编排 -->
+      <div class="section" id="s6">
+        <h2>六、任务编排：--filter 圈范围，拓扑序定先后</h2>
+        <p>
+          monorepo 装完依赖只是第一步，真正的日常是「<strong>在几百个脚本里，只跑我该跑的那部分</strong>」。
+          pnpm 内置两个维度的编排：<strong>范围（filter）</strong>与<strong>顺序（拓扑）</strong>。
+        </p>
+
+        <h3>6.1 两个核心开关</h3>
+        <div class="code-title">递归执行：-r / --recursive（默认按依赖图拓扑排序）</div>
+        <pre class="code-block"><code class="language-bash">pnpm -r build                 # 所有包，按「依赖者后跑」的拓扑序执行
+pnpm -r build --parallel      # 并行跑（无依赖关系时提速；注意日志交织）
+pnpm -r test --no-bail        # 一个失败不中断，跑完所有再报
+pnpm -r --aggregate-output run build   # 各包输出聚合，CI 日志更干净
+pnpm -r exec rm -rf dist       # 在每个包目录里执行 shell 命令</code></pre>
+
+        <div class="code-title">过滤执行：--filter（圈定「跑谁」）</div>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>写法</th>
+              <th>含义</th>
+              <th>我项目里的真实用例</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>--filter &lt;精确名&gt;</code></td>
+              <td>指定一个包</td>
+              <td><code>pnpm --filter @hsa-ai/chat build</code></td>
+            </tr>
+            <tr>
+              <td><code>--filter '&lt;glob&gt;'</code></td>
+              <td>按包名通配</td>
+              <td><code>pnpm --filter "@hsa-ai/*" build</code>（build:libs）</td>
+            </tr>
+            <tr>
+              <td><code>--filter ./路径</code></td>
+              <td>按目录过滤</td>
+              <td><code>pnpm --filter ./examples/ai-test-app dev</code></td>
+            </tr>
+            <tr>
+              <td><code>--filter ...&lt;pkg&gt;</code></td>
+              <td>目标包 <strong>及其所有依赖</strong>（先把地基建好）</td>
+              <td>发布 ui 前先构建 chat、chat-vue</td>
+            </tr>
+            <tr>
+              <td><code>--filter &lt;pkg&gt;...</code></td>
+              <td>目标包 <strong>及所有依赖它的包</strong>（影响面）</td>
+              <td>改了 chat → 把用到它的全部重测</td>
+            </tr>
+            <tr>
+              <td><code>--filter ...[&lt;git-ref&gt;]</code></td>
+              <td>相对 git 变更涉及的包（affected 思维）</td>
+              <td>CI 上只测改动链：<code>--filter ...[origin/main]</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <strong class="tag">记忆锚点</strong>
+          <code>...</code> 在<strong>前</strong> = 「它的上游（它依赖谁）」，发布/构建前置链用它；
+          <code>...</code> 在<strong>后</strong> = 「它的下游（谁依赖它）」，改动影响面/回归测试用它。
+        </div>
+
+        <h3>6.2 拓扑序：为什么必须「先地基后大楼」</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 980 340" width="980" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowIndigo" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+              <marker id="arrowGray" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#9aa7b8" />
+              </marker>
+            </defs>
+
+            <!-- 主链 -->
+            <rect x="20" y="60" width="170" height="60" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <circle cx="20" cy="60" r="13" fill="#646cff" />
+            <text x="20" y="65" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">1</text>
+            <text x="112" y="86" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/chat</text>
+            <text x="112" y="106" font-size="11" fill="#9aa7b8" text-anchor="middle">ai-chat · 纯 TS 核心</text>
+
+            <rect x="240" y="60" width="170" height="60" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <circle cx="240" cy="60" r="13" fill="#646cff" />
+            <text x="240" y="65" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">2</text>
+            <text x="332" y="86" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/chat-vue</text>
+            <text x="332" y="106" font-size="11" fill="#9aa7b8" text-anchor="middle">Vue3 适配层</text>
+
+            <rect x="460" y="60" width="170" height="60" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <circle cx="460" cy="60" r="13" fill="#646cff" />
+            <text x="460" y="65" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">3</text>
+            <text x="552" y="86" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/ui</text>
+            <text x="552" y="106" font-size="11" fill="#9aa7b8" text-anchor="middle">组件库</text>
+
+            <rect x="690" y="60" width="220" height="60" rx="8" fill="#edf0ff" stroke="#646cff" stroke-width="2" />
+            <circle cx="690" cy="60" r="13" fill="#f59e0b" />
+            <text x="690" y="65" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">4</text>
+            <text x="805" y="86" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/portal-assistant</text>
+            <text x="805" y="106" font-size="11" fill="#9aa7b8" text-anchor="middle">悬浮窗 = ui + page-context 组合</text>
+
+            <path d="M190,90 L232,90" stroke="#646cff" stroke-width="2" marker-end="url(#arrowIndigo)" />
+            <path d="M410,90 L452,90" stroke="#646cff" stroke-width="2" marker-end="url(#arrowIndigo)" />
+            <path d="M630,90 L682,90" stroke="#646cff" stroke-width="2" marker-end="url(#arrowIndigo)" />
+
+            <!-- 独立核心包 -->
+            <rect x="240" y="190" width="170" height="60" rx="8" fill="#f8f9fa" stroke="#9aa7b8" stroke-dasharray="5 3" />
+            <circle cx="240" cy="190" r="13" fill="#2e7d32" />
+            <text x="240" y="195" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">1</text>
+            <text x="332" y="216" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/data-query</text>
+            <text x="332" y="236" font-size="11" fill="#9aa7b8" text-anchor="middle">无内部依赖 · 可并行</text>
+
+            <rect x="460" y="190" width="190" height="60" rx="8" fill="#f8f9fa" stroke="#9aa7b8" stroke-dasharray="5 3" />
+            <circle cx="460" cy="190" r="13" fill="#2e7d32" />
+            <text x="460" y="195" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">1</text>
+            <text x="566" y="216" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle" font-family="Consolas,monospace">@hsa-ai/page-context</text>
+            <text x="566" y="236" font-size="11" fill="#9aa7b8" text-anchor="middle">无内部依赖 · 可并行</text>
+
+            <path d="M650,214 C700,214 730,160 756,126" fill="none" stroke="#646cff" stroke-width="2" marker-end="url(#arrowIndigo)" />
+
+            <!-- 示例应用 -->
+            <rect x="690" y="256" width="220" height="56" rx="8" fill="#fffaf2" stroke="#ef6c00" stroke-dasharray="5 3" />
+            <circle cx="690" cy="256" r="13" fill="#ef6c00" />
+            <text x="690" y="261" font-size="13" fill="#fff" text-anchor="middle" font-weight="bold">5</text>
+            <text x="805" y="280" font-size="13" font-weight="bold" fill="#b45309" text-anchor="middle" font-family="Consolas,monospace">examples/ai-test-app</text>
+            <text x="805" y="300" font-size="11" fill="#9aa7b8" text-anchor="middle">联调应用 · 最后构建</text>
+            <path d="M860,120 L860,250" fill="none" stroke="#9aa7b8" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowGray)" />
+
+            <text x="490" y="330" font-size="12" fill="#7a8aa0" text-anchor="middle">pnpm -r build 默认按此依赖图拓扑执行：实线 = 强依赖（阻断顺序），虚线 = 消费关系；无依赖的包可并行</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 这张图直接决定了「改了 chat 之后，CI 要重跑谁」</p>
+
+        <div class="callout warn">
+          <strong class="tag">pnpm 编排 vs 任务缓存</strong>
+          pnpm 的 <code>-r/--filter</code> 解决的是「<strong>跑哪些、按什么顺序</strong>」，但它<strong>没有内容哈希缓存</strong>——
+          每次都是真跑。要「没改过的包直接复用上次结果」，就得上 Turborepo/Nx 的缓存层（见第九章）。
+          两者是叠加关系：官方推荐组合就是「<strong>pnpm 当包管理器 + turbo 当任务运行器</strong>」。
+        </div>
+      </div>
+
+      <!-- 七、真实仓库解剖 -->
+      <div class="section" id="s7">
+        <h2>七、真实仓库解剖：hsa-neu-ai-platform-fe 怎么落地</h2>
+        <div class="explanation">
+          <p style="margin: 0">
+            面试里「你实际用过 monorepo 吗」这题，最有力的回答结构是：<strong>目录形态 → 一个真实配置细节 →
+            它解决了什么问题 → 我踩过什么坑</strong>。下面 7 块全部来自我维护的真实工程（配置已脱敏），每块配「面试怎么讲」。
+          </p>
+        </div>
+
+        <h3>7.1 workspace 取反排除：给 dev-starter 做「双向隔离」</h3>
+        <div class="code-title">根 pnpm-workspace.yaml</div>
+        <pre class="code-block"><code class="language-yaml">packages:
+  - 'packages/*'
+  - 'examples/*'
+  - '!packages/dev-starter'    # 取反：根 workspace 不吸收它</code></pre>
+        <div class="code-title">packages/dev-starter/pnpm-workspace.yaml（它自己的）</div>
+        <pre class="code-block"><code class="language-yaml"># 本目录自己就是 workspace 根：pnpm 向上查找在这里就停，
+# 根目录的 pnpm i 也不会波及本目录 → 双向互不影响
+packages: []    # 空数组：只有根项目自己，不含任何子包</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>取反语法 <code>!pattern</code> 是 pnpm workspace 的实用特性。
+          dev-starter 是脚手架/实验目录，依赖体系与主仓完全不同——根 workspace <strong>排除它</strong>（方向一），
+          它内部<strong>自带 pnpm-workspace.yaml 截断向上查找</strong>（方向二），于是两套 install 互不污染，
+          lockfile 也不混。这就是「配置即边界」。
+        </div>
+
+        <h3>7.2 根 package.json：把编排写进脚本，而不是写进文档</h3>
+        <div class="code-title">根 package.json（节选）</div>
+        <pre class="code-block"><code class="language-json">{
+  "private": true,
+  "scripts": {
+    "build:libs":   "pnpm --filter \"@hsa-ai/*\" build",
+    "build:all":    "pnpm -r build",
+    "typecheck":    "pnpm -r typecheck",
+    "test:core":    "pnpm --filter @hsa-ai/chat build && pnpm --filter @hsa-ai/chat-vue build && pnpm --filter @hsa-ai/ui test",
+    "release:ui":   "pnpm --filter @hsa-ai/chat build && pnpm --filter @hsa-ai/chat-vue build && pnpm --filter @hsa-ai/ui release",
+    "release:all":  "pnpm --filter \"@hsa-ai/*\" -r release"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "engines": { "node": ">=24" }
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>三个点。① <code>--filter "@hsa-ai/*"</code> 用 scope
+          通配圈定「所有内部库」，examples 不会被误发布；② <code>release:ui</code>
+          <strong>显式写出依赖顺序</strong>（先构建 chat、chat-vue，ui 才能拿到它们的类型声明产物）——
+          把拓扑约束固化成脚本，新人不用读文档也不会发错；③
+          <code>packageManager</code> 字段 + <code>engines</code> 锁定 pnpm 10.32.1 / Node ≥24，
+          Corepack 会在执行时校验版本——<strong>「团队用同一个 pnpm」是 lockfile 一致性的前提</strong>。
+        </div>
+
+        <h3>7.3 peerDependencies + workspace devDependencies「双写」</h3>
+        <p>这是库包型 monorepo 最核心的依赖模式，也是最常被追问的细节：</p>
+        <div class="code-title">packages/ui/package.json（节选）</div>
+        <pre class="code-block"><code class="language-json">{
+  "name": "@hsa-ai/ui",
+  "version": "2.17.0",
+  "peerDependencies": {
+    "@hsa-ai/chat": ">=1.5.0",           // 声明给「下游消费者」：我需要这些邻居
+    "@hsa-ai/chat-vue": ">=1.2.1",
+    "vue": ">=3.5.0"
+  },
+  "devDependencies": {
+    "@hsa-ai/chat": "workspace:*",       // 供「本仓库开发/构建/测试」：链接到本地源码
+    "@hsa-ai/chat-vue": "workspace:*"
+  }
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>同一个包写两遍，<strong>服务两个不同受众</strong>——
+          <code>peerDependencies</code> 是<strong>发布给下游的契约</strong>（「装我的人，请自备这些依赖」），
+          范围写 <code>&gt;=1.5.0</code> 这种普通语义版本；<code>devDependencies</code> 里的
+          <code>workspace:*</code> 是<strong>给本仓库用的</strong>：安装时链接到本地 chat 包，跑测试、起
+          VitePress 文档、做类型跳转全部指向源码。为什么不写进 dependencies？
+          <strong>避免把 vue/内部库打进自己的产物</strong>——尤其 vue，重复打包会产生两个 Vue 实例，响应式直接失效。
+        </div>
+
+        <div class="code-title">对比：什么时候用 dependencies + workspace:*（运行时内部依赖）</div>
+        <pre class="code-block"><code class="language-json">// packages/portal-assistant/package.json
+"dependencies": {
+  "@hsa-ai/page-context": "workspace:*"   // 内部实现细节，随我一起发，下游无需感知
+},
+"peerDependencies": {
+  "@hsa-ai/ui": ">=2.15.8"                // 由宿主提供的大件 → peer
+},
+"peerDependenciesMeta": {
+  "@hsa-ai/chat": { "optional": true }    // 可选能力：不装也能用基础功能
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>判断准绳一句话——「<strong>这段代码必须由宿主提供（否则双实例/体积爆炸）→
+          peer；只是我的内部实现、跟着我发就行 → dependencies + workspace:*；有它功能更强但非必须 →
+          peer + optional</strong>」。workspace:* 在 publish 时会被重写成真实版本，所以发布到内网 Nexus
+          后下游用普通 semver 就能装。
+        </div>
+
+        <h3>7.4 .npmrc：严格提升 + scope registry 分流</h3>
+        <div class="code-title">根 .npmrc（节选，令牌已脱敏）</div>
+        <pre class="code-block"><code class="language-ini">shamefully-hoist=false          # 保持 pnpm 严格结构，主动拒绝幽灵依赖
+strict-peer-dependencies=false  # peer 不匹配警告不阻断安装（渐进修复策略）
+
+registry=https://registry.npmjs.org/          # 公网包走官方源
+@vitest:registry=https://registry.npmjs.org/  # 部分 scope 强制回官方源
+
+# 医保内网 scope 走公司 Nexus 私服
+@ncp-web:registry=http://10.104.1.200/nexus/repository/hsa-neu-ui/
+@hsa-ai:registry=http://10.104.1.200/nexus/repository/hsa-neu-ui/
+//10.104.1.200/nexus/...:_authToken=&lt;内网令牌·已脱敏&gt;</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong><code>.npmrc</code> 是 pnpm 的「策略层」，三个实战点：
+          ① <code>shamefully-hoist=false</code> 是显式宣言——pnpm 默认就严格，这里写出来是给团队看的
+          「我们不走回头路」；② <strong>按 scope 分流 registry</strong>：公网包走 npmjs、内网组件库走公司
+          Nexus 私服，一个项目同时吃两套源；③ <code>strict-peer-dependencies=false</code> 体现取舍——
+          存量包 peer 声明不规范时，先保证 install 可用，警告逐步收敛。补充一句安全意识：
+          <strong>带 token 的 .npmrc 绝不能出现在对外开源的仓库里</strong>。
+        </div>
+
+        <h3>7.5 tsconfig.base.json：编译约束的单一事实</h3>
+        <div class="code-title">根 tsconfig.base.json</div>
+        <pre class="code-block"><code class="language-json">{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  }
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>8 个包各自 <code>"extends": "../../tsconfig.base.json"</code>，
+          再叠加自己的 <code>jsx/vue</code> 差异项。<code>declaration + declarationMap</code>
+          让下游包拿到 <code>.d.ts</code> 还能「跳转到源码」——这正是 7.2 里「先构建 chat 才能发
+          ui」的原因：<strong>跨包类型解析依赖构建产物</strong>。monorepo 的价值在这里落地为
+          「规范定义一次、处处生效」。
+        </div>
+
+        <h3>7.6 构建门禁：测试不过，链路就断</h3>
+        <div class="code-title">packages/ui/package.json 的 scripts（节选）</div>
+        <pre class="code-block"><code class="language-json">{
+  "build":   "pnpm test && vue-tsc --noEmit && vite build",
+  "release": "pnpm build && changelogen --release --path . --push && pnpm pack",
+  "typecheck": "vue-tsc --noEmit"
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>把质量门禁<strong>焊进脚本</strong>而不是留给 CI 文档：
+          <code>build</code> 内部先跑 vitest，再类型检查，最后打包——任何一步失败，
+          根上 <code>build:libs</code> / <code>release:*</code> 的 filter 链就地中断，
+          <strong>坏产物出不了仓库</strong>。再配合 git hooks 跑 <code>test:core</code>，
+          形成「提交时 → 构建时 → 发布时」三道闸。
+        </div>
+
+        <h3>7.7 exports 子路径 + sideEffects：库包的出口设计</h3>
+        <div class="code-title">packages/ui/package.json（节选）</div>
+        <pre class="code-block"><code class="language-json">{
+  "exports": {
+    ".":          { "import": { "types": "./dist/index.d.ts",  "default": "./dist/index.js"  },
+                    "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" } },
+    "./blocks":   { "import": "./dist/blocks.js",  "require": "./dist/blocks.cjs" },
+    "./charts":   { "import": "./dist/charts.js",  "require": "./dist/charts.cjs" },
+    "./style.css": "./dist/style.css"
+  },
+  "sideEffects": ["**/*.css", "**/*.scss"],
+  "files": ["dist", "README.md", "CHANGELOG.md"]
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>三点：① <code>exports</code> 是<strong>白名单式入口</strong>，
+          内部文件不再可被 deep import，重构目录不破坏下游；② <code>./charts</code> 这类
+          <strong>子路径导出</strong>让下游按需引（不用整库全量进 bundle）；③
+          <code>sideEffects</code> 只豁免样式文件——JS 全部可 tree-shake，唯独 CSS
+          不是纯函数不能被删；④ <code>files</code> 白名单控制 tar 包体积，只发 dist。
+        </div>
+      </div>
+
+      <!-- 八、方案对比 -->
+      <div class="section" id="s8">
+        <h2>八、方案对比：pnpm workspace / Lerna / Turborepo / Nx / Rush</h2>
+        <p>先把问题拆成两层，面试回答会立刻清晰：<strong>包管理与链接</strong>（谁管 node_modules 和 workspace）是 pnpm/yarn/npm 的事；
+        <strong>任务编排与缓存</strong>（谁管构建图、跑得快不快）是 lerna/turbo/nx 的事。两层可自由组合。</p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>方案</th>
+              <th>定位</th>
+              <th>强项</th>
+              <th>短板 / 代价</th>
+              <th>一句话画像</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>pnpm workspace</strong></td>
+              <td>包管理器内置 workspace + 基础编排</td>
+              <td class="win">安装快且严格；filter/拓扑序开箱即用；单 lockfile</td>
+              <td>无任务缓存；跨包增量要自己设计或接 turbo</td>
+              <td>「地基级标配」——几乎所有现代 monorepo 的底座</td>
+            </tr>
+            <tr>
+              <td><strong>Lerna</strong></td>
+              <td>早期 monorepo 事实标准（发版/变更管理）</td>
+              <td>独立版本策略、changelog、publish 流程成熟</td>
+              <td>维护几近停摆后由 Nx 团队接手；任务执行已交棒 Nx runner</td>
+              <td>「上一代王者」——现在多作为发版工具被提起</td>
+            </tr>
+            <tr>
+              <td><strong>Turborepo</strong></td>
+              <td>专注构建缓存的任务运行器</td>
+              <td class="win">内容哈希缓存（本地 + Remote Cache）；配置极简 turbo.json；与 pnpm 是官配</td>
+              <td>不做深度代码图分析，affected 粒度较粗</td>
+              <td>「给 pnpm 插上缓存翅膀」——中小团队性价比之选</td>
+            </tr>
+            <tr>
+              <td><strong>Nx</strong></td>
+              <td>全功能 monorepo 平台（项目图 + 任务图）</td>
+              <td class="win">精确 affected 计算、插件生态（vite/angular/react）、 generators、IDE 集成</td>
+              <td>学习曲线陡、概念多、侵入性强，小项目杀鸡用牛刀</td>
+              <td>「企业级全家桶」——大仓治理的重型武器</td>
+            </tr>
+            <tr>
+              <td><strong>Rush</strong></td>
+              <td>Microsoft 的企业级方案</td>
+              <td>多包管理器支持、变更集（change file）流程、极稳</td>
+              <td>配置繁琐、社区小、上手成本高</td>
+              <td>「大厂基建风」——强调流程与合规而非开发体验</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">选型答题模板</strong>
+          「新起一个库群 monorepo：<strong>pnpm workspace 起步</strong>；构建一慢、需要「没改就复用」→
+          加 <strong>Turborepo</strong>（成本最低）；当出现跨包影响面精确计算、代码生成器、多团队插件规范等
+          组织级诉求 → 迁 <strong>Nx</strong>；存量老仓要走严格的变更审批/多包管理器 → 看 <strong>Rush</strong>。
+          本项目是 8 个纯 TS 库 + 单 lockfile + 内网发布，pnpm 自带的 filter 与脚本门禁已够用，
+          暂未引入 turbo——引入的触发条件是「CI 全量构建超过可接受阈值且重复构建占比高」。」
+        </div>
+      </div>
+
+      <!-- 九、缓存与增量 -->
+      <div class="section" id="s9">
+        <h2>九、构建缓存与增量：把「全量」变成「只跑改动的链」</h2>
+
+        <h3>9.1 三层增量策略（从便宜到昂贵）</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>层</th>
+              <th>手段</th>
+              <th>粒度</th>
+              <th>成本</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>L1 · 变更圈定</td>
+              <td><code>pnpm --filter ...[origin/main]</code> / turbo <code>--filter=...[origin/main]</code></td>
+              <td>受影响的包</td>
+              <td class="win">零成本，pnpm 原生</td>
+            </tr>
+            <tr>
+              <td>L2 · 任务缓存</td>
+              <td>turbo 的本地缓存：输入（源码 hash + 依赖包 hash + 环境变量）没变 → 直接回放上次输出</td>
+              <td>「包 × 任务」</td>
+              <td>引入 turbo.json 配置</td>
+            </tr>
+            <tr>
+              <td>L3 · 远程缓存</td>
+              <td>turbo Remote Cache / Nx Cloud：团队共享同一份产物，同事跑过的构建你直接下载</td>
+              <td>跨机器</td>
+              <td>需要服务端（Vercel/Nx Cloud 或自建）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">turbo.json 的心智模型（与 pnpm filter 配合）</div>
+        <pre class="code-block"><code class="language-json">{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],            // 拓扑：先构建我依赖的包（= pnpm -r 的顺序）
+      "outputs": ["dist/**"],             // 哪些文件算「产物」→ 可被缓存回放
+      "env": ["NODE_ENV"]                 // 参与缓存 key 的环境变量
+    },
+    "test": { "dependsOn": ["build"], "outputs": [] }
+  }
+}</code></pre>
+
+        <div class="callout info">
+          <strong class="tag">缓存正确性的本质</strong>
+          任务缓存 = <strong>「输入指纹没变 ⇒ 输出必然相同 ⇒ 直接复用」</strong>。所以配置里必须诚实回答两个问题：
+          ① 这个任务的输入包含什么（源码、依赖包版本、环境变量、工具版本）；② 输出在哪个目录（dist/**）。
+          漏报输入 → 缓存脏数据（最难查的 bug）；漏报输出 → 缓存永远 miss（白配）。
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">一个必须知道的耦合点</strong>
+          本项目 7.5 说过：跨包解析依赖 <code>.d.ts</code> 产物。这意味着<strong>「只构建改动的包」的前提是
+          依赖包的 dist 存在</strong>——冷 CI 上必须先全量构建一次（或用缓存回放），否则 filter 增量构建会报
+          「找不到类型」。<code>--filter ...[ref]</code> 圈出的是「要重跑的」，不是「要存在的」。
+        </div>
+      </div>
+
+      <!-- 十、版本与发布 -->
+      <div class="section" id="s10">
+        <h2>十、版本与发布：独立版本、顺序与门禁</h2>
+
+        <h3>10.1 两种版本策略</h3>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>独立版本（Independent）· 我项目采用</h4>
+            <ul>
+              <li>每个包自己的版本号：<code>@hsa-ai/ui 2.17.0</code>、<code>@hsa-ai/chat 1.5.0</code>、<code>@hsa-ai/chat-vue 1.2.1</code>。</li>
+              <li>只改了 ui → 只发 ui，语义诚实，下游按需升级。</li>
+              <li>代价：<strong>发布顺序要自己保证</strong>（依赖先发），变更说明按包各写各的。</li>
+              <li>工具：changelogen（本项目）、changesets、lerna publish。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>锁步版本（Lockstep）</h4>
+            <ul>
+              <li>所有包永远同一版本号，任一变更全体 +1。</li>
+              <li>优点：不存在版本矩阵，永远只有「一套」组合，兼容性问题最少。</li>
+              <li>代价：改一行也全量发版，通知噪音大。</li>
+              <li>代表：babel、vue 生态部分包、rush version policies。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>10.2 发布流水线（我项目的实际形态）</h3>
+        <div class="code-title">每包独立发布：build → changelog → 打 tar 包</div>
+        <pre class="code-block"><code class="language-bash"># packages/*/package.json 中的 release 脚本
+pnpm build &amp;&amp; changelogen --release --path . --push &amp;&amp; pnpm pack
+#      │              │                        │
+#      │              │                        └─ 产出 tgz，上传内网 Nexus
+#      │              └─ 生成 CHANGELOG + 提交版本号 + push
+#      └─ 测试门禁 + 类型检查 + 打包（失败即终止，坏产物不入库）
+
+# 根目录按依赖顺序发布 ui（先备齐 chat / chat-vue）
+pnpm release:ui</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>发布三问——<strong>发什么</strong>（<code>files</code> 白名单决定 tar 包内容）、
+          <strong>按什么顺序发</strong>（依赖先发；脚本里显式写 <code>chat → chat-vue → ui</code>，
+          或用 <code>pnpm -r publish</code> 的拓扑序）、<strong>怎么知道发了什么</strong>
+          （changelogen 按 conventional commits 生成每包独立 CHANGELOG）。
+          <code>pnpm pack</code> 本地解包可验证 workspace:* 已被重写、exports 路径正确——
+          <strong>发前验证 tar 包</strong>是很多候选人漏掉的一步。
+        </div>
+
+        <div class="callout danger">
+          <strong class="tag">经典翻车题：workspace 协议泄漏</strong>
+          若发布时忘记用 <code>pnpm publish</code>（比如手抖用 npm publish），<code>workspace:*</code>
+          <strong>不会被重写</strong>，下游安装直接报错 <code>Unsupported URL Type "workspace:"</code>。
+          pnpm 的重写行为是 pnpm publish/pack 的能力，不是 npm 的——工具链必须统一，这正是
+          <code>packageManager</code> 字段存在的意义。
+        </div>
+      </div>
+
+      <!-- 十一、踩坑清单 -->
+      <div class="section" id="s11">
+        <h2>十一、踩坑清单：这些坑我踩过 / 见过</h2>
+        <div class="pitfall-grid">
+          <div class="pitfall">
+            <span class="no">坑 1</span><b>「Cannot find module」其实是没声明依赖</b><br />
+            pnpm 下报缺模块，先怀疑幽灵依赖暴露（这是好事），用
+            <code>pnpm why xxx</code> 查链路，显式 <code>pnpm add</code> 补声明——别急着开
+            <code>shamefully-hoist</code>。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 2</span><b>Windows 上符号链接权限问题</b><br />
+            旧版 Windows/未开开发者模式时 symlink 创建失败，pnpm 会退化为 junction/复制。
+            解决：开「开发者模式」或管理员权限；企业环境可用 <code>node-linker=hoisted</code> 兜底。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 3</span><b>跨包引用指向 dist，忘了先构建</b><br />
+            本地改了 chat 源码，ui 却一直跑旧逻辑——因为链接解析到的是 chat 的
+            <code>dist</code>。要么 <code>dev</code> 模式 watch 构建，要么配 TS 项目引用/源码出口。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 4</span><b>lockfile 冲突与「幽灵 diff」</b><br />
+            多人同改依赖时 pnpm-lock.yaml 冲突频发。铁律：<strong>别手改 lockfile</strong>，改完
+            package.json 重新 <code>pnpm install</code> 让它整体再生成；CI 用 <code>pnpm install --frozen-lockfile</code> 强制校验。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 5</span><b>peerDependencies 警告风暴</b><br />
+            monorepo 里 peer 范围写太严（精确到 x.y.z）会互相打架。库的 peer 用
+            <code>&gt;=x.y.0 &lt;major</code> 宽松区间；存量包不规范时用
+            <code>strict-peer-dependencies=false</code> 先保安装，再逐步修。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 6</span><b>同一依赖多版本共存导致「双 vue」</b><br />
+            某包锁了 <code>vue@3.4</code>、根上是 <code>3.5</code> → 两份 vue，prop/响应式不互通。
+            用根级 <code>overrides</code> / <code>catalog</code> 强制统一，或收紧 peer 范围。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 7</span><b>CI 装依赖慢 / 每次全量下载</b><br />
+            没缓存 store 等于自废武功。CI 上缓存 <code>~/.local/share/pnpm/store</code>（或
+            <code>pnpm store path</code> 的实际路径）+ <code>node_modules/.vite</code> 等，
+            安装时间可降一个量级。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 8</span><b>pnpm 10：依赖的 install 脚本被静默拦截</b><br />
+            esbuild/protobuf 等带安装脚本的包可能「装上了却不工作」。显式
+            <code>onlyBuiltDependencies</code> 白名单或 <code>pnpm approve-builds</code>；
+            升级 pnpm 大版本后先检查这类行为变更。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 9</span><b>filter glob 要加引号</b><br />
+            <code>pnpm --filter "@hsa-ai/*"</code> 不加引号会被 shell 自己展开（bash 尤甚），
+            结果变成传了一堆路径给 pnpm。养成一律加引号的肌肉记忆。
+          </div>
+          <div class="pitfall">
+            <span class="no">坑 10</span><b>把 token 提交进 .npmrc</b><br />
+            内网私服需要 authToken 是常态，但仓库一旦外发即泄漏。提交前扫描
+            <code>_authToken</code>，用 CI 环境变量/本地私有 .npmrc 注入，对外仓库走
+            <code>.npmrc.example</code> 模板。
+          </div>
+        </div>
+      </div>
+
+      <!-- 十二、追问链 -->
+      <div class="section" id="s12">
+        <h2>十二、面试追问链：把这题聊到加分</h2>
+
+        <details class="qa">
+          <summary>Q1 · pnpm 为什么快、为什么省磁盘？（必考）</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：因为不复制。包内容按<strong>内容 hash</strong> 存进全局 store，同内容全局一份；项目里的
+            <code>.pnpm</code> 虚拟存储用<strong>硬链接</strong>指向 store（同一 inode，零字节拷贝），
+            顶层 <code>node_modules</code> 再用<strong>符号链接</strong>指进去。命中缓存的包只是建两个链接 + 写元数据，
+            所以重复安装接近秒级，磁盘占用也从「每仓一份」变成「全局一份」。</p>
+            <p><strong>追问预判</strong>：硬链接和符号链接的区别？→ 硬链接是同一份数据的另一个名字（两个目录项指同一 inode，删一个不影响另一个）；符号链接是路径的指针（指向没了就成死链）。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · 什么是幽灵依赖？pnpm 为什么天然没有？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：import 了 package.json 没声明、却因 hoisting 提升到顶层而能跑的包。pnpm 不提升——顶层只有声明过的包，其余全在 <code>.pnpm</code> 虚拟存储里按各自的依赖链解析，所以「没声明 = 不可见 = 直接报错」，package.json 恢复为唯一事实。代价是个别不规范包要显式补声明，或临时开 <code>shamefully-hoist</code>。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · workspace:* 发布后变成什么？谁做的？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：<code>pnpm publish</code> / <code>pnpm pack</code> 时自动把 <code>workspace:*</code> 重写成真实版本（如 <code>2.17.0</code>），再打 tar 包，所以 npm/私服消费者看到的是普通 semver。这个重写是 pnpm 的能力——如果误用 npm publish，workspace 协议会原样带出去导致下游安装失败。可以解包验证。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · peerDependencies 是干嘛的？为什么你的项目里 peer 和 dev 双写？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：peer 是「宿主提供」的契约——声明我运行时需要、但<strong>不该由我打包</strong>的依赖（典型是 vue：双实例会炸）。双写的两行服务两个受众：peer 的 <code>&gt;=1.5.0</code> 发布给下游看；dev 的 <code>workspace:*</code> 让本仓库开发/测试/类型解析链接到本地源码包。不写进 dependencies 是为了不把内部库/框架打进产物。</p>
+            <p><strong>追问预判</strong>：devDependencies 的 workspace:* 发布后呢？→ pnpm 一样会重写，且 devDeps 本来就不被下游安装，无影响。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · pnpm -r build 是按什么顺序执行的？和 --parallel 什么关系？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：默认按<strong>依赖图拓扑序</strong>——被依赖者先跑，保证下游构建时上游 dist 已就绪；同层无依赖关系的包可并行。加 <code>--parallel</code> 则忽略顺序全并行（快但可能踩到未就绪产物）；<code>--no-bail</code> 控制失败是否继续；pnpm 只管顺序与范围，<strong>不管缓存</strong>——缓存是 turbo/nx 的活。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · --filter ...pkg 和 pkg... 有什么区别？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：<code>...pkg</code>（省略号在前）= pkg <strong>加上它的所有依赖</strong>（上游链），用于「发布/构建前把地基备齐」；<code>pkg...</code>（省略号在后）= pkg <strong>加上所有依赖它的包</strong>（下游链），用于「改了核心库之后圈定回归测试范围」。再加 <code>[origin/main]</code> 可与 git 变更求交集，实现 affected。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q7 · monorepo 怎么做增量构建？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>三层：① filter + git ref 圈出受影响的包（pnpm 原生，零成本）；② Turborepo 内容哈希任务缓存——输入没变直接回放 dist（要诚实声明 inputs/outputs/dependsOn）；③ 远程缓存让团队共享产物。另有一个冷启动前提：跨包类型依赖 dist，CI 首次必须全量或从缓存恢复，否则增量构建报找不到类型。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q8 · 独立版本怎么保证发布顺序？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：依赖先发。手段从轻到重：① 脚本里显式写顺序（我项目 release:ui 先 build chat/chat-vue）；② <code>pnpm -r publish</code> 按拓扑序自动发；③ changesets/Rush 的变更集流程统一管理「这一轮发谁、发什么版本」。发前用 <code>pnpm pack</code> 验产物，发后按 scope 是否存在来判断是否需要 registry 同步等待。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q9 · pnpm 和 Lerna / Turborepo / Nx 是什么关系？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：正交——pnpm 解决「装与连」（包管理 + workspace + 基础 filter），turbo/nx 解决「跑与缓」（任务图、增量、缓存），lerna 传统上解决「发与记」（版本与 changelog，现由 Nx 维护）。选型递进：pnpm 起步 → 慢了加 turbo → 组织级图治理上 nx。我项目 8 个包用 pnpm filter + 脚本门禁已够，引入 turbo 的触发条件是 CI 重复全量构建占比高。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q10 · shamefully-hoist 什么时候该开？node_modules/.pnpm 是什么？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：<code>.pnpm</code> 是虚拟存储——所有包的真实目录、按「包名@版本」组织，内部互相解析依赖，是 pnpm 严格结构的实现载体。<code>shamefully-hoist=true</code> 会把依赖提升到顶层模拟 npm，仅建议在「工具链不兼容严格结构」的迁移期临时使用（如某些 Electron/老 Vite 插件场景），开久了等于放弃 pnpm 的核心收益；我项目显式设为 false。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q11 · 你的 monorepo 怎么保证代码质量不随包数失控？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：配置单源 + 门禁前移。根上一份 eslint/prettier/tsconfig.base 全包 extends（规范定义一次）；每个包 <code>build = test && typecheck && build</code>，根脚本 filter 链自动继承这道闸；git hook 跑 test:core 兜底；CI 用 <code>--frozen-lockfile</code> 锁依赖、按 affected 只跑改动链。质量不靠自觉，靠流水线里焊死的断点。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 十三、速记卡 -->
+      <div class="section" id="s13">
+        <h2>十三、一页速记卡（进面试间前扫一遍）</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>三句话定调</strong>：pnpm 管「装」（store + 硬链接 + 符号链接 = 快省严格）；workspace 管「连」（yaml 划范围，workspace: 本地链接/发布重写）；monorepo 管「管」（原子变更 + 统一工具链，代价是编排与治理）。</li>
+            <li><strong>结构图在脑中</strong>：<code>顶层 node_modules（只有声明的）→ .pnpm 虚拟存储（全版本）→ 全局 store（内容 hash）</code>；实线硬链接、虚线符号链接。</li>
+            <li><strong>幽灵依赖</strong> = 声明与可见集不一致；pnpm 靠不提升根治；逃生开关 shamefully-hoist / node-linker=hoisted，慎开。</li>
+            <li><strong>双写模式</strong>：peer（给下游的契约，宽范围）+ dev workspace:*（给本地的链接）；内部小依赖才进 dependencies + workspace:*；publish 自动重写 workspace:。</li>
+            <li><strong>编排口诀</strong>：省略号在前建地基（<code>...pkg</code>），省略号在后排影响（<code>pkg...</code>），<code>-r</code> 拓扑序，<code>--parallel</code> 换速度，<code>[ref]</code> 圈变更。</li>
+            <li><strong>缓存三板斧</strong>：filter 圈范围 → turbo 本地缓存回放 → 远程缓存共享；缓存正确性 = 输入指纹诚实（源码+依赖+环境变量，输出 dist/**）。</li>
+            <li><strong>发布三问</strong>：发什么（files/exports 白名单）、什么顺序（依赖先发/脚本写死/拓扑发布）、怎么记录（changelogen/changesets 独立 CHANGELOG）；发前 pnpm pack 验包。</li>
+            <li><strong>本项目数字包</strong>：pnpm 10.32.1 · Node ≥24 · 8 包 + 1 示例 · 独立版本（ui 2.17 / chat 1.5 / chat-vue 1.2）· scope registry 分流内网 Nexus · build = test &amp;&amp; typecheck &amp;&amp; 打包。</li>
+            <li><strong>选型一句话</strong>：pnpm workspace 起步 → 慢了加 Turborepo → 组织级图治理上 Nx；Lerna 是上一代发版标准，Rush 是企业流程派。</li>
+            <li><strong>主动交代代价</strong>：仓库治理、构建复杂度、CI 要 affected 化、跨包类型依赖 dist——能说出代价的候选人才像真正做过的人。</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「monorepo 不是工具选择，是工程治理选择：pnpm 给了它一个干净的依赖底座，
+          filter 与拓扑序给了它秩序，缓存给了它速度——而边界清晰的包设计，才是这一切能成立的前提。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <!-- 引入 highlight.js 做代码高亮 -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      // 模态框：点击示意图放大
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
