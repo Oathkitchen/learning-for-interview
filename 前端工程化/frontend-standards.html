@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>前端规范如何落地：从组件库到 AGENTS.md</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        background: transparent;
+      }
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #2e7d32;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #2e7d32;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>前端规范如何落地</h1>
+    <p class="subtitle">
+      规范为何难落地 · 组件库 + 模板 + Lint 三板斧 · 门禁与度量 · AI 时代的契约层（AGENTS.md / skills）·
+      真实实践解剖 · 追问链（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇 -->
+      <div class="section" id="s0">
+        <h2>〇、30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            <strong>规范落地的本质：把「团队品味」翻译成「机制」，让正确的事最容易做，让错误的事根本做不了。</strong>
+            口头约定必然衰减，文档必然过期——只有被<strong>工具自动执行</strong>的规范才活着。我把落地拆成四层：
+          </p>
+          <p style="margin: 0">
+            ① <strong>物化层</strong>：组件库 + 模板页——把规范做进「积木」和「起点」，写对的成本低于写错；
+            ② <strong>工具层</strong>：ESLint / Prettier / TS / commitlint——机器自动检查与修复；
+            ③ <strong>闸门层</strong>：husky / pre-commit / CI——不过不让走；
+            ④ <strong>契约层</strong>（AI 时代新增）：AGENTS.md / skills / rules——把同一套规范写成<strong>智能体也能读懂并遵守的契约</strong>，
+            对人和 AI 一视同仁。我过往的实践是「组件库 + 模板 + lint」三板斧，现在加上 AGENTS.md 这一层，
+            规范的受众从「团队成员」扩展到了「团队成员 + 会写代码的智能体」。
+          </p>
+        </div>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">🧱 物化：做成积木</span>
+            <p style="margin: 0; font-size: 14px">
+              组件库 + 模板页让「合规范」成为最省力的路径——用对的 Button 比自己写一个还快。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">⚙️ 工具：做成机器</span>
+            <p style="margin: 0; font-size: 14px">
+              ESLint / Prettier / tsc 把「风格与质量」从 code review 的口水战里拿出来，交给确定性程序。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🚧 闸门：做成强制</span>
+            <p style="margin: 0; font-size: 14px">
+              pre-commit + CI：不过不给过。规范最怕的不是「不知道」，而是「知道但来不及」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">📜 契约：对人和 AI 同款</span>
+            <p style="margin: 0; font-size: 14px">
+              AGENTS.md / skills 把品味规则写进智能体的上下文——AI 写的代码也必须过同一道 lint 门禁。
+            </p>
+          </div>
+        </div>
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、规范为什么难落地</a></li>
+          <li><a href="#s2">二、传统三板斧：组件库 + 模板 + Lint</a></li>
+          <li><a href="#s3">三、工具层细看：Lint 体系怎么分层</a></li>
+          <li><a href="#s4">四、闸门层：pre-commit 与 CI 门禁</a></li>
+          <li><a href="#s5">五、AI 时代的契约层：AGENTS.md / skills</a></li>
+          <li><a href="#s6">六、真实实践解剖：品味规则的机械化</a></li>
+          <li><a href="#s7">七、闭环：让规范不变成文档债</a></li>
+          <li><a href="#s8">八、面试追问链</a></li>
+          <li><a href="#s9">九、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、为什么难落地 -->
+      <div class="section" id="s1">
+        <h2>一、规范为什么难落地：死掉的三种姿势</h2>
+        <p>先承认一个事实：<strong>大部分团队不缺规范文档，缺的是让规范生效的机制。</strong>规范文档最常见的三种死法：</p>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>死法</th>
+              <th>现场</th>
+              <th>根因</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>写完即巅峰</strong></td>
+              <td>立项时激情输出 50 页规范 wiki，三个月后无人打开，新人靠口口相传</td>
+              <td>规范只存在于「文档层」，没有任何东西引用它、强制它</td>
+            </tr>
+            <tr>
+              <td><strong>review 打架</strong></td>
+              <td>「这里要不要拆组件」「注释用中文还是英文」在 MR 里吵十轮，最后看谁资深</td>
+              <td>该进机器的规则留在了人的品味裁决里——<strong>主观的事没有客观裁判</strong></td>
+            </tr>
+            <tr>
+              <td><strong>紧急豁免</strong></td>
+              <td>「今天先这样，上线后重构」——重构永远在明天，破例成了新规范</td>
+              <td>没有闸门，规范是「建议」而不是「约束」；人有 deadline 时建议必输</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>1.1 落地公式</h3>
+        <div class="explanation">
+          <p style="margin: 0">
+            <strong>规范落地 = 能物化的物化 + 能自动的自动 + 能拦截的拦截 + 剩下的写成契约。</strong>
+            判断一条规范怎么落地，就问三个问题：① 能不能做成「用它就自然合规范」的组件/模板？
+            ② 能不能写成 lint 规则/脚本？③ 不能自动化的，能不能让「不合格就无法提交/合并」？
+            三个都做不到的规范，大概率会死——要么删掉，要么写进 AI/人的契约层并配 review 清单。
+          </p>
+        </div>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 340" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowStd" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+            <text x="520" y="36" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">规范落地的四层防线（越往下越「硬」）</text>
+
+            <rect x="16" y="72" width="236" height="120" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="134" y="102" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">① 物化层</text>
+            <text x="134" y="128" font-size="12.5" fill="#35495e" text-anchor="middle">组件库 · 模板页 · 脚手架</text>
+            <text x="134" y="152" font-size="12" fill="#7a8aa0" text-anchor="middle">让「写对」比「写错」省力</text>
+            <text x="134" y="174" font-size="12" fill="#7a8aa0" text-anchor="middle">（成本不对称设计）</text>
+
+            <rect x="284" y="72" width="236" height="120" rx="10" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="402" y="102" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">② 工具层</text>
+            <text x="402" y="128" font-size="12.5" fill="#35495e" text-anchor="middle">ESLint · Prettier · tsc</text>
+            <text x="402" y="152" font-size="12" fill="#7a8aa0" text-anchor="middle">机器自动检查 / 修复</text>
+            <text x="402" y="174" font-size="12" fill="#7a8aa0" text-anchor="middle">（确定性裁判）</text>
+
+            <rect x="552" y="72" width="236" height="120" rx="10" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="670" y="102" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">③ 闸门层</text>
+            <text x="670" y="128" font-size="12.5" fill="#35495e" text-anchor="middle">husky · pre-commit · CI</text>
+            <text x="670" y="152" font-size="12" fill="#7a8aa0" text-anchor="middle">不过不让提交/合并</text>
+            <text x="670" y="174" font-size="12" fill="#7a8aa0" text-anchor="middle">（消灭「紧急豁免」）</text>
+
+            <rect x="820" y="72" width="204" height="120" rx="10" fill="#fffbeb" stroke="#f59e0b" />
+            <text x="922" y="102" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">④ 契约层</text>
+            <text x="922" y="128" font-size="12.5" fill="#35495e" text-anchor="middle">AGENTS.md · skills · rules</text>
+            <text x="922" y="152" font-size="12" fill="#7a8aa0" text-anchor="middle">写给人 + 智能体的规范</text>
+            <text x="922" y="174" font-size="12" fill="#7a8aa0" text-anchor="middle">（同一套品味，同一道门禁）</text>
+
+            <path d="M252,132 L278,132" stroke="#646cff" stroke-width="2" marker-end="url(#arrowStd)" />
+            <path d="M520,132 L546,132" stroke="#646cff" stroke-width="2" marker-end="url(#arrowStd)" />
+            <path d="M788,132 L814,132" stroke="#646cff" stroke-width="2" marker-end="url(#arrowStd)" />
+
+            <rect x="16" y="228" width="1008" height="76" rx="8" fill="#f8f9fa" />
+            <text x="520" y="256" font-size="13" fill="#35495e" text-anchor="middle" font-weight="bold">分工：①② 解决「怎么写才对」，③ 解决「不对过不去」，④ 解决「新成员（含 AI）怎么知道」</text>
+            <text x="520" y="282" font-size="12.5" fill="#7a8aa0" text-anchor="middle">原则：能用①②消化的规范不要靠③④硬扛；能自动检查的绝不要靠自觉——人性经不起 deadline 考验</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 越往下越是「硬约束」，落地强度：组件 &lt; lint &lt; 门禁 &lt; 契约+门禁</p>
+      </div>
+
+      <!-- 二、传统三板斧 -->
+      <div class="section" id="s2">
+        <h2>二、传统三板斧：组件库 + 模板页 + Lint（我的实践起点）</h2>
+        <p>这三样分别命中规范落地的三个痛点：<strong>复用、起点、底线</strong>。</p>
+
+        <h3>2.1 组件库：把规范做成「积木」</h3>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>它自动带来什么规范</h4>
+            <ul>
+              <li><strong>视觉规范</strong>：间距、圆角、字号、色板——用组件就是用设计令牌。</li>
+              <li><strong>交互规范</strong>：loading 态、空态、错误态、防重复提交——组件内置，业务不用各自发明。</li>
+              <li><strong>可访问性</strong>：aria、键盘操作——集中在组件库修一次，全站受益。</li>
+              <li><strong>API 纪律</strong>：受控/非受控、事件命名、插槽设计——组件库定了，业务代码自然同构。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>踩过的坑（组件库不等于万能）</h4>
+            <ul>
+              <li>组件库覆盖不到的「页面级」问题（布局、数据流、错误处理）没人管——所以要有模板。</li>
+              <li>API 设计不好 → 业务方绕过组件库裸写样式，规范反而被绕开。</li>
+              <li>升级成本高：组件库发大版本，所有业务方跟着改——要版本策略（peerDependencies、changelog）。</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>2.2 模板页：把规范做成「起点」</h3>
+        <p>
+          组件库管「零件」，模板页管「整机」——列表页、详情页、表单页、登录后的布局骨架。
+          新页面从模板复制/生成而不是从空白开始，<strong>路由约定、状态管理接法、请求层封装、错误边界、权限点挂载</strong>
+          全部在模板里示范过一次。这其实就是脚手架思想在业务开发里的应用（和 CLI 那页的「模板流水线」一脉相承）。
+        </p>
+        <div class="callout tip">
+          <strong class="tag">判断模板好坏的标准</strong>
+          新人不用问「这里该怎么做」，照着模板抄就对了——如果模板里还要口头补三句「我们一般这样……」，
+          说明模板没把规范物化完整，那三句话就该进模板或进契约文档。
+        </div>
+
+        <h3>2.3 Lint：把规范做成「机器裁判」</h3>
+        <p>
+          Lint 是三板斧里唯一的<strong>强制力</strong>：风格（格式、命名）交给 Prettier/ESLint 自动修，
+          质量（any、未使用变量、错误的相等比较）交给 ESLint/TS 报错拦下。
+          核心收益是把 code review 从「争论风格」解放出来，让人只看<strong>逻辑与设计</strong>。
+        </p>
+        <div class="code-title">真实规则片段（我项目的 eslint.config.mjs，flat config）</div>
+        <pre class="code-block"><code class="language-javascript">rules: {
+  // 禁止 any——使用 unknown + 类型守卫
+  '@typescript-eslint/no-explicit-any': 'error',
+  // 优先使用 type-only import
+  '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+  // 禁止 require
+  '@typescript-eslint/no-require-imports': 'error',
+  'no-console': ['warn', { allow: ['warn', 'error'] }],
+  eqeqeq: ['error', 'always'],
+  'prefer-const': 'error',
+  'no-var': 'error',
+}</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>规则不是随手抄的 lint 全家桶，而是<strong>团队品味的机械化</strong>——
+          「禁止 any」对应「严格类型」这条品味；「consistent-type-imports」对应「导出纪律」。
+          每条规则都能回答「它在防什么事故」，答不上来的规则就该删。<strong>lint 配置是团队约定的可执行版本。</strong>
+        </div>
+      </div>
+
+      <!-- 三、Lint 体系 -->
+      <div class="section" id="s3">
+        <h2>三、工具层细看：Lint 体系怎么分层</h2>
+        <p>不要把所有规则塞进一个 ESLint。按「谁的职责」分层，冲突最少、升级最稳：</p>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>层</th>
+              <th>工具</th>
+              <th>管什么</th>
+              <th>失败时</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>格式</strong></td>
+              <td>Prettier（+ editorconfig）</td>
+              <td>缩进、引号、分号、换行——纯风格</td>
+              <td>保存时自动修 / lint --fix</td>
+            </tr>
+            <tr>
+              <td><strong>语言质量</strong></td>
+              <td>TypeScript（strict）+ typescript-eslint</td>
+              <td>类型、any、断言风格、type-only import</td>
+              <td>error，编译/提交失败</td>
+            </tr>
+            <tr>
+              <td><strong>代码坏味道</strong></td>
+              <td>ESLint（含 no-var/eqeqeq/no-console…）</td>
+              <td>低级错误、不推荐写法</td>
+              <td>error/warn 分级</td>
+            </tr>
+            <tr>
+              <td><strong>框架约定</strong></td>
+              <td>eslint-plugin-vue / react-hooks 等</td>
+              <td>组件写法、hooks 依赖、模板约束</td>
+              <td>error</td>
+            </tr>
+            <tr>
+              <td><strong>样式</strong></td>
+              <td>stylelint（有 CSS 体系时）</td>
+              <td>选择器、命名（BEM）、颜色字面量</td>
+              <td>error</td>
+            </tr>
+            <tr>
+              <td><strong>提交信息</strong></td>
+              <td>commitlint</td>
+              <td>Conventional Commits（feat/fix/chore…）</td>
+              <td>拒绝 commit</td>
+            </tr>
+            <tr>
+              <td><strong>架构约束</strong></td>
+              <td>dependency-cruiser / eslint-plugin-boundaries / 自写 CI 脚本</td>
+              <td>包间依赖方向、禁 import 层、文件行数上限</td>
+              <td>error（CI 拦截）</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <strong class="tag">分级的用意</strong>
+          <strong>error = 机制拦截</strong>（不过不给过），<strong>warn = 文化提醒</strong>（review 时看一眼）。
+          全部设成 error 会导致「warning 疲劳」之后的「error 疲劳」，团队开始写 <code>eslint-disable</code>——
+          那是规范失效的前兆。定期统计 disable 数量，比统计代码行数有意义。
+        </div>
+      </div>
+
+      <!-- 四、闸门 -->
+      <div class="section" id="s4">
+        <h2>四、闸门层：pre-commit 与 CI——「不过不让走」</h2>
+        <p>工具层解决「能不能检查」，闸门层解决「检查了但有人想跳过」。规范的公信力全在这一层。</p>
+
+        <h3>4.1 闸门的三个位置（越早越省，越晚越全）</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>位置</th>
+              <th>跑什么</th>
+              <th>特点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>保存时</strong>（编辑器）</td>
+              <td>format on save、ESLint fix on save</td>
+              <td class="win">反馈最快，规范「长在手上」；依赖编辑器配置（.vscode/settings.json 进仓库）</td>
+            </tr>
+            <tr>
+              <td><strong>pre-commit</strong></td>
+              <td>lint-staged（只查改动文件）+ 关键测试（如 test:core）+ typecheck</td>
+              <td class="win">秒级拦截低级错误；要快——钩子超过 10s 就有人研究怎么跳过</td>
+            </tr>
+            <tr>
+              <td><strong>CI / MR</strong></td>
+              <td>全量 lint + typecheck + 测试 + 架构检查 + （可选）AI review</td>
+              <td>最终防线，慢一点没关系；<strong>分支保护</strong>强制 CI 绿才能合并</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">我项目的提交门禁（真实做法）</div>
+        <pre class="code-block"><code class="language-bash"># GOLDEN_RULES 第 8 条：提交前必须通过
+pnpm test && pnpm typecheck && pnpm lint
+
+# 落地方式：simple-git-hooks 的 pre-commit
+# 1. 根 package.json 的 prepare 脚本在 pnpm install 时自动安装钩子
+# 2. 钩子执行 pnpm test:core（核心三包 chat / chat-vue / ui 的测试门禁）
+# 3. build 脚本内部也前置了测试：pnpm test && tsup——坏产物出不了仓库
+# 4. 紧急逃生口：SKIP_SIMPLE_GIT_HOOKS=1（显式、可审计，比 --no-verify 的「隐式跳过」更诚实）</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>门禁设计我抓住三点：① <strong>钩子自动安装</strong>（prepare 脚本）——
+          不依赖同事记得手动 setup；② <strong>关键路径三保险</strong>——pre-commit 测试、build 前置测试、CI 全量，
+          单点绕过仍有兜底；③ <strong>逃生口要显式</strong>——允许极端情况跳过，但要求写环境变量这个「故意的动作」，
+          而不是大家默默学会的 <code>--no-verify</code>。
+        </div>
+
+        <div class="callout warn">
+          <strong class="tag">反模式提醒</strong>
+          ① 钩子跑全量测试 → 一次 commit 等 5 分钟 → 全员研究跳过方法，门禁名存实亡；
+          ② CI 只跑 lint 不跑测试 → 类型和规范的错拦住了，逻辑错照样上线；
+          ③ 「规范」和「工具配置」两套真相 → wiki 说中文注释，eslint 没配对应规则 → 注释语言全靠缘分。
+          <strong>每条规范都必须能指向它的机械化检查点</strong>——指向不了的规范要补机器或删条文。
+        </div>
+      </div>
+
+      <!-- 五、AI 契约层 -->
+      <div class="section" id="s5">
+        <h2>五、AI 时代的契约层：AGENTS.md / skills / rules</h2>
+        <div class="explanation">
+          <p style="margin: 0">
+            AI 写代码改变了规范落地的<strong>受众结构</strong>：以前规范读者只有「会来问你的同事」，
+            现在还有「读上下文、生成整文件的智能体」。智能体不看 wiki、不参加宣讲会——
+            <strong>它只看得到喂给它的上下文</strong>。所以规范要再物化一层：写成智能体加载的契约文件。
+            我项目 GOLDEN_RULES 开头那句话就是这层的纲领：<em>「这些规则代表团队的品味偏好，
+            通过 lint 规则和 CI 机械化执行。<strong>对人和智能体一视同仁。</strong>」</em>
+          </p>
+        </div>
+
+        <h3>5.1 AGENTS.md：智能体的「新人入职手册」</h3>
+        <p>
+          AGENTS.md 是放在仓库根（或子目录）的 Markdown，主流 AI 编程工具（Claude Code、Codex、
+          Cursor 等）会自动读取。它不是写给人看的 README——<strong>README 讲「这是什么项目」，
+          AGENTS.md 讲「在这个仓库干活的规矩」</strong>。
+        </p>
+        <div class="code-title">我项目的 AGENTS.md 骨架（真实结构）</div>
+        <pre class="code-block"><code class="language-markdown"># AGENTS.md
+
+## 仓库概览        # 语言/包管理/构建/测试/规范——让 AI 选对工具链
+## 快速导航        # 指向 ARCHITECTURE / DESIGN / GOLDEN_RULES / 执行计划
+## 包结构          # monorepo 各包职责表——避免 AI 乱建文件、乱放代码
+## 常用命令        # pnpm test / build:libs / typecheck / lint / release:*
+## 关键约束        # ⭐ 规范的浓缩条款：
+#  1. 零 HTTP 客户端依赖（请求层注入）
+#  2. 包间零耦合
+#  3. 类型优先 + JSDoc
+#  4. 提交门禁（test:core + typecheck）
+#  5. 单文件 ≤ 300 行（Markdown 不限）
+#  6. 禁止尾随逗号</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>AGENTS.md 的设计原则：① <strong>只写「干活需要知道的」</strong>——
+          架构详情外链到 docs/，别把 50 页规范糊进去（上下文窗口贵，AI 也会失焦）；
+          ② <strong>约束要可判定</strong>——「单文件不超过 300 行」比「保持良好结构」有效一万倍；
+          ③ <strong>命令可直接复制</strong>——AI 读到就能跑，跑完就有反馈。
+        </div>
+
+        <h3>5.2 三层契约的分工</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>载体</th>
+              <th>适合放什么</th>
+              <th>生命周期</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>AGENTS.md</strong>（仓库级）</td>
+              <td class="win">工具链、命令、目录职责、关键约束、禁区——每个任务都需要的背景</td>
+              <td>随仓库演进，MR 里和代码一起改</td>
+            </tr>
+            <tr>
+              <td><strong>skills / 专项指令</strong>（.mimocode/skills、.claude/skills 等）</td>
+              <td class="win">可复用工作流：「怎么发版」「怎么写组件」「怎么跑视觉回归」——按需加载的作业指导书</td>
+              <td>沉淀高频操作，比在对话里重复叮嘱稳定</td>
+            </tr>
+            <tr>
+              <td><strong>rules</strong>（.cursor/rules、.editorconfig…）</td>
+              <td>格式、目录级差异约定、生成代码的风格</td>
+              <td>工具专用，进仓库共享</td>
+            </tr>
+            <tr>
+              <td><strong>lint + CI</strong>（仍然兜底）</td>
+              <td class="win">一切能自动判定的——<strong>AI 写完照样过同一道门禁</strong></td>
+              <td>机器裁决，不信任任何生成物</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">核心心法：契约层不替代门禁层</strong>
+          AGENTS.md 是「预防」，lint/CI 是「拦截」。AI 偶尔仍会违规——这时靠的是 pre-commit 和 CI 把它拦下来，
+          报错信息再把 AI 拉回正轨（好的报错文案 = 给智能体的第二份文档）。
+          <strong>给 AI 的规范必须是「可执行的偏好」，给人的规范必须有「强制的闸门」——两层缺一不可。</strong>
+        </div>
+
+        <h3>5.3 AI 时代的两个新实践</h3>
+        <ul>
+          <li><strong>把报错写成人和 AI 都能读懂的「修复指引」</strong>：CI 脚本失败时打印「违反了哪条规则 → 怎么改 → 依据文件」，
+            智能体下一轮就能自愈，人类也省了查文档。</li>
+          <li><strong>用 AI 反哺规范</strong>：review 时发现 AI 反复犯的同一类错，要么加 lint 规则（能自动判），
+            要么写进 AGENTS.md（需要语境判断）——<strong>AI 的错误分布是规范缺口的热力图</strong>。</li>
+        </ul>
+      </div>
+
+      <!-- 六、真实实践 -->
+      <div class="section" id="s6">
+        <h2>六、真实实践解剖：品味规则的机械化</h2>
+        <p>
+          我项目里有一份 <code>docs/GOLDEN_RULES.md</code>——它不是「规范文档」，而是
+          <strong>每条品味都标注了检查方式的「可执行契约」</strong>。挑几条看它怎么被落地：
+        </p>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>品味规则（GOLDEN_RULES）</th>
+              <th>机械化检查点</th>
+              <th>拦截层</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>① 零外部运行时依赖（库包 dependencies 必须为空）</td>
+              <td>CI 扫 <code>packages/*/package.json</code> 的 dependencies 字段</td>
+              <td class="win">CI 脚本</td>
+            </tr>
+            <tr>
+              <td>② 严格类型：禁 any，公共 API 显式返回类型</td>
+              <td><code>@typescript-eslint/no-explicit-any: error</code> + tsconfig strict</td>
+              <td class="win">ESLint + tsc</td>
+            </tr>
+            <tr>
+              <td>③ 单文件 ≤ 300 行</td>
+              <td>CI 脚本扫文件行数（Markdown 豁免）</td>
+              <td class="win">CI 脚本</td>
+            </tr>
+            <tr>
+              <td>④ 导出纪律：index.ts 只 re-export</td>
+              <td>code review 清单 + （可加）ESLint no-restricted-syntax</td>
+              <td>review / 可再机械化</td>
+            </tr>
+            <tr>
+              <td>⑤ 命名约定（kebab-case 文件、create 前缀工厂）</td>
+              <td>部分可 ESLint（naming-convention），部分 review</td>
+              <td>混合</td>
+            </tr>
+            <tr>
+              <td>⑧ 提交门禁：test + typecheck + lint</td>
+              <td>simple-git-hooks pre-commit + build 前置测试 + CI</td>
+              <td class="win">钩子 + CI 双保险</td>
+            </tr>
+            <tr>
+              <td>⑨ 包间隔离：禁止反向 import、循环依赖零容忍</td>
+              <td>dependency-cruiser / 自写依赖图检查</td>
+              <td class="win">CI 脚本</td>
+            </tr>
+            <tr>
+              <td>⑩ 禁止尾随逗号</td>
+              <td>Prettier 配置与规则一致（trailingComma: "none"）</td>
+              <td class="win">Prettier 自动修</td>
+            </tr>
+            <tr>
+              <td>⑪ 注释用简体中文</td>
+              <td>review + AGENTS.md 明示（AI 与人同款要求）</td>
+              <td>契约层 + review</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout info">
+          <strong class="tag">这张表的价值（面试直接展示）</strong>
+          一眼看出规范的「覆盖率」：哪些进了机器（绿）、哪些还在 review、哪些还是人治。
+          规范落地的迭代方向就是<strong>把人治的行往左迁</strong>——迁不动的才留在契约层和 review 清单。
+        </div>
+
+        <h3>6.1 组件库 + 模板 + Lint + AGENTS 的全景分工</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>手段</th>
+              <th>解决的规范问题</th>
+              <th>失效信号</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>组件库</strong></td>
+              <td>视觉/交互/API 的「零件级」规范</td>
+              <td>业务方大量写内联样式、fork 组件改内部</td>
+            </tr>
+            <tr>
+              <td><strong>模板页</strong></td>
+              <td>页面骨架/数据流/错误处理的「整机级」规范</td>
+              <td>新页面结构五花八门、新人要问「标准写法」</td>
+            </tr>
+            <tr>
+              <td><strong>Lint + 门禁</strong></td>
+              <td>风格/质量/架构约束的「底线级」规范</td>
+              <td>eslint-disable 暴涨、钩子被频繁跳过</td>
+            </tr>
+            <tr>
+              <td><strong>AGENTS.md / skills</strong></td>
+              <td>上下文/流程/品味的「认知级」规范（人 + AI）</td>
+              <td>AI 反复犯同一类错、文件越写越长没人提醒</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 七、闭环 -->
+      <div class="section" id="s7">
+        <h2>七、闭环：让规范不变成文档债</h2>
+        <p>规范是活物，落地只是开始。保持它活着的最小闭环：</p>
+        <ol>
+          <li><strong>写下「为什么」</strong>：每条规范带一句防的事故（GOLDEN_RULES 的写法）——没有 rationale 的规范无法说服人遵守。</li>
+          <li><strong>挂上检查点</strong>：能 lint 的 lint，能脚本的脚本，能钩子的钩子；暂时不能的，明确写「由 review 负责」。</li>
+          <li><strong>度量违例</strong>：eslint-disable 数量、门禁跳过次数、review 中同类意见出现频率——数字比感觉可信。</li>
+          <li><strong>定期删改</strong>：季度 review 规范本身。过时的规范比没有规范更糟——它教会所有人「规范可以不遵守」。</li>
+          <li><strong>AI 错误回流</strong>：把智能体反复犯的错固化成 lint 规则或 AGENTS.md 条款，契约层跟着长。</li>
+        </ol>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">一句话</strong>
+          规范落地的终点不是「人人背诵规范」，而是「人人（和每个 AI）在无感知中被规范护着写出了对的代码」。
+        </div>
+      </div>
+
+      <!-- 八、追问链 -->
+      <div class="section" id="s8">
+        <h2>八、面试追问链</h2>
+
+        <details class="qa">
+          <summary>Q1 · 你们的前端规范是怎么落地的？（必考，答不出细节就露馅）</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：四层。① 物化——组件库 + 模板页，让合规范的写法最省力；
+            ② 工具——ESLint（strict TS、禁 any）+ Prettier + tsc 自动检查；
+            ③ 闸门——simple-git-hooks 的 pre-commit 跑核心测试，build 前置测试，CI 全量 + 分支保护；
+            ④ 契约——GOLDEN_RULES + AGENTS.md，把品味规则写成「可判定条款」，对人和智能体一视同仁。
+            每条规范都能指向它的检查点，指向不了的会补机器或删条文。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · 规范写了没人遵守怎么办？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：先分诊。能自动判定的 → 加 lint/脚本，从「呼吁」变「拦截」；
+            不能自动但可以阻断的 → 进 pre-commit/CI 门禁；
+            都不行的 → 砍掉或收窄成 review 清单里的一条。关键是别让规范停在「建议」——
+            建议在 deadline 面前必输。另一个抓手是成本不对称设计：组件库/模板让「写对」更快，违规反而更费劲。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · ESLint 规则是不是越多越好？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：不是。每条规则要能回答「防什么事故」，答不上来就删。
+            error/warn 分级：error 给必须拦的（any、eqeqeq），warn 给文化提醒。
+            全 error 会引发 disable 泛滥——我会监控 eslint-disable 数量作为规范健康度指标。
+            我们也不抄 lint 全家桶：规则集是团队品味的映射，比如「consistent-type-imports」对应导出纪律。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · AGENTS.md 和 README 有什么区别？写什么、不写什么？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：README 面向「想了解项目的人」，AGENTS.md 面向「要在这个仓库干活的智能体/新人」：
+            工具链、常用命令、目录职责、关键约束、禁区。写法三条：只写干活需要的（详情外链 docs/）、
+            约束必须可判定（「单文件 ≤300 行」优于「保持良好结构」）、命令可直接复制执行。
+            它替代不了 lint——AGENTS.md 是预防，门禁是拦截，AI 写的代码照样过同一道 CI。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · AI 写的代码怎么保证符合团队规范？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：两头夹。生成前：把规范写进上下文（AGENTS.md/skills），让智能体知道品味与约束；
+            生成后：不信任任何生成物，pre-commit + CI 用和人类完全相同的 lint/测试/类型门禁拦截。
+            再加一个反哺回路：AI 反复犯的错 → 能自动判的升级成 lint 规则，需要语境的写进 AGENTS.md——
+            AI 的错误分布就是规范缺口的热力图。我们 GOLDEN_RULES 明确「对人和智能体一视同仁」，就是这个意思。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · 怎么衡量规范落地的效果？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：看违例而不是看文档。① 违例率：eslint-disable 数量、门禁跳过次数；
+            ② review 质量：风格类评论占比下降、设计类讨论占比上升；
+            ③ 交付一致性：新人首个 PR 的返工次数、同类事故是否重复发生；
+            ④ 契约健康度：AI 相关返修是否收敛。数字下降说明机制在起作用，否则就是规范与工具脱节了。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 九、速记卡 -->
+      <div class="section" id="s9">
+        <h2>九、一页速记卡</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>本质</strong>：把团队品味翻译成机制——写对比写错省力，错误根本过不去。</li>
+            <li><strong>三种死法</strong>：写完即巅峰（无引用）、review 打架（主观无裁判）、紧急豁免（无闸门）。</li>
+            <li><strong>落地公式</strong>：能物化的物化 + 能自动的自动 + 能拦截的拦截 + 剩下的写成契约。</li>
+            <li><strong>三板斧</strong>：组件库（零件级规范）→ 模板页（整机级规范）→ Lint（底线级规范）。</li>
+            <li><strong>Lint 分层</strong>：格式（Prettier）/ 语言（tsc+ts-eslint）/ 坏味道（ESLint）/ 框架 / 架构（依赖边界）；error=拦截，warn=提醒。</li>
+            <li><strong>闸门三位置</strong>：保存时 &lt; pre-commit（要快！）&lt; CI+分支保护；逃生口要显式（SKIP_…）不要隐式（--no-verify）。</li>
+            <li><strong>AI 契约层</strong>：AGENTS.md（干活的规矩）/ skills（可复用作业指导书）/ rules（格式与风格）——可判定、可复制、只写干活需要的。</li>
+            <li><strong>一视同仁</strong>：AI 写的代码过同一道 lint/测试门禁；契约是预防，门禁是拦截，两层缺一不可。</li>
+            <li><strong>真实工程</strong>：GOLDEN_RULES 11 条各带检查方式（禁 any→ESLint error、300 行→CI 脚本、零依赖→CI 扫 package.json）；pre-commit 跑 test:core。</li>
+            <li><strong>闭环</strong>：写清为什么 → 挂检查点 → 度量违例（disable 数/跳过数）→ 定期删改 → AI 错误回流成规则。</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「规范落地的终点不是人人背诵规范，而是人和智能体在无感知中被规范护着，写出了对的代码——
+          能自动的交给机器，不能自动的写成契约，契约之外的交给闸门。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>

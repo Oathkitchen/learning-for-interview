@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>首屏优化四件套：首屏 · JS 体积 · 路由懒加载 · 图片</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        background: transparent;
+      }
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #2e7d32;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #2e7d32;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>首屏优化四件套</h1>
+    <p class="subtitle">
+      首屏加载 · JS 包体积 · 路由懒加载 · 图片优化——四条杠杆如何拧成一根绳 ·
+      关键路径图解 · 实操清单 · 追问链（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇 -->
+      <div class="section" id="s0">
+        <h2>〇、30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            这四件事不是并列的四个技巧，而是<strong>一条链上的四个杠杆</strong>：
+            <strong>「首屏加载」是目标</strong>（用户多久看到可用的主体内容），
+            <strong>JS 包体积、路由懒加载、图片优化是三大主杠杆</strong>——
+            分别砍掉「不该来的字节」「现在用不到的字节」「过重的视觉字节」。
+          </p>
+          <p>
+            ① <strong>首屏加载</strong>：先画清关键路径（HTML → 关键 CSS → 首屏 JS → 数据 → 渲染），
+            找出「谁在挡着第一屏」；② <strong>JS 包体积</strong>：用 bundle 分析找出胖子，
+            靠 tree-shaking、依赖治理、压缩现代语法减重；③ <strong>路由懒加载</strong>：
+            按路由把代码切成按需块，首屏只付「当前路由」的钱；④ <strong>图片优化</strong>：
+            换现代格式、按屏给尺寸、非首屏懒加载——但<strong>首屏 LCP 图恰恰不能 lazy</strong>。
+          </p>
+          <p style="margin: 0">
+            与 LCP/INP/CLS 的关系：这四件事主要服务 <strong>LCP</strong>（还有 TBT/FCP），
+            顺带通过「更少主线程工作」改善 <strong>INP</strong>。
+            一句话：<strong>首屏优化 = 删掉不需要的 + 延后不着急的 + 压缩必须留的 + 让最重的图先走。</strong>
+          </p>
+        </div>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">🎯 首屏加载</span>
+            <p style="margin: 0; font-size: 14px">
+              目标：关键路径最短。先测量再动手——关键资源、阻塞点、数据瀑布。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">📦 JS 包体积</span>
+            <p style="margin: 0; font-size: 14px">
+              目标：入口字节最少。分析（bundle analyzer）→ 治理（tree-shaking / 依赖替换）→ 门禁（体积预算）。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🗂 路由懒加载</span>
+            <p style="margin: 0; font-size: 14px">
+              目标：按需付费。动态 <code>import()</code> 按路由切块 + 预取策略，公共依赖提为共享 chunk。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🖼 图片优化</span>
+            <p style="margin: 0; font-size: 14px">
+              目标：视觉字节最小且不挡 LCP。格式/尺寸/懒加载三板斧——首屏图反着来：preload、别 lazy。
+            </p>
+          </div>
+        </div>
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、首屏加载：关键路径思维</a></li>
+          <li><a href="#s2">二、JS 包体积：找出胖子并减重</a></li>
+          <li><a href="#s3">三、路由懒加载：按需付费</a></li>
+          <li><a href="#s4">四、图片优化：格式 · 尺寸 · 时机</a></li>
+          <li><a href="#s5">五、四件事合起来的作战顺序</a></li>
+          <li><a href="#s6">六、度量与门禁</a></li>
+          <li><a href="#s7">七、面试追问链</a></li>
+          <li><a href="#s8">八、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、首屏 -->
+      <div class="section" id="s1">
+        <h2>一、首屏加载：用关键路径思维找「谁在挡路」</h2>
+        <p>
+          「首屏慢」是结果，不是原因。正确姿势是把首屏拆成<strong>关键路径</strong>上的串行环节，
+          看每个环节耗时和依赖关系——优化就是<strong>把串行改并行、把必须的提前、把不必须的挪走</strong>。
+        </p>
+
+        <h3>1.1 首屏关键路径全景</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 420" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowFs" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+            <text x="520" y="34" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">首屏关键路径：从敲下回车到「主体内容可见」</text>
+
+            <!-- 主链 -->
+            <rect x="16" y="70" width="150" height="64" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <text x="91" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">① DNS / TCP</text>
+            <text x="91" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">连接建立（预连接）</text>
+
+            <rect x="192" y="70" width="150" height="64" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <text x="267" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">② TTFB + HTML</text>
+            <text x="267" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">首字节 → 文档下载</text>
+
+            <rect x="368" y="70" width="150" height="64" rx="8" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="443" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">③ 解析 + 关键 CSS</text>
+            <text x="443" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">渲染树构建（阻塞点）</text>
+
+            <rect x="544" y="70" width="150" height="64" rx="8" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="619" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">④ 首屏 JS 执行</text>
+            <text x="619" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">框架启动/水合/路由</text>
+
+            <rect x="720" y="70" width="150" height="64" rx="8" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="795" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">⑤ 首屏数据</text>
+            <text x="795" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">接口/SSR 直出</text>
+
+            <rect x="896" y="70" width="128" height="64" rx="8" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="960" y="96" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">⑥ 渲染</text>
+            <text x="960" y="118" font-size="11" fill="#7a8aa0" text-anchor="middle">首屏像素 / LCP</text>
+
+            <path d="M166,102 L186,102" stroke="#646cff" stroke-width="2" marker-end="url(#arrowFs)" />
+            <path d="M342,102 L362,102" stroke="#646cff" stroke-width="2" marker-end="url(#arrowFs)" />
+            <path d="M518,102 L538,102" stroke="#646cff" stroke-width="2" marker-end="url(#arrowFs)" />
+            <path d="M694,102 L714,102" stroke="#646cff" stroke-width="2" marker-end="url(#arrowFs)" />
+            <path d="M870,102 L890,102" stroke="#646cff" stroke-width="2" marker-end="url(#arrowFs)" />
+
+            <!-- 可并行分支 -->
+            <rect x="368" y="170" width="330" height="56" rx="8" fill="#f8f9fa" stroke="#9aa7b8" stroke-dasharray="5 3" />
+            <text x="533" y="194" font-size="12" fill="#35495e" text-anchor="middle">并行兄弟：首屏图片（不挡 CSS/JS，但要赶在 LCP 前）</text>
+            <text x="533" y="214" font-size="11" fill="#7a8aa0" text-anchor="middle">preload / fetchpriority=high —— 图片是「另一条赛道」</text>
+            <path d="M533,170 L533,140" stroke="#2e7d32" stroke-width="2" stroke-dasharray="4 3" />
+
+            <rect x="16" y="170" width="320" height="56" rx="8" fill="#f8f9fa" stroke="#9aa7b8" stroke-dasharray="5 3" />
+            <text x="176" y="194" font-size="12" fill="#35495e" text-anchor="middle">可延后：非首屏 JS / 埋点 / 字体 / 广告 SDK</text>
+            <text x="176" y="214" font-size="11" fill="#7a8aa0" text-anchor="middle">defer · 动态 import · requestIdleCallback</text>
+
+            <!-- 优化手段对应 -->
+            <rect x="16" y="266" width="1008" height="128" rx="8" fill="#fffbea" stroke="#e6c200" stroke-dasharray="5 3" />
+            <text x="36" y="294" font-size="13" font-weight="bold" fill="#b45309">每一段的优化抓手：</text>
+            <text x="36" y="322" font-size="12.5" fill="#5b5330">① preconnect/dns-prefetch 　② CDN 缓存 HTML、减少重定向、SSR/流式 　③ 内联关键 CSS、去渲染阻塞</text>
+            <text x="36" y="348" font-size="12.5" fill="#5b5330">④ 本页主角：JS 包体积 + 路由懒加载（第二、三章）　⑤ 接口并行、SSR 直出数据、防瀑布 　⑥ 图片尺寸/格式、字体 swap（第四章）</text>
+            <text x="36" y="374" font-size="12.5" fill="#5b5330">心法：先用 Performance/瀑布图定位「哪一段最肥」，再动手——不对症的优化全是安慰剂</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 橙色两段（CSS/JS 阻塞）通常是 SPA 首屏的主犯，正是后文三件套的战场</p>
+
+        <h3>1.2 首屏的「可用」比「全出」更重要</h3>
+        <ul>
+          <li><strong>骨架屏/渐进渲染</strong>：先出结构（标题、导航、卡片框），再填数据——用户感知的「快」来自早期可读。</li>
+          <li><strong>关键内容优先</strong>：主内容区先渲染，评论区/侧栏/推荐位延后——别让「最后 10% 的内容」拖住前 90%。</li>
+          <li><strong>与指标对齐</strong>：首屏优化的主要目标是 <strong>LCP</strong>（还有 FCP/TBT）；顺带减主线程压力利好 INP。</li>
+        </ul>
+        <div class="callout tip">
+          <strong class="tag">一句话</strong>
+          首屏优化的第一步永远是<strong>测量关键路径</strong>，而不是上手段。
+          「JS 太大」「图片太重」是诊断结果——先在瀑布图上看到它挡在关键路径上，才值得砍。
+        </div>
+      </div>
+
+      <!-- 二、JS 体积 -->
+      <div class="section" id="s2">
+        <h2>二、JS 包体积：找出胖子，再谈减重</h2>
+
+        <h3>2.1 先看清：体积都花在哪（分析工具）</h3>
+        <div class="code-title">三板斧分析</div>
+        <pre class="code-block"><code class="language-bash"># ① 构建产物统计（webpack/vite/rollup 都有对应插件）
+npx vite-bundle-visualizer        # vite: rollup-plugin-visualizer
+npx webpack-bundle-analyzer dist  # webpack 生态
+
+# ② 看「谁引入了它」——体积问题八成是依赖问题
+npx source-map-explorer dist/assets/*.js
+# 或用包体积检查工具（对第三方库选型很管用）
+npx bundlephobia lodash-es       # 查一个包的 min+gzip 体积
+
+# ③ 浏览器侧：DevTools → Network（JS 过滤）+ Coverage（未执行代码占比）
+# Coverage（Ctrl+Shift+P → Coverage）能直接看到「下载了但没跑」的字节——懒加载的靶子</code></pre>
+
+        <h3>2.2 减重手段（按杠杆从大到小）</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>手段</th>
+              <th>做什么</th>
+              <th>收益量级</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>路由级代码分割</strong></td>
+              <td>动态 <code>import()</code> 按路由/按组件切块（见第三章）</td>
+              <td class="win">极大——入口包常常直接减半</td>
+            </tr>
+            <tr>
+              <td><strong>依赖治理</strong></td>
+              <td>换轻量库（moment→dayjs、lodash→按需引入）、删幽灵依赖、阻断巨型间接依赖</td>
+              <td class="win">大——一个 moment 就 ~70KB gzip</td>
+            </tr>
+            <tr>
+              <td><strong>Tree-shaking 真生效</strong></td>
+              <td>ESM 产出、<code>sideEffects</code> 声明正确、避免 import 整个库的副作用入口</td>
+              <td>中大——取决于库的导出质量</td>
+            </tr>
+            <tr>
+              <td><strong>组件级懒加载</strong></td>
+              <td>弹窗/图表/编辑器等「点开才需要」的组件动态加载</td>
+              <td>中——echarts/md-editor 这类动辄几百 KB</td>
+            </tr>
+            <tr>
+              <td><strong>压缩与现代语法</strong></td>
+              <td>minify + <code>target</code> 现代浏览器（es2020+）、brotli/gzip 预压缩</td>
+              <td>中——brotli 比 gzip 再省 15–20%</td>
+            </tr>
+            <tr>
+              <td><strong>外部化大依赖</strong></td>
+              <td>CDN external（vue/react 走 CDN 长缓存）——要权衡缓存与安全（SRI）</td>
+              <td>中——省重复下载，不省解析执行</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">Vue / React 按需引入的对比</div>
+        <pre class="code-block"><code class="language-javascript">// ❌ 整库引入：打包器摇不掉未使用的（若库有副作用/非纯 ESM）
+import _ from 'lodash';
+import moment from 'moment';
+
+// ✅ 按需/替代
+import debounce from 'lodash-es/debounce';   // lodash-es 是 ESM，可 tree-shake
+import { format } from 'date-fns';           // dayjs/date-fns 体积小一个量级
+
+// ✅ 大组件动态加载
+const ECharts = defineAsyncComponent(() => import('./ECharts.vue'));  // Vue
+const Chart = lazy(() => import('./Chart'));                          // React</code></pre>
+
+        <div class="talk">
+          <strong>面试怎么讲：</strong>包体积我按「<strong>分析 → 治理 → 门禁</strong>」三步走：
+          analyzer 找 Top 贡献者（通常是 1–2 个巨型依赖或全量引入的库）；
+          治理优先做「换/删/分割」而不是「压缩」——优化压缩比省 10% 小事，砍掉一个 300KB 的库是大事；
+          最后上 <strong>size-limit / bundlesize 体积预算</strong>进 CI，防止回潮。
+          我做组件库时还有一层：库本身走 ESM + <code>sideEffects</code> 声明 + 子路径导出，
+          让下游 tree-shaking 能生效——<strong>体积优化要考虑「我产出的东西让别人摇不摇得掉」。</strong>
+        </div>
+      </div>
+
+      <!-- 三、路由懒加载 -->
+      <div class="section" id="s3">
+        <h2>三、路由懒加载：让首屏只付「当前路由」的钱</h2>
+        <p>
+          路由懒加载的本质是<strong>把「进入应用要下载什么」改成「进这个页面要下载什么」</strong>——
+          用动态 <code>import()</code> 让打包器按路由切出独立 chunk，进入哪个路由才拉哪个。
+        </p>
+
+        <h3>3.1 标准姿势</h3>
+        <div class="code-title">Vue Router / React Router</div>
+        <pre class="code-block"><code class="language-javascript">// Vue：组件直接 () => import(...)，构建器自动分块
+const routes = [
+  { path: '/',           component: () => import('./views/Home.vue') },
+  { path: '/dashboard',  component: () => import('./views/Dashboard.vue') },
+  { path: '/report/:id', component: () => import('./views/Report.vue') }
+];
+
+// React：lazy + Suspense
+const Settings = lazy(() => import('./pages/Settings'));
+&lt;Suspense fallback={&lt;Skeleton /&gt;}&gt;
+  &lt;Settings /&gt;
+&lt;/Suspense&gt;</code></pre>
+
+        <h3>3.2 切完之后的三件事（很多人只做了第一步）</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>事项</th>
+              <th>做法</th>
+              <th>为什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>① 公共依赖抽离</strong></td>
+              <td>构建器配置 <code>manualChunks</code>/splitChunks：vue/react、工具库提为共享 chunk；避免 A、B 路由各打一份</td>
+              <td class="win">防止「切了 N 个包，体积反而更大」</td>
+            </tr>
+            <tr>
+              <td><strong>② 预取（prefetch）下一跳</strong></td>
+              <td>路由切换间隙用 <code>requestIdleCallback</code> 预取高频下一跳；
+                或 webpackPrefetch 注释 / <code>&lt;link rel="prefetch"&gt;</code></td>
+              <td class="win">懒加载把「打开时的成本」挪走了，预取把它「抢跑」回来——用户点进去秒开</td>
+            </tr>
+            <tr>
+              <td><strong>③ 首屏路由别懒</strong></td>
+              <td>落地页/首页 chunk 直接进主包或 preload；加载态骨架屏与真实布局对齐</td>
+              <td>首屏路由再 lazy 就是「为懒而懒」——多一次网络往返还拖 LCP</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">预取与分块配置示例</div>
+        <pre class="code-block"><code class="language-javascript">// Webpack 魔法注释：预取下一跳（浏览器空闲时加载）
+const Home = () => import(/* webpackPrefetch: true */ './views/Home.vue');
+
+// Rollup/Vite 手动分块：框架与大依赖独立长缓存
+// vite.config.js
+export default {
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],   // 变动少 → 长缓存
+          charts: ['echarts']                        // 大块单独放，按需才进
+        }
+      }
+    }
+  }
+}</code></pre>
+
+        <div class="callout warn">
+          <strong class="tag">懒加载的常见翻车</strong>
+          ① 切得太碎：一个按钮一个 chunk，HTTP 请求数爆炸——粒度按「路由/大功能」就够；
+          ② 循环依赖导致 chunk 拆分异常，公共代码重复；③ 动态 import 失败没有兜底（网络抖动白屏）——
+          要有加载失败重试与错误边界；
+          ④ 忽略执行成本：拆包解决「下载」，巨量计算依然卡 INP——那是长任务问题，另一战场。
+        </div>
+
+        <div class="talk">
+          <strong>面试怎么讲：</strong>路由懒加载我会讲完整闭环：<strong>切块（import）→ 抽公共（manualChunks）
+          → 抢跑（prefetch）→ 守住首屏（首页不懒）</strong>。效果用 Coverage 面板验证：
+          进入首页时「未使用的字节」应显著下降。再补一句边界认知：
+          <strong>懒加载优化的是网络与解析，不解决主线程长任务</strong>——与 INP 的优化要分开汇报。
+        </div>
+      </div>
+
+      <!-- 四、图片优化 -->
+      <div class="section" id="s4">
+        <h2>四、图片优化：格式 · 尺寸 · 时机（三板斧 + 一个反常识）</h2>
+        <p>
+          图片常常是页面里<strong>最重的字节</strong>，也是 <strong>LCP 的头号嫌疑人</strong>。
+          优化分三个维度：送什么格式、送多大、什么时候送。
+        </p>
+
+        <h3>4.1 格式：能小则小，能现代则现代</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>格式</th>
+              <th>适用</th>
+              <th>相对 JPEG 体积</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>AVIF</strong></td>
+              <td>照片/复杂图；兼容性已达主流</td>
+              <td class="win">约小 50%（但编码慢，生产建议 CDN/构建期转）</td>
+            </tr>
+            <tr>
+              <td><strong>WebP</strong></td>
+              <td>通用场景的默认选择</td>
+              <td class="win">约小 25–35%，兼容性很好</td>
+            </tr>
+            <tr>
+              <td><strong>SVG</strong></td>
+              <td>图标、插画、logo（矢量）</td>
+              <td>视复杂度；文本可压缩、可样式化</td>
+            </tr>
+            <tr>
+              <td>JPEG/PNG</td>
+              <td>回退格式（&lt;picture&gt; 提供）</td>
+              <td>基准</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="code-title">按能力协商格式（&lt;picture&gt;）</div>
+        <pre class="code-block"><code class="language-html">&lt;picture&gt;
+  &lt;source type="image/avif" srcset="hero.avif" /&gt;
+  &lt;source type="image/webp" srcset="hero.webp" /&gt;
+  &lt;img src="hero.jpg" alt="主视觉" width="1200" height="630" /&gt;
+&lt;/picture&gt;</code></pre>
+
+        <h3>4.2 尺寸：按屏给图，别用桌面图怼手机</h3>
+        <div class="code-title">srcset + sizes（浏览器选最合适的）</div>
+        <pre class="code-block"><code class="language-html">&lt;img
+  src="hero-800.jpg"
+  srcset="hero-400.jpg 400w, hero-800.jpg 800w, hero-1600.jpg 1600w"
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+  alt="主视觉"
+  width="1200" height="630"
+/&gt;
+&lt;!-- 要点：
+  1. width/height（或 CSS aspect-ratio）必须给——防 CLS，浏览器可预留空间
+  2. 尺寸裁剪在服务端/构建期做（CDN 图片处理 / sharp），别让浏览器下载大图再缩
+  3. DPR 2x 屏要考虑 srcset 密度 --&gt;
+</code></pre>
+
+        <h3>4.3 时机：懒加载 vs 首屏预载（反常识点）</h3>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>非首屏图：懒加载</h4>
+            <ul>
+              <li><code>loading="lazy"</code> 原生属性，简单有效（列表长图、下半屏内容）。</li>
+              <li>更精细：IntersectionObserver 自定义占位/渐显。</li>
+              <li>注意：lazy 图会给 CLS 风险——占位高度要预留。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>首屏 LCP 图：反着来！</h4>
+            <ul>
+              <li><strong>不能 lazy</strong>——lazy 会推迟它，直接拖垮 LCP。</li>
+              <li class="win"><code>&lt;link rel="preload" as="image" href="hero.avif"&gt;</code> 提前抢带宽。</li>
+              <li>HTML 属性 <code>fetchpriority="high"</code>；CSS 背景图尽量换成 <code>&lt;img&gt;</code>（可被 LCP 追踪/预载）。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">图片优化与 CLS 的交叉点</strong>
+          上一节 CLS 的头号来源就是「图片没写尺寸」——图片优化天然顺手修 CLS：
+          <strong>width/height（或 aspect-ratio）永远是图片标签的必填项</strong>，
+          它同时服务于「布局稳定」和「浏览器预留空间」。
+        </div>
+
+        <div class="talk">
+          <strong>面试怎么讲：</strong>图片我按「格式（AVIF/WebP 前置 + 传统回退）、尺寸（srcset/sizes + 真实裁剪）、
+          时机（非首屏 lazy、首屏 preload + fetchpriority）」三板斧展开，并强调反常识点：
+          <strong>LCP 图与 lazy 是死对头</strong>。验证方式：Network 里看图片实际下载的字节数与解码时间，
+          LCP 元素是否就是这张图、它的请求有没有被排到前面。
+        </div>
+      </div>
+
+      <!-- 五、作战顺序 -->
+      <div class="section" id="s5">
+        <h2>五、四件事合起来：一次首屏优化的作战顺序</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>步骤</th>
+              <th>动作</th>
+              <th>产出</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. 测</strong></td>
+              <td>Performance 瀑布图 + LCP 元素 + Coverage + bundle analyzer</td>
+              <td>「谁在关键路径上、多少字节、多少未使用」清单</td>
+            </tr>
+            <tr>
+              <td><strong>2. 砍</strong></td>
+              <td>删/换重依赖；未用代码消灭（tree-shaking、按需引入）</td>
+              <td>入口包变薄——先做减法再谈切分</td>
+            </tr>
+            <tr>
+              <td><strong>3. 切</strong></td>
+              <td>路由懒加载 + 公共 chunk 抽离 + 非关键组件动态加载</td>
+              <td>入口只付首屏钱；Coverage 未使用字节大降</td>
+            </tr>
+            <tr>
+              <td><strong>4. 图</strong></td>
+              <td>格式转换/压缩、srcset、首屏 preload、非首屏 lazy、补宽高</td>
+              <td>LCP 图字节变小且更早到；CLS 顺手变好</td>
+            </tr>
+            <tr>
+              <td><strong>5. 并</strong></td>
+              <td>资源并行（preconnect/preload）、数据并行（SSR/防瀑布）、延后非关键脚本</td>
+              <td>关键路径串行段变短</td>
+            </tr>
+            <tr>
+              <td><strong>6. 守</strong></td>
+              <td>体积预算 + Lighthouse CI + RUM 监控</td>
+              <td>不回潮——优化是工程不是运动</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <strong class="tag">杠杆排序经验</strong>
+          对典型 SPA：「路由懒加载没做」&gt;「巨型依赖全量引入」&gt;「图片未压缩」&gt;「压缩算法调优」。
+          先问「哪些字节根本不该现在到」（切/延后），再问「剩下的字节能不能更小」（格式/压缩），
+          最后才抠 HTTP 层的花活。<strong>顺序反了就是白忙。</strong>
+        </div>
+      </div>
+
+      <!-- 六、度量与门禁 -->
+      <div class="section" id="s6">
+        <h2>六、度量与门禁：让优化活过下个迭代</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>度量对象</th>
+              <th>工具</th>
+              <th>门禁方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>首屏指标（LCP/FCP/TBT）</td>
+              <td>Lighthouse CI / WebPageTest</td>
+              <td>PR 上跑固定场景，阈值超标挂 MR</td>
+            </tr>
+            <tr>
+              <td>入口包体积</td>
+              <td>size-limit / bundlesize / CI 脚本比对 gzip 体积</td>
+              <td class="win">「入口 ≤ N KB」写进 CI，超预算失败——最有效的一条</td>
+            </tr>
+            <tr>
+              <td>chunk 结构健康</td>
+              <td>analyzer 快照 / 自动 diff 资产清单</td>
+              <td>chunk 数量与重复模块告警</td>
+            </tr>
+            <tr>
+              <td>图片资产</td>
+              <td>构建期图片体积检查（无 alt/无宽高/超尺寸告警）</td>
+              <td>lint 插件 / CI 脚本</td>
+            </tr>
+            <tr>
+              <td>真实用户体感</td>
+              <td>web-vitals RUM（LCP/INP/CLS P75）</td>
+              <td>报警而非门禁——门禁管「别改坏」，RUM 管「真的好」</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="code-title">体积预算示例（size-limit 风格）</div>
+        <pre class="code-block"><code class="language-json">// 例：「主入口 gzip 后不超过 150KB」——具体数字按业务定，但要有数字
+{
+  "path": "dist/assets/index-*.js",
+  "limit": "150 KB",
+  "gzip": true
+}
+// CI：npx size-limit
+// 体积预算是「团队契约」：新增依赖必须过问——它逼所有人思考「值不值这些字节」</code></pre>
+      </div>
+
+      <!-- 七、追问链 -->
+      <div class="section" id="s7">
+        <h2>七、面试追问链</h2>
+
+        <details class="qa">
+          <summary>Q1 · 首屏加载慢你怎么排查？（必考）</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：按关键路径拆段：DNS/TCP → TTFB/HTML → 解析与关键 CSS → 首屏 JS 执行 → 数据 → 渲染。
+            用 Performance 瀑布图看谁在关键路径上、谁在阻塞；用 Coverage 看下载未用的字节；
+            用 analyzer 看包的构成。定位到段之后对症：TTFB 用 CDN/SSR，阻塞用 defer/内联关键 CSS，
+            JS 胖做分割与依赖治理，图重做格式与 preload。<strong>先测量后动手</strong>是不变的原则。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · 怎么控制 JS 包体积？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：分析（analyzer/source-map-explorer/Coverage）→ 治理 → 门禁。
+            治理按杠杆排序：路由级分割 &gt; 依赖治理（换轻量库、按需引入、删幽灵依赖）&gt; tree-shaking 生效
+            （ESM + sideEffects）&gt; 组件懒加载 &gt; 压缩与现代语法 &gt; CDN 外部化。
+            最后用 size-limit 类体积预算进 CI 防回潮。注意区分「下载体积」与「执行成本」——后者是 INP 问题。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · 路由懒加载要注意什么？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：完整闭环是切块 + 抽公共 + 预取 + 守首屏。
+            切块用动态 import；公共依赖用 manualChunks/splitChunks 防重复；
+            空闲时 prefetch 高频下一跳（把懒的延迟抢回来）；首屏路由不要懒（别为懒而懒）。
+            还要防切太碎（请求爆炸）、加载失败兜底、骨架屏高度对齐。懒加载只解决下载与解析，不解决长任务。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · 图片优化有哪些手段？首屏图和普通图有什么不同？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：三板斧——格式（AVIF/WebP + picture 回退）、尺寸（srcset/sizes、服务端裁剪、给宽高）、
+            时机（非首屏 loading=lazy，首屏 preload + fetchpriority=high）。
+            关键反常识：LCP 图绝不能 lazy，否则直接拖垮 LCP；CSS 背景大图尽量换成 img 以便预载与追踪。
+            宽高必填还是 CLS 的预防措施——一石二鸟。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · 怎么证明你的优化有效？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：前后对比三层证据——① Lab 复现：同场景 Lighthouse/Performance 跑分
+            （LCP、TBT、FCP 数值变化）；② 产物证据：入口 gzip 体积、chunk 数量、Coverage 未使用字节占比；
+            ③ RUM 证据：真实用户 P75 的 LCP/INP/CLS 分布改善。三层缺一不可：
+            只有跑分没 RUM 是「实验室冠军」，只有 RUM 没复现路径是「不知道为什么好」。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · 首屏优化和 LCP/INP 优化是一回事吗？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：高度重叠但不相等。首屏优化是工程视角（关键路径、字节、切分），
+            主要作用于 LCP/FCP/TBT；INP 是交互视角——懒加载减轻解析与主线程占用对 INP 有帮助，
+            但 INP 的主敌是长任务与 handler 耗时，要单独诊断。
+            CLS 则主要由图片宽高、动态插入、字体替换驱动——图片优化会顺手改善 CLS，但布局稳定性另有纪律。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 八、速记卡 -->
+      <div class="section" id="s8">
+        <h2>八、一页速记卡</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>总纲</strong>：首屏是目标；JS 体积、路由懒加载、图片是三大杠杆——删不需要的、延后不着急的、压缩必须留的、让 LCP 图先走。</li>
+            <li><strong>首屏</strong>：关键路径六段（DNS→HTML→CSS→JS→数据→渲染）；先测量定位最肥的一段；「可用」优于「全出」。</li>
+            <li><strong>JS 体积</strong>：分析（analyzer/Coverage）→ 治理（分割&gt;换库&gt;tree-shaking&gt;懒加载&gt;压缩）→ 门禁（size-limit）。</li>
+            <li><strong>路由懒加载</strong>：动态 import 切块 + manualChunks 抽公共 + prefetch 抢跑 + 首屏路由不懒；防切太碎与加载失败。</li>
+            <li><strong>图片</strong>：格式 AVIF/WebP + picture 回退；尺寸 srcset/sizes + 真实裁剪；时机非首屏 lazy、首屏 preload——LCP 图与 lazy 死对头。</li>
+            <li><strong>一石二鸟</strong>：图片必给 width/height——同时防 CLS 并帮浏览器预留空间。</li>
+            <li><strong>作战顺序</strong>：测 → 砍 → 切 → 图 → 并 → 守；顺序反了白忙。</li>
+            <li><strong>度量三层</strong>：Lab 跑分（复现）+ 产物证据（体积/未用字节）+ RUM P75（真相）；体积预算进 CI。</li>
+            <li><strong>边界认知</strong>：懒加载/体积优化利 LCP；长任务归 INP；布局归 CLS——别把功劳和问题记错账。</li>
+            <li><strong>金句</strong>：「首屏优化不是加特效，是做减法和排日程——哪些字节不该来，哪些字节不急着来，哪些字节必须第一个到。」</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「四件套的共同敌人是『所有东西都想立刻到达浏览器』：
+          包体积回答『什么不该来』，懒加载回答『什么不急着来』，图片回答『来的东西怎么更小、更准』，
+          首屏关键路径回答『谁必须第一个到』——想清楚这四句，优化就不再是碰运气。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>

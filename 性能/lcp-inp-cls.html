@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Vitals 三巨头：LCP · INP · CLS</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        background: transparent;
+      }
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #2e7d32;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #2e7d32;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+      .metric-pill {
+        display: inline-block;
+        border-radius: 6px;
+        padding: 1px 10px;
+        font-size: 13px;
+        font-weight: bold;
+      }
+      .metric-pill.good {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .metric-pill.warn {
+        background: #fff3e0;
+        color: #ef6c00;
+      }
+      .metric-pill.poor {
+        background: #fdecea;
+        color: #e53935;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>Web Vitals 三巨头：LCP · INP · CLS</h1>
+    <p class="subtitle">
+      各衡量什么 · 阈值与算法 · 测量（Lab vs RUM）· 优化清单 · 真实现场解读 ·
+      追问链（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇 -->
+      <div class="section" id="s0">
+        <h2>〇、30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            Core Web Vitals 是 Google 提出的<strong>「以用户为中心」的三项体验度量</strong>，
+            对应用户提问的三个问题：
+          </p>
+          <p>
+            <strong>LCP（Largest Contentful Paint，最大内容绘制）</strong>——「页面<strong>多久看得见主要内容</strong>？」
+            衡量<strong>加载性能</strong>：视口内最大那块内容（图/大标题/视频首帧）画出来的时刻。
+          </p>
+          <p>
+            <strong>INP（Interaction to Next Paint，交互到下一帧绘制）</strong>——「操作<strong>多久有反馈</strong>？」
+            衡量<strong>响应性</strong>：一次交互从输入到下一帧呈现的完整耗时（2024 年起取代 FID）。
+          </p>
+          <p style="margin: 0">
+            <strong>CLS（Cumulative Layout Shift，累积布局偏移）</strong>——「页面<strong>会不会乱跳</strong>？」
+            衡量<strong>视觉稳定性</strong>：意外布局偏移的累计分数。一句话记忆：
+            <strong>LCP 管「快不快」，INP 管「跟不跟手」，CLS 管「稳不稳」——三者合成用户对「这个网站好不好用」的直觉。</strong>
+          </p>
+        </div>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">🖼 LCP · 加载</span>
+            <p style="margin: 0; font-size: 14px">
+              视口内最大内容元素的绘制完成时刻。良好 <strong>≤ 2.5s</strong>。对应「用户觉得内容出来了没有」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">⚡ INP · 响应</span>
+            <p style="margin: 0; font-size: 14px">
+              交互输入 → 下一帧呈现的耗时（取会话内最差的交互之一）。良好 <strong>≤ 200ms</strong>。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">📐 CLS · 稳定</span>
+            <p style="margin: 0; font-size: 14px">
+              未预期布局偏移的「影响分数 × 距离分数」累计。良好 <strong>≤ 0.1</strong>。对应「点错按钮的恐惧」。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">📊 测量两口径</span>
+            <p style="margin: 0; font-size: 14px">
+              Lab（实验室/本地模拟，可控可复现）与 RUM（真实用户监控，分布与 P75 才是考核口径）。
+            </p>
+          </div>
+        </div>
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、为什么是这三个：体验模型与阈值</a></li>
+          <li><a href="#s2">二、LCP：加载性能</a></li>
+          <li><a href="#s3">三、INP：响应性</a></li>
+          <li><a href="#s4">四、CLS：视觉稳定性</a></li>
+          <li><a href="#s5">五、怎么测：Lab 与 RUM</a></li>
+          <li><a href="#s6">六、真实现场解读（本地指标截图）</a></li>
+          <li><a href="#s7">七、优化清单速查</a></li>
+          <li><a href="#s8">八、面试追问链</a></li>
+          <li><a href="#s9">九、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、为什么是这三个 -->
+      <div class="section" id="s1">
+        <h2>一、为什么是这三个：体验模型、阈值与时间线</h2>
+        <p>
+          页面性能指标一大堆（TTFB、FCP、TBT、TTI…），Core Web Vitals 选这三个是因为它们
+          <strong>直接对应人的体感</strong>，而且能在真实用户环境（RUM）里稳定测出来：
+        </p>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>指标</th>
+              <th>体验维度</th>
+              <th>用户的问题</th>
+              <th>良好</th>
+              <th>需改进</th>
+              <th>差</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>LCP</strong></td>
+              <td>加载性能</td>
+              <td>内容出来了没有？</td>
+              <td><span class="metric-pill good">≤ 2.5s</span></td>
+              <td><span class="metric-pill warn">≤ 4s</span></td>
+              <td><span class="metric-pill poor">&gt; 4s</span></td>
+            </tr>
+            <tr>
+              <td><strong>INP</strong></td>
+              <td>响应性</td>
+              <td>点了有反应吗？</td>
+              <td><span class="metric-pill good">≤ 200ms</span></td>
+              <td><span class="metric-pill warn">≤ 500ms</span></td>
+              <td><span class="metric-pill poor">&gt; 500ms</span></td>
+            </tr>
+            <tr>
+              <td><strong>CLS</strong></td>
+              <td>视觉稳定性</td>
+              <td>会不会乱跳点错？</td>
+              <td><span class="metric-pill good">≤ 0.1</span></td>
+              <td><span class="metric-pill warn">≤ 0.25</span></td>
+              <td><span class="metric-pill poor">&gt; 0.25</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout info">
+          <strong class="tag">考核口径：P75</strong>
+          真实用户数据看的是<strong>第 75 百分位</strong>——75% 的访问达到良好才算「良好」。
+          平均值会骗人（少数极慢会话被摊平）；<strong>Lab 单次跑分也不代表用户体验</strong>。
+          Google 搜索排名信号用的就是字段（field）数据的 P75。
+        </div>
+
+        <h3>1.1 三大指标在页面生命周期里的位置</h3>
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 380" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowV" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+            <text x="520" y="34" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">页面生命周期 × 三大指标在测什么时刻</text>
+
+            <!-- 主时间轴 -->
+            <path d="M60,200 L980,200" stroke="#9aa7b8" stroke-width="2.5" marker-end="url(#arrowV)" />
+            <text x="980" y="224" font-size="11" fill="#7a8aa0" text-anchor="end">时间 →</text>
+
+            <!-- 阶段底条 -->
+            <rect x="60" y="188" width="180" height="24" rx="4" fill="#e3f2fd" stroke="#1565c0" />
+            <rect x="240" y="188" width="220" height="24" rx="4" fill="#e8f5e9" stroke="#2e7d32" />
+            <rect x="460" y="188" width="260" height="24" rx="4" fill="#fff3e0" stroke="#ef6c00" />
+            <rect x="720" y="188" width="240" height="24" rx="4" fill="#f4f6ff" stroke="#646cff" />
+            <text x="150" y="204" font-size="11" fill="#1565c0" text-anchor="middle">导航/网络/解析</text>
+            <text x="350" y="204" font-size="11" fill="#1b5e20" text-anchor="middle">内容绘制</text>
+            <text x="590" y="204" font-size="11" fill="#b45309" text-anchor="middle">持续加载/渲染</text>
+            <text x="840" y="204" font-size="11" fill="#646cff" text-anchor="middle">用户交互阶段</text>
+
+            <!-- LCP 标注 -->
+            <path d="M300,180 L300,120" stroke="#2e7d32" stroke-width="2" />
+            <rect x="180" y="56" width="240" height="64" rx="8" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="300" y="82" font-size="13" font-weight="bold" fill="#1b5e20" text-anchor="middle">LCP：最大内容绘制完成</text>
+            <text x="300" y="104" font-size="11.5" fill="#1b5e20" text-anchor="middle">图片/大标题/视频首帧画完的时刻</text>
+            <circle cx="300" cy="200" r="7" fill="#2e7d32" />
+
+            <!-- INP 标注 -->
+            <path d="M600,180 L600,120" stroke="#ef6c00" stroke-width="2" />
+            <rect x="480" y="56" width="240" height="64" rx="8" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="600" y="82" font-size="13" font-weight="bold" fill="#b45309" text-anchor="middle">INP：交互 → 下一帧呈现</text>
+            <text x="600" y="104" font-size="11.5" fill="#b45309" text-anchor="middle">点击/按键/触摸 后多久看到反馈</text>
+            <circle cx="600" cy="200" r="7" fill="#ef6c00" />
+
+            <!-- CLS 标注 -->
+            <path d="M840,180 L840,280" stroke="#646cff" stroke-width="2" />
+            <rect x="720" y="280" width="240" height="64" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <text x="840" y="306" font-size="13" font-weight="bold" fill="#646cff" text-anchor="middle">CLS：全程累计意外偏移</text>
+            <text x="840" y="328" font-size="11.5" fill="#646cff" text-anchor="middle">从加载到页面生命周期结束都在记账</text>
+            <circle cx="840" cy="200" r="7" fill="#646cff" />
+
+            <!-- FID 对比注释 -->
+            <rect x="60" y="280" width="420" height="64" rx="8" fill="#f8f9fa" />
+            <text x="76" y="306" font-size="12" font-weight="bold" fill="#35495e">注：FID 只测「输入延迟」（到首次处理前）——</text>
+            <text x="76" y="328" font-size="12" fill="#7a8aa0">INP 测完整交互（处理+渲染），2024/03 起成为 Core Web Vitals 正式成员</text>
+
+            <text x="520" y="368" font-size="12" fill="#7a8aa0" text-anchor="middle">LCP 有一个「关键时刻」；INP 每次交互都在采样；CLS 全程记账——测量形态完全不同</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 三个指标分别盯住「加载 / 响应 / 稳定」三个体验轴</p>
+      </div>
+
+      <!-- 二、LCP -->
+      <div class="section" id="s2">
+        <h2>二、LCP：加载性能——「主要内容出来了没有」</h2>
+
+        <h3>2.1 定义与计时对象</h3>
+        <ul>
+          <li>
+            <strong>测什么</strong>：视口（viewport）内<strong>最大</strong>的内容元素的<strong>绘制完成时间</strong>。
+            候选元素类型：<code>&lt;img&gt;</code>、<code>&lt;svg&gt;</code> 内的 <code>&lt;image&gt;</code>、
+            <code>&lt;video&gt;</code> 的封面帧、带背景图的元素、块级文本元素（标题/段落）。
+          </li>
+          <li>
+            <strong>取最终值</strong>：页面加载过程中 LCP 会随「更大的元素出现」不断更新，
+            <strong>最终 LCP 是用户首次交互（滚动/点击/按键）前的最后一次候选绘制</strong>——
+            交互后不再更新（因为「加载中」的意义结束了）。
+          </li>
+          <li><strong>不是</strong>：不是 FCP（第一块内容），不是 DOMContentLoaded，不是 onload——LCP 更接近「用户觉得主体内容到位了」。</li>
+        </ul>
+
+        <div class="code-title">用 PerformanceObserver 看 LCP 元素（排障第一手）</div>
+        <pre class="code-block"><code class="language-javascript">new PerformanceObserver((list) => {
+  const entries = list.getEntries();
+  const last = entries[entries.length - 1];
+  console.log('LCP:', last.startTime, '元素:', last.element, last.url);
+  // 截图里的现场就是这么来的：LCP 元素 div#hp_top_cover.hp_top_cover
+}).observe({ type: 'largest-contentful-paint', buffered: true });</code></pre>
+
+        <h3>2.2 LCP 慢的四大根因与对策</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>根因</th>
+              <th>表现</th>
+              <th>对策</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>慢的 TTFB</strong></td>
+              <td>HTML 本身来得慢（服务器/CDN/重定向）</td>
+              <td class="win">CDN 边缘缓存、服务端渲染/流式输出、减少重定向链、缓存 HTML</td>
+            </tr>
+            <tr>
+              <td><strong>资源加载慢</strong></td>
+              <td>LCP 图片没预加载、被 CSS/字体挡着</td>
+              <td class="win"><code>&lt;link rel="preload" as="image"&gt;</code>、优先级 fetchpriority=high、合理格式（webp/avif）与尺寸</td>
+            </tr>
+            <tr>
+              <td><strong>渲染阻塞</strong></td>
+              <td>同步 CSS/JS 卡住首次渲染，大标题迟迟不出</td>
+              <td>CSS 内联关键部分、JS 加 <code>defer</code>/<code>async</code>、减少阻塞资源</td>
+            </tr>
+            <tr>
+              <td><strong>客户端渲染出数晚</strong></td>
+              <td>SPA 空壳 → 等 JS → 拉接口 → 才有内容</td>
+              <td>SSR/SSG/流式渲染、骨架屏（注意骨架屏本身可能成为 LCP 元素！）、优先渲染主内容而非广告位</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>LCP 优化的思考顺序是「<strong>时间都花在哪一段</strong>」：
+          TTFB → 资源下载 → 渲染 → 字体/脚本阻塞。先用 DevTools Performance 面板看 LCP 标记落点和瀑布图，
+          再对症下药。我现场那个例子（<code>div#hp_top_cover</code>）LCP 只有 0.31s——说明主视觉块
+          基本首屏即出，这一页的加载侧可以打满分，注意力应转到 CLS。
+        </div>
+      </div>
+
+      <!-- 三、INP -->
+      <div class="section" id="s3">
+        <h2>三、INP：响应性——「点了多久有反馈」</h2>
+
+        <h3>3.1 定义：一次交互的完整旅程</h3>
+        <p>
+          INP 观察页面上<strong>几乎所有的点击、触摸、键盘交互</strong>，对每次交互记录：
+        </p>
+        <div class="code-title">一次交互 = 三段耗时</div>
+        <pre class="code-block"><code class="language-text">[ 输入延迟 ]          [ 事件处理 ]           [ 渲染/呈现 ]
+用户点按钮            JS 跑 handler         样式计算+布局+绘制
+→ 浏览器开始处理      → 业务逻辑/状态更新    → 下一帧（next paint）可见
+─────────────────────────────────────────────────────────────
+INP = 整段的「输入 → 下一帧绘制」总时长</code></pre>
+        <ul>
+          <li><strong>取值策略</strong>：通常报告<strong>整个页面生命周期里最差（或接近最差）的那次交互</strong>（排除极端离群值）——
+            一次卡死的点击就足以毁掉 INP，这与 LCP 的「关键时刻」截然不同。</li>
+          <li><strong>与 FID 的区别</strong>：FID（First Input Delay）只测「输入被处理前的排队延迟」，不含处理与渲染；
+            INP 测<strong>完整旅程</strong>，更能反映「卡不卡」的体感。2024 年 3 月起 INP 取代 FID 进入 Core Web Vitals。</li>
+          <li><strong>无交互时</strong>：没有交互就没有 INP（你截图里的「—」就是这个状态）——
+            这时要<strong>主动去点几下</strong>才能测出数。</li>
+        </ul>
+
+        <h3>3.2 INP 慢的三大根因与对策</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>根因</th>
+              <th>典型现场</th>
+              <th>对策</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>输入延迟段长</strong></td>
+              <td>主线程被长任务（打包进来的巨型 JS、同步计算）占住，点击排队</td>
+              <td class="win">拆长任务（<code>scheduler.yield()</code> / setTimeout 切片）、代码分割、降低首屏 JS 体积</td>
+            </tr>
+            <tr>
+              <td><strong>事件处理段长</strong></td>
+              <td>handler 里同步算大量数据、强制同步布局（读写 DOM 交错）</td>
+              <td>算法降复杂度、Web Worker 算、防抖/节流、批量 DOM 更新</td>
+            </tr>
+            <tr>
+              <td><strong>渲染段长</strong></td>
+              <td>一帧里改几千个节点、巨量样式重算、复杂动画</td>
+              <td>虚拟列表、CSS containment、transform/opacity 动画、<code>content-visibility</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout tip">
+          <strong class="tag">长任务是 INP 的头号敌人</strong>
+          Performance 面板里 <strong>&gt;50ms 的 Long Task</strong> 就是嫌疑犯。
+          面试金句：「<strong>INP 不是『接口快就行』——接口慢通常只贡献输入延迟段，
+          而真正的杀手是主线程上的长任务：它让点击排队、让 handler 推迟、让下一帧迟到。</strong>」
+        </div>
+      </div>
+
+      <!-- 四、CLS -->
+      <div class="section" id="s4">
+        <h2>四、CLS：视觉稳定性——「会不会乱跳」</h2>
+
+        <h3>4.1 分数怎么算：影响分数 × 距离分数</h3>
+        <p>
+          每一次<strong>非用户触发</strong>的布局偏移记一个「布局偏移分数」，CLS 是页面生命周期内
+          <strong>意外偏移的累计</strong>（用「会话窗口」方式累计：连续偏移间隔小于 1s 且窗口不超过 5s 记作一串）。
+        </p>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 360" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <text x="520" y="34" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">一次布局偏移的分数 = 影响分数 × 距离分数</text>
+
+            <!-- 偏移前 -->
+            <rect x="60" y="70" width="200" height="200" rx="10" fill="#f8f9fa" stroke="#e0e0e0" />
+            <text x="160" y="98" font-size="13" font-weight="bold" fill="#35495e" text-anchor="middle">偏移前</text>
+            <rect x="84" y="116" width="152" height="36" rx="4" fill="#bbdefb" stroke="#1565c0" />
+            <text x="160" y="139" font-size="11" fill="#0d47a1" text-anchor="middle">头图 hero</text>
+            <rect x="84" y="160" width="152" height="36" rx="4" fill="#c8e6c9" stroke="#2e7d32" />
+            <text x="160" y="183" font-size="11" fill="#1b5e20" text-anchor="middle">列表项 A（用户要点击）</text>
+            <rect x="84" y="204" width="152" height="36" rx="4" fill="#c8e6c9" stroke="#2e7d32" />
+            <text x="160" y="227" font-size="11" fill="#1b5e20" text-anchor="middle">列表项 B</text>
+
+            <!-- 箭头 -->
+            <text x="310" y="170" font-size="13" fill="#e53935" text-anchor="middle" font-weight="bold">广告位/图片</text>
+            <text x="310" y="190" font-size="13" fill="#e53935" text-anchor="middle" font-weight="bold">突然插入</text>
+            <path d="M272,168 L348,168" stroke="#e53935" stroke-width="2.5" marker-end="url(#arrowV)" />
+
+            <!-- 偏移后 -->
+            <rect x="360" y="70" width="200" height="200" rx="10" fill="#fff8f6" stroke="#e53935" />
+            <text x="460" y="98" font-size="13" font-weight="bold" fill="#8c1d18" text-anchor="middle">偏移后</text>
+            <rect x="384" y="112" width="152" height="36" rx="4" fill="#bbdefb" stroke="#1565c0" />
+            <text x="460" y="135" font-size="11" fill="#0d47a1" text-anchor="middle">头图 hero</text>
+            <rect x="384" y="152" width="152" height="30" rx="4" fill="#ffcdd2" stroke="#e53935" />
+            <text x="460" y="172" font-size="11" fill="#8c1d18" text-anchor="middle">插入的广告（占位）</text>
+            <rect x="384" y="186" width="152" height="36" rx="4" fill="#c8e6c9" stroke="#2e7d32" />
+            <text x="460" y="209" font-size="11" fill="#1b5e20" text-anchor="middle">列表项 A ↓ 下移了</text>
+            <rect x="384" y="228" width="152" height="36" rx="4" fill="#c8e6c9" stroke="#2e7d32" />
+            <text x="460" y="251" font-size="11" fill="#1b5e20" text-anchor="middle">列表项 B ↓ 下移了</text>
+
+            <!-- 计算 -->
+            <rect x="600" y="70" width="400" height="200" rx="10" fill="#f4f6ff" stroke="#646cff" />
+            <text x="620" y="102" font-size="13" font-weight="bold" fill="#35495e">分数构成：</text>
+            <text x="620" y="132" font-size="12.5" fill="#35495e">影响分数 = 受影响视口面积占比</text>
+            <text x="620" y="158" font-size="12.5" fill="#35495e">（A+B 两个元素占了视口大部分）</text>
+            <text x="620" y="192" font-size="12.5" fill="#35495e">距离分数 = 最大移动距离 ÷ 视口最大边</text>
+            <text x="620" y="218" font-size="12.5" fill="#35495e">（下移约 70px，距离分数不大）</text>
+            <text x="620" y="250" font-size="13" font-weight="bold" fill="#646cff">布局偏移分数 = 影响 × 距离</text>
+
+            <rect x="60" y="296" width="940" height="40" rx="8" fill="#e8f5e9" />
+            <text x="530" y="321" font-size="12.5" fill="#1b5e20" text-anchor="middle">用户触发的偏移（点击展开、拖拽、动画）不计分——「意料之中」不算；「突然出现把内容挤走」才算</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 截图里「最糟糕的集群 偏移 2 次」就是一次会话窗口内连续发生了两次这样的记账</p>
+
+        <h3>4.2 CLS 常见来源与对策</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>来源</th>
+              <th>现场</th>
+              <th>对策</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>图片/视频无尺寸</strong></td>
+              <td>加载完才把下面内容顶下去</td>
+              <td class="win">写死 <code>width/height</code> 或 CSS <code>aspect-ratio</code>（浏览器可预留空间）</td>
+            </tr>
+            <tr>
+              <td><strong>动态注入广告/embed</strong></td>
+              <td>上方插入 iframe/广告条，整页下移</td>
+              <td class="win">为动态内容预留固定高度容器；插到底部/侧栏而不是内容流中间</td>
+            </tr>
+            <tr>
+              <td><strong>字体 FOIT/FOUT</strong></td>
+              <td>webfont 到货替换回退字体，文本变宽变窄导致换行变化</td>
+              <td><code>font-display: optional</code>/<code>swap</code> + <code>size-adjust</code> 匹配回退字体度量、预加载关键字体</td>
+            </tr>
+            <tr>
+              <td><strong>骨架屏/加载态高度不匹配</strong></td>
+              <td>骨架 40px、真内容 120px，出现时一跳</td>
+              <td>骨架高度对齐真实内容；或用 <code>min-height</code> 占位</td>
+            </tr>
+            <tr>
+              <td><strong>迟到插入的 banner/提示条</strong></td>
+              <td>Cookie 条、运营弹层把顶部内容推下</td>
+              <td>预留位置、浮层用 <code>position: fixed</code> 不占文档流</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>CLS 优化的总纲是「<strong>给一切迟到的内容留位子</strong>」——
+          图片给尺寸、广告给容器、字体给度量、骨架给高度。
+          本地那张截图 CLS=0.16、最糟糕集群偏移 2 次——典型的「两次小跳」场景：
+          优先去 Performance 的 Layout Shift 区域看<strong>具体是哪两个元素在动</strong>（工具里「偏移 2 次」可以点开看），
+          而不是猜。0.16 处在「需改进」区间（0.1–0.25），把这两次偏移消掉基本就能进绿色。
+        </div>
+      </div>
+
+      <!-- 五、怎么测 -->
+      <div class="section" id="s5">
+        <h2>五、怎么测：Lab 与 RUM，两套口径</h2>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>Lab（实验室/本地）——可控、可复现</h4>
+            <ul>
+              <li><strong>工具</strong>：Lighthouse、DevTools Performance、web-vitals 扩展、WebPageTest。</li>
+              <li><strong>特点</strong>：固定环境/网络/设备（可节流 4G + 4x CPU），跑分稳定，适合回归对比与 CI 门禁。</li>
+              <li><strong>局限</strong>：没有真实用户网络/设备/交互分布；<strong>INP 在 Lab 里往往测不出</strong>（没人点页面）——
+                你截图里的 INP「—」就是这个原因。</li>
+              <li><strong>适合回答</strong>：「这次改动有没有把指标改坏？」</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>RUM（真实用户监控）——分布、真相</h4>
+            <ul>
+              <li><strong>工具</strong>：web-vitals 库上报 + 自建后端、Chrome UX Report（CrUX）、各 RUM 平台。</li>
+              <li><strong>特点</strong>：按 P75 看分布；能看到「哪类设备/页面/交互在差」。</li>
+              <li><strong>局限</strong>：受广告拦截/浏览器差异影响；需要采样与聚合成本。</li>
+              <li><strong>适合回答</strong>：「用户真实体感如何？搜索排名信号健不健康？」</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="code-title">用 web-vitals 库采集（RUM 的标准姿势）</div>
+        <pre class="code-block"><code class="language-javascript">import { onLCP, onINP, onCLS } from 'web-vitals';
+
+function report(metric) {
+  // metric: { name, value, rating, id, entries, ... }
+  // 上报到自己的后端 / 第三方 RUM；注意用 metric.id 做去重（指标值会更新）
+  analytics.sendVitals(metric);
+}
+onLCP(report);
+onINP(report);   // 需要真实交互才会产生值
+onCLS(report);   // 会随偏移持续更新，会话窗口内累计</code></pre>
+        <div class="callout warn">
+          <strong class="tag">Lab 与 RUM 打架怎么办</strong>
+          「Lighthouse 100 分但用户说卡」是经典案情——Lab 只模拟了加载，没模拟真实交互与弱机。
+          原则：<strong>Lab 做回归门禁，RUM 做体感真相；考核用 RUM 的 P75，调优用 Lab 复现</strong>。
+          两者数据要能对上话：Lab 发现的长任务、布局偏移元素，要在 RUM 分布里找到对应的差页面/差设备。
+        </div>
+      </div>
+
+      <!-- 六、真实现场 -->
+      <div class="section" id="s6">
+        <h2>六、真实现场解读：一张本地指标截图怎么读</h2>
+        <div class="explanation">
+          <p style="margin: 0">
+            下面按你提供的本地指标面板（LCP 0.31s / CLS 0.16 / INP 未测）演示「怎么读数 → 怎么行动」——
+            这正是面试里「你优化过什么」的答题模板。
+          </p>
+        </div>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>指标</th>
+              <th>读数</th>
+              <th>判读</th>
+              <th>下一步动作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>LCP</strong></td>
+              <td><span class="metric-pill good">0.31s · 良好</span><br />LCP 元素 <code>div#hp_top_cover.hp_top_cover</code></td>
+              <td class="win">远低于 2.5s 红线；主视觉块首屏即出。加载侧（TTFB/资源/阻塞）基本无痛点</td>
+              <td>保持现状；若是 SSR/静态页，这数字合理。可顺手确认该元素是否做了 preload——但没必要为 0.31s 过度优化</td>
+            </tr>
+            <tr>
+              <td><strong>CLS</strong></td>
+              <td><span class="metric-pill warn">0.16 · 仍需提升</span><br />最糟糕的集群：偏移 2 次</td>
+              <td>落在「需改进」区间（0.1–0.25）。<strong>两次偏移</strong>而非长期漂移——是「两个突发挤动」型问题</td>
+              <td class="win">点开工具里的「偏移 2 次」看元素对：常见嫌疑是晚到的图片/横幅/字体替换；
+                给它们预留宽高或 fixed 定位。消掉这两次，CLS 大概率进 ≤0.1 绿区</td>
+            </tr>
+            <tr>
+              <td><strong>INP</strong></td>
+              <td><span class="metric-pill warn">— · 未测</span><br />「与网页互动以测量 INP」</td>
+              <td>Lab 场景下无交互则无值——这不是失败，是「还没考」</td>
+              <td>手动点几下核心操作（按钮/导航/输入）让面板出分；再用 Performance 录一段交互看长任务。
+                真实考核还是要上 RUM 的 P75</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">「读数 → 行动」的答题模板（面试可直接套）</div>
+        <pre class="code-block"><code class="language-text">1. 现象：本地面板 LCP 0.31s（良好），CLS 0.16（需改进，最糟糕集群偏移 2 次），INP 未产生
+2. 定性：加载侧已达标；问题是「两次突发布局偏移」；响应性还没测
+3. 定位：打开面板的偏移详情/Performance 的 Layout Shift 轨道，锁定移动的元素对
+4. 处方（按命中概率）：
+   - 图片/视频 → 补 width/height 或 aspect-ratio
+   - 动态横幅/广告 → 预留容器高度，或改为 fixed 浮层
+   - 字体替换 → font-display + 回退字体度量对齐（size-adjust）
+   - 骨架/加载态 → min-height 对齐真实内容
+5. 验证：本地重跑 CLS 进绿（≤0.1）；RUM 上看 P75 分布是否同步改善
+6. 顺便：点几个按钮把 INP 测出来，确认没有 >50ms 的长任务</code></pre>
+
+        <div class="talk">
+          <strong>面试怎么讲：</strong>「我优化性能不从『分低』出发，而从<strong>读数语义</strong>出发：
+          LCP 元素是谁（工具直接给出）、CLS 是哪几次偏移（集群可下钻）、INP 是哪次交互最差。
+            本地指标是<strong>线索</strong>，P75 字段数据才是<strong>判卷</strong>。
+          这个现场 LCP 0.31 恰好说明『不是所有性能问题都要优化』——
+          <strong>把力气花在红黄灯上，绿灯别过度治疗</strong>。」
+        </div>
+      </div>
+
+      <!-- 七、优化清单 -->
+      <div class="section" id="s7">
+        <h2>七、优化清单速查（按指标）</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>指标</th>
+              <th>高杠杆手段</th>
+              <th>验证手段</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="4"><strong>LCP</strong></td>
+              <td>CDN/缓存 HTML，压缩 TTFB（含 302 重定向链清理）</td>
+              <td>DevTools 网络瀑布图：HTML 行的等待时间</td>
+            </tr>
+            <tr>
+              <td>关键图 preload + fetchpriority=high + 现代格式/合适尺寸</td>
+              <td>LCP 元素的请求优先级与加载时间</td>
+            </tr>
+            <tr>
+              <td>JS defer/async，CSS 去阻塞；避免大同步脚本挡住首绘</td>
+              <td>Performance 面板里的「渲染阻塞」标记</td>
+            </tr>
+            <tr>
+              <td>SPA 走 SSR/流式输出，骨架屏但高度对齐</td>
+              <td>LCP 元素从「骨架」变「真内容」的时刻</td>
+            </tr>
+            <tr>
+              <td rowspan="3"><strong>INP</strong></td>
+              <td class="win">拆长任务（&gt;50ms），yield 给主线程喘息</td>
+              <td>Performance 长任务轨道 + Long Animation Frames</td>
+            </tr>
+            <tr>
+              <td>事件 handler 减负：Worker 计算、批量 DOM、防抖</td>
+              <td>交互录制定位 handler 耗时</td>
+            </tr>
+            <tr>
+              <td>首屏 JS 减重、代码分割、非关键交互延迟绑定</td>
+              <td>入口 bundle 体积 + TBT（Lab 代理指标）</td>
+            </tr>
+            <tr>
+              <td rowspan="3"><strong>CLS</strong></td>
+              <td class="win">一切媒体给尺寸（width/height/aspect-ratio）</td>
+              <td>Layout Shift 区域下钻「偏移的元素对」</td>
+            </tr>
+            <tr>
+              <td>动态内容预留位 / 浮层用 fixed；字体度量对齐</td>
+              <td>CLS 会话窗口曲线（哪一时刻在跳）</td>
+            </tr>
+            <tr>
+              <td>避免「往内容流顶部插东西」的运营模式</td>
+              <td>RUM 按页面/组件维度看 CLS 分布</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <strong class="tag">优先级心法</strong>
+          先看红黄灯、再看杠杆：<strong>TTFB 和长任务</strong>是 LCP/INP 的共同杠杆（动一处赚两处）；
+          <strong>CLS 九成靠「留位子」的工程习惯</strong>，技术含量不高但纪律性要求高——
+          写代码时每次插入动态内容都问一句「它会挤走谁」。
+        </div>
+      </div>
+
+      <!-- 八、追问链 -->
+      <div class="section" id="s8">
+        <h2>八、面试追问链</h2>
+
+        <details class="qa">
+          <summary>Q1 · LCP、INP、CLS 分别衡量什么？（必考）</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：LCP 衡量加载性能——视口内最大内容元素绘制完成的时刻，良好 ≤2.5s，回答「内容出来了没有」；
+            INP 衡量响应性——从输入到下一帧呈现的完整耗时（取会话内最差交互），良好 ≤200ms，回答「点了有反应吗」；
+            CLS 衡量视觉稳定性——意外布局偏移（影响分数×距离分数）的累计，良好 ≤0.1，回答「会不会乱跳」。
+            三个合起来就是用户对快不快、跟不跟手、稳不稳的直觉。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · INP 和 FID 有什么区别？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：FID 只测首次输入的「延迟段」（点击到 handler 开始跑），不含处理和渲染；
+            INP 测完整交互（输入延迟 + 事件处理 + 下一帧渲染），且覆盖几乎全部交互、取最差值，
+            更能反映真实卡顿。2024 年 3 月起 INP 取代 FID 成为 Core Web Vitals 正式指标。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · CLS 怎么计算？什么不算偏移？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：单次布局偏移分数 = 影响分数（受影响视口面积占比）× 距离分数（最大移动距离/视口最大边）；
+            CLS 是生命周期内意外偏移的会话窗口累计（窗口 ≤5s、间隔 &lt;1s 连成串）。
+            用户触发的偏移不计分——点击展开、路由跳转后的重新布局、「意料之中」的动画都不算；
+            算的是「突然出现把内容挤走」这类无预期位移。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · Lab 分数和真实用户体验为什么不一致？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：Lab 是固定环境单次跑分：设备好、网络可配置、没人交互——所以 INP 常无值、
+            弱机上的长任务也测不到。真实用户是设备/网络/交互的分布，考核看 P75。
+            我的做法：Lab 做回归门禁（改动别把分打坏），RUM 做体感真相（按页面/设备定位差群体），
+            两边用同一套 web-vitals 定义，数据才能对话。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · 给你一个 CLS 0.16 的页面，你先干什么？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：先下钻再动手。0.16 在「需改进」区间，工具显示「最糟糕集群偏移 2 次」——
+            说明是两个突发挤动而非持续漂移。第一步打开偏移详情看移动的元素对；
+            第二步按嫌疑链排查：晚到图片/动态横幅/字体替换/骨架高度；
+            第三步对症给位子（尺寸、固定高度、fixed 浮层、font-display）；
+            第四步本地复跑进绿 + RUM 看 P75 是否同步掉下来。没有定位的「优化」都是碰运气。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · 怎么把性能指标变成 CI 门禁？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：用 Lab 的可复现性。Lighthouse CI / WebPageTest 脚本在 PR 上跑固定场景，
+            对 LCP/CLS 设预算阈值（比如 LCP≤2.5s、CLS≤0.1），超预算就挂掉 MR；
+            同时跑 bundle 体积预算。注意 Lab 测不了 INP——交互响应性靠「长任务预算」（TBT/Long Tasks ≤X）
+            做代理指标，真实 INP 留给 RUM 报警。门禁管「别改坏」，RUM 管「真的好」。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 九、速记卡 -->
+      <div class="section" id="s9">
+        <h2>九、一页速记卡</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>一句话</strong>：LCP 管「快不快」（≤2.5s），INP 管「跟不跟手」（≤200ms），CLS 管「稳不稳」（≤0.1）；考核看 P75。</li>
+            <li><strong>LCP</strong>：视口最大内容的绘制完成时刻；候选 = 图/视频首帧/大文本块；交互后不再更新。优化：TTFB、preload 关键图、去渲染阻塞、SSR。</li>
+            <li><strong>INP</strong>：输入→事件处理→下一帧呈现 的完整耗时，取会话内最差；2024 起取代 FID。优化：拆长任务、handler 减负、首屏 JS 减重。</li>
+            <li><strong>CLS</strong>：影响分数×距离分数，会话窗口累计；用户触发的偏移不计分。优化：给一切迟到内容留位子（尺寸/高度/fixed/字体度量）。</li>
+            <li><strong>Lab vs RUM</strong>：Lab 可复现做门禁（INP 测不出要主动交互）；RUM 真实分布做真相（P75 判卷）。</li>
+            <li><strong>读数方法</strong>：LCP 看元素是谁、CLS 看偏移集群的元素对、INP 看最差交互的长任务——先定位后动手。</li>
+            <li><strong>真实现场</strong>：LCP 0.31 绿灯（不过度治疗）；CLS 0.16 两次偏移（下钻元素对→留位子）；INP 「—」= 未考（去点几下）。</li>
+            <li><strong>公共杠杆</strong>：TTFB（LCP）与长任务（INP）是高杠杆；CLS 靠工程纪律「插入前问会挤走谁」。</li>
+            <li><strong>门禁</strong>：Lighthouse CI + 体积/时长预算管「别改坏」；RUM 报警管「真的好」。</li>
+            <li><strong>金句</strong>：「性能指标不是分数游戏——LCP 元素、偏移集群、最差交互，每个数字都指着一个具体的元素和一段具体的代码。」</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「LCP、INP、CLS 分别是加载、响应、稳定三面镜子：照见的不是『快不快』的抽象分数，
+          而是某个 hero 图没预加载、某个 handler 跑了 300ms、某个横幅把按钮顶走了——
+          会读数的人，从指标一路走到代码。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>

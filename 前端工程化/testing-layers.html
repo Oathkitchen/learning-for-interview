@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>单元测试 · 组件测试 · E2E：分别解决什么问题</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        color: #646cff;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7a8aa0;
+        margin-bottom: 40px;
+      }
+      h2 {
+        color: #35495e;
+        border-bottom: 2px solid #646cff;
+        padding-bottom: 10px;
+        margin-top: 44px;
+      }
+      h3 {
+        color: #646cff;
+        margin-top: 28px;
+      }
+      h4 {
+        color: #35495e;
+        margin-top: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .section {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+      }
+      .explanation {
+        background-color: #f8f9fa;
+        padding: 18px 20px;
+        border-radius: 8px;
+        border-left: 5px solid #646cff;
+        margin: 16px 0;
+      }
+      .diagram-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+        background-color: #fff;
+        cursor: zoom-in;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px;
+        overflow-x: auto;
+      }
+      .diagram-container:hover {
+        border-color: #646cff;
+        box-shadow: 0 0 10px rgba(100, 108, 255, 0.2);
+      }
+      .diagram-note {
+        text-align: center;
+        color: #7a8aa0;
+        font-size: 13px;
+        margin: -8px 0 18px;
+      }
+      code {
+        background-color: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        color: #e96900;
+      }
+      p,
+      li,
+      td {
+        overflow-wrap: break-word;
+      }
+      .code-title {
+        font-weight: bold;
+        color: #35495e;
+        margin: 24px 0 8px;
+      }
+      pre.code-block {
+        margin: 0 0 16px;
+        border-radius: 8px;
+        border-left: 5px solid #61afef;
+        overflow: auto;
+        background: #282c34;
+      }
+      pre.code-block code {
+        display: block;
+        padding: 20px;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        line-height: 1.55;
+        background: transparent;
+        color: #abb2bf;
+        white-space: pre;
+      }
+      pre.code-block code.hljs {
+        padding: 20px;
+        background: transparent;
+      }
+      .map-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+      }
+      .map-table th,
+      .map-table td {
+        border: 1px solid #e0e0e0;
+        padding: 11px 13px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .map-table th {
+        background: #646cff;
+        color: #fff;
+      }
+      .map-table tr:nth-child(even) td {
+        background: #f8f9fa;
+      }
+      .map-table td.win {
+        background: #edf0ff !important;
+        font-weight: 600;
+      }
+      .key-concepts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .concept-card {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .concept-title {
+        font-weight: bold;
+        color: #646cff;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 10px;
+        margin: 4px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .toc li a {
+        display: block;
+        background: #f8f9fa;
+        border: 1px solid #e0e6f0;
+        border-left: 4px solid #646cff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #35495e;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .toc li a:hover {
+        background: #edf0ff;
+        border-left-color: #f59e0b;
+        color: #646cff;
+      }
+      .vs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin: 18px 0;
+      }
+      .vs-panel {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 18px;
+        min-width: 0;
+      }
+      .vs-panel.bad {
+        border-top: 4px solid #cb3837;
+      }
+      .vs-panel.good {
+        border-top: 4px solid #2e7d32;
+      }
+      .vs-panel h4 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+      }
+      .vs-panel.bad h4 {
+        color: #cb3837;
+      }
+      .vs-panel.good h4 {
+        color: #2e7d32;
+      }
+      .vs-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        font-size: 14px;
+      }
+      @media (max-width: 820px) {
+        .vs-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .callout {
+        padding: 16px 20px;
+        border-radius: 8px;
+        margin: 18px 0;
+        border-left: 5px solid;
+      }
+      .callout.tip {
+        background: #e8f5e9;
+        border-color: #2e7d32;
+      }
+      .callout.warn {
+        background: #fff3e0;
+        border-color: #ef6c00;
+      }
+      .callout.info {
+        background: #e3f2fd;
+        border-color: #1565c0;
+      }
+      .callout strong.tag {
+        display: inline-block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .talk {
+        background: #fffbea;
+        border: 1px dashed #e6c200;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 14px;
+        margin: -8px 0 22px;
+        color: #5b5330;
+      }
+      .talk strong {
+        color: #b45309;
+      }
+      details.qa {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin: 12px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      details.qa summary {
+        cursor: pointer;
+        padding: 12px 16px;
+        font-weight: bold;
+        color: #35495e;
+        background: #f4f6fb;
+        list-style: none;
+      }
+      details.qa summary::before {
+        content: "▸ ";
+        color: #646cff;
+      }
+      details.qa[open] summary::before {
+        content: "▾ ";
+      }
+      details.qa .qa-body {
+        padding: 14px 18px;
+        border-top: 1px solid #eee;
+        font-size: 14px;
+      }
+      .memo {
+        background: linear-gradient(180deg, #f4f6ff 0%, #ffffff 100%);
+        border: 1px solid #d9def5;
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-top: 14px;
+      }
+      .memo ol {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      .memo li {
+        margin: 7px 0;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #fff;
+        margin: auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 95%;
+        height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: auto;
+      }
+      .modal-content svg {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+      }
+      .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        color: #fff;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+        text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+      }
+      .close:hover {
+        color: #646cff;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css"
+    />
+  </head>
+  <body>
+    <h1>单元测试 · 组件测试 · E2E 测试</h1>
+    <p class="subtitle">
+      各自解决什么问题 · 反馈速度与真实度的取舍 · 测试金字塔/奖杯 · 用例放哪层 ·
+      真实实践（vitest + @vue/test-utils）· 追问链（面试向 · 图解版）
+    </p>
+
+    <div class="container">
+      <!-- 〇 -->
+      <div class="section" id="s0">
+        <h2>〇、30 秒电梯答案</h2>
+        <div class="explanation">
+          <p>
+            三层测试不是「把同一件事测三遍」，而是<strong>用不同成本买不同保险</strong>：
+          </p>
+          <p>
+            <strong>单元测试</strong>解决「<strong>逻辑对不对</strong>」——纯函数、解析器、状态机的边界条件，
+            毫秒级反馈，便宜到可以写很碎；它防的是「算错了」。
+          </p>
+          <p>
+            <strong>组件测试</strong>解决「<strong>交互契约对不对</strong>」——props/slots/事件、
+            用户点了之后组件的可观察行为是否符合约定；它防的是「接口对不上、行为被改坏」。
+          </p>
+          <p style="margin: 0">
+            <strong>E2E 测试</strong>解决「<strong>真实链路通不通</strong>」——真实浏览器、真实路由、
+            真实接口（或稳定 mock）下用户旅程能否走完；它防的是「缝合处坏了、配置错了、集成炸了」。
+            一句话记忆：<strong>单元买「正确性」，组件买「契约」，E2E 买「真实感」——买的越高层越贵，
+            也越接近用户的抱怨</strong>。
+          </p>
+        </div>
+        <div class="key-concepts">
+          <div class="concept-card">
+            <span class="concept-title">🧪 单元测试</span>
+            <p style="margin: 0; font-size: 14px">
+              对象：函数/模块。断言：输入→输出。速度：毫秒。防：逻辑错误、边界遗漏、回归。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🧩 组件测试</span>
+            <p style="margin: 0; font-size: 14px">
+              对象：一个组件。断言：渲染 + 交互 → 可观察行为（DOM/事件）。防：契约破坏、交互回归。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">🎯 E2E 测试</span>
+            <p style="margin: 0; font-size: 14px">
+              对象：用户旅程。断言：真实系统里的关键路径。防：集成缝、环境/配置、跨模块协作。
+            </p>
+          </div>
+          <div class="concept-card">
+            <span class="concept-title">⚖️ 选层原则</span>
+            <p style="margin: 0; font-size: 14px">
+              能下放就下放：能在单测里锁死的别靠 E2E 撞大运——E2E 是保险不是主力。
+            </p>
+          </div>
+        </div>
+        <h3>本页目录</h3>
+        <ul class="toc">
+          <li><a href="#s1">一、为什么要分层：速度与真实度</a></li>
+          <li><a href="#s2">二、单元测试：解决逻辑正确性</a></li>
+          <li><a href="#s3">三、组件测试：解决交互契约</a></li>
+          <li><a href="#s4">四、E2E：解决链路真实性</a></li>
+          <li><a href="#s5">五、三层对照与形状之争</a></li>
+          <li><a href="#s6">六、一条用例放哪层？</a></li>
+          <li><a href="#s7">七、真实实践：vitest 与门禁</a></li>
+          <li><a href="#s8">八、面试追问链</a></li>
+          <li><a href="#s9">九、一页速记卡</a></li>
+        </ul>
+      </div>
+
+      <!-- 一、为什么要分层 -->
+      <div class="section" id="s1">
+        <h2>一、为什么要分层：一条 bug 的成本曲线</h2>
+        <p>
+          规律很残酷：<strong>缺陷发现得越晚，修复成本指数级上升</strong>——写完当场发现是改一个字符，
+          集成后发现是改一个模块，上线后发现是改一个事故报告。测试分层的本质是
+          <strong>用便宜的检查去堆密度，用昂贵的检查去守底线</strong>。
+        </p>
+
+        <div class="diagram-container">
+          <svg viewBox="0 0 1040 400" width="1040" xmlns="http://www.w3.org/2000/svg" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+            <defs>
+              <marker id="arrowT" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 z" fill="#646cff" />
+              </marker>
+            </defs>
+
+            <!-- 左：速度 vs 真实度 -->
+            <rect x="14" y="14" width="500" height="372" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <text x="264" y="48" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">核心取舍：反馈速度 ↔ 真实程度</text>
+
+            <!-- 坐标轴 -->
+            <path d="M70,80 L70,320 L470,320" fill="none" stroke="#9aa7b8" stroke-width="1.5" marker-end="url(#arrowT)" />
+            <text x="60" y="72" font-size="11" fill="#7a8aa0" text-anchor="end">真实</text>
+            <text x="470" y="340" font-size="11" fill="#7a8aa0" text-anchor="end">反馈速度 →</text>
+            <text x="52" y="330" font-size="11" fill="#7a8aa0" text-anchor="end">快</text>
+
+            <!-- 三个点 -->
+            <rect x="320" y="240" width="130" height="56" rx="8" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="385" y="264" font-size="13" font-weight="bold" fill="#1b5e20" text-anchor="middle">单元测试</text>
+            <text x="385" y="284" font-size="11" fill="#1b5e20" text-anchor="middle">毫秒 · 低真实度</text>
+
+            <rect x="200" y="160" width="130" height="56" rx="8" fill="#fff3e0" stroke="#ef6c00" />
+            <text x="265" y="184" font-size="13" font-weight="bold" fill="#b45309" text-anchor="middle">组件测试</text>
+            <text x="265" y="204" font-size="11" fill="#b45309" text-anchor="middle">秒级 · 中真实度</text>
+
+            <rect x="90" y="90" width="130" height="56" rx="8" fill="#f4f6ff" stroke="#646cff" />
+            <text x="155" y="114" font-size="13" font-weight="bold" fill="#646cff" text-anchor="middle">E2E</text>
+            <text x="155" y="134" font-size="11" fill="#646cff" text-anchor="middle">分钟 · 高真实度</text>
+
+            <text x="264" y="362" font-size="12" fill="#7a8aa0" text-anchor="middle">越往上（真实）越贵、越慢、越脆；越往右（快）越便宜、越稳、越不「像真的」</text>
+
+            <!-- 右：金字塔/奖杯 -->
+            <rect x="540" y="14" width="486" height="372" rx="10" fill="#ffffff" stroke="#e0e0e0" />
+            <text x="783" y="48" font-size="14" font-weight="bold" fill="#35495e" text-anchor="middle">两种形状：金字塔 vs 测试奖杯</text>
+
+            <!-- 金字塔 -->
+            <path d="M640,300 L700,110 L760,300 Z" fill="#f4f6ff" stroke="#646cff" />
+            <path d="M655,270 L700,190 L745,270 Z" fill="#fff3e0" stroke="#ef6c00" />
+            <path d="M670,230 L700,175 L730,230 Z" fill="#e8f5e9" stroke="#2e7d32" />
+            <text x="700" y="292" font-size="11" fill="#35495e" text-anchor="middle">E2E 少量</text>
+            <text x="700" y="252" font-size="11" fill="#b45309" text-anchor="middle">组件 中量</text>
+            <text x="700" y="206" font-size="11" fill="#1b5e20" text-anchor="middle">单元 大量</text>
+            <text x="700" y="330" font-size="12" fill="#7a8aa0" text-anchor="middle">经典金字塔：底下厚</text>
+
+            <!-- 奖杯 -->
+            <rect x="850" y="110" width="110" height="40" rx="6" fill="#f4f6ff" stroke="#646cff" />
+            <rect x="865" y="158" width="80" height="36" rx="6" fill="#e8f5e9" stroke="#2e7d32" />
+            <rect x="835" y="202" width="140" height="52" rx="6" fill="#fff3e0" stroke="#ef6c00" stroke-width="2" />
+            <rect x="855" y="262" width="100" height="30" rx="6" fill="#f8f9fa" stroke="#9aa7b8" />
+            <text x="905" y="134" font-size="11" fill="#35495e" text-anchor="middle">E2E 少量</text>
+            <text x="905" y="180" font-size="11" fill="#1b5e20" text-anchor="middle">单元</text>
+            <text x="905" y="232" font-size="12" font-weight="bold" fill="#b45309" text-anchor="middle">组件测试 最厚</text>
+            <text x="905" y="282" font-size="10.5" fill="#7a8aa0" text-anchor="middle">静态/快照辅助</text>
+            <text x="905" y="330" font-size="12" fill="#7a8aa0" text-anchor="middle">Kent C. Dodds 测试奖杯：组件层最厚</text>
+          </svg>
+        </div>
+        <p class="diagram-note">点击图片可放大 · 左图决定「一层」的成本属性；右图决定「各写多少」的形状</p>
+
+        <div class="callout info">
+          <strong class="tag">形状之争怎么答（面试加分）</strong>
+          金字塔（经典，微服务/后端语境重）强调「单测数量最多」；<strong>测试奖杯</strong>（Kent C. Dodds）
+          针对现代前端说「组件测试性价比最高」——DOM 环境（jsdom）已经足够便宜，组件层能覆盖大量以前要单测+集成测的场景。
+          我的实践偏奖杯：库函数解析器用单测锁死，UI 组件用 @vue/test-utils 测行为，E2E 只守关键旅程。
+          <strong>形状不重要，「反馈快的层多写、反馈慢的层少写」的原则才重要。</strong>
+        </div>
+      </div>
+
+      <!-- 二、单元测试 -->
+      <div class="section" id="s2">
+        <h2>二、单元测试：解决「逻辑正确性」</h2>
+        <h3>2.1 它到底在买什么保险</h3>
+        <ul>
+          <li><strong>边界与分支</strong>：空值、非法输入、极值、并发乱序——人脑记不全，用例表能记全。</li>
+          <li><strong>回归锁定</strong>：修过的 bug 补一条用例，防止未来改回去。<strong>测试是写给未来的自己的。</strong></li>
+          <li><strong>重构信心</strong>：有单测兜底，改内部实现敢下手——这是提高代码演进速度的基础设施。</li>
+          <li><strong>可执行文档</strong>：<code>parseMessage</code> 的用例就是协议文档，比 wiki 永不过期。</li>
+        </ul>
+
+        <div class="code-title">真实单元测试（我项目的 SSE 消息解析器）</div>
+        <pre class="code-block"><code class="language-javascript">import { parseMessage } from '../src/message-parser'
+
+describe('解析消息', () => {
+  it('可以解析思考事件', () => {
+    const result = parseMessage('{"type":"thinking","text":"让我想想..."}')
+    expect(result).toEqual({ type: 'thinking', text: '让我想想...' })
+  })
+  it('可以解析 [DONE] 结束标记', () => {
+    expect(parseMessage('[DONE]')).toEqual({ type: 'done' })
+  })
+  it('可以将纯文本当作内容事件', () => {
+    // 协议兼容：非 JSON 字段按内容兜底——边界写进用例，协议行为被锁死
+  })
+})</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>这个解析器是 SSE 协议的边界，输入是字符串流、输出是结构化事件——
+          典型的「单测最佳对象」：纯、快、边界多。<code>[DONE]</code> 哨兵、非 JSON 兜底这些
+          <strong>协议边角</strong>全用用例钉住，后面任何人改解析器都会被测试拦住。
+        </div>
+
+        <h3>2.2 单测的「不」：三件不该干的事</h3>
+        <div class="vs-grid">
+          <div class="vs-panel good">
+            <h4>该测</h4>
+            <ul>
+              <li><strong>公共接口的输入→输出</strong>（行为契约）。</li>
+              <li>边界、错误分支、协议兼容（旧格式还能解析）。</li>
+              <li>修 bug 时：先写复现用例再改代码（TDD 的最小应用）。</li>
+            </ul>
+          </div>
+          <div class="vs-panel bad">
+            <h4>不该测 / 测了就脆</h4>
+            <ul>
+              <li><strong>实现细节</strong>：内部私有函数、调用顺序、内部状态结构——一重构全红，测试变成负担。</li>
+              <li><strong>框架本身</strong>：Vue 的响应式、数组 map——那是框架的测试。</li>
+              <li><strong>一行断言十件事</strong>：一个用例一个行为，红了才知道是哪个契约破了。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout tip">
+          <strong class="tag">一句话</strong>
+          单元测试的对象是「<strong>可以脱离框架独立成立的逻辑</strong>」。写之前先问：
+          这段代码如果搬到 Node 裸跑还需要什么？依赖越多，它越不「单元」，越该考虑组件/集成层。
+        </div>
+      </div>
+
+      <!-- 三、组件测试 -->
+      <div class="section" id="s3">
+        <h2>三、组件测试：解决「交互契约」</h2>
+        <p>
+          组件测试的对象是「<strong>一个组件对外的可观察行为</strong>」：给定 props/slots/初始状态，
+          渲染出什么、用户操作后发出什么事件、DOM 怎么变。它处在单测与 E2E 之间的甜点区——
+          比单测真实（真的渲染、真的事件），比 E2E 快（jsdom 内跑，不启浏览器）。
+        </p>
+
+        <div class="code-title">真实组件测试（我项目的 AiButton，@vue/test-utils + vitest）</div>
+        <pre class="code-block"><code class="language-javascript">import { mount } from '@vue/test-utils'
+import AiButton from '../../src/primitives/ai-button/AiButton.vue'
+
+describe('AiButton', () => {
+  it('渲染按钮元素', () => {
+    const wrapper = mount(AiButton)
+    expect(wrapper.element.tagName.toLowerCase()).toBe('button')
+  })
+  it('点击时触发 click 事件', async () => {
+    const wrapper = mount(AiButton)
+    await wrapper.trigger('click')
+    expect(wrapper.emitted('click')!.length).toBe(1)
+  })
+  it('disabled 时不触发 click 事件', async () => {
+    const wrapper = mount(AiButton, { props: { disabled: true } })
+    await wrapper.trigger('click')
+    expect(wrapper.emitted('click')).toBeFalsy()
+  })
+  it('loading 状态时渲染 spinner', () => {
+    const wrapper = mount(AiButton, { props: { loading: true } })
+    expect(wrapper.find('.ai-btn__spinner').exists()).toBe(true)
+  })
+  it('渲染 slot 内容', () => {
+    const wrapper = mount(AiButton, { slots: { default: '确认' } })
+    expect(wrapper.text()).toContain('确认')
+  })
+})</code></pre>
+
+        <h3>3.1 组件测试的「契约清单」</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>契约维度</th>
+              <th>测什么</th>
+              <th>对应上面例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>渲染契约</strong></td>
+              <td>基础元素/结构是否成立（button 还是 a，关键 class）</td>
+              <td>渲染按钮元素、variant 类名</td>
+            </tr>
+            <tr>
+              <td><strong>交互契约</strong></td>
+              <td>用户操作 → 可观察结果（事件、DOM 变化）</td>
+              <td>点击触发 click、disabled 不触发</td>
+            </tr>
+            <tr>
+              <td><strong>状态契约</strong></td>
+              <td>loading/disabled/错误态的表现与限制</td>
+              <td>loading 显示 spinner 且拦截点击</td>
+            </tr>
+            <tr>
+              <td><strong>内容契约</strong></td>
+              <td>slots / 文本 / 可访问性名（aria-label）</td>
+              <td>渲染 slot 内容「确认」</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>3.2 测试哲学：Testing Library 口径</h3>
+        <ul>
+          <li><strong>以用户视角查询</strong>：优先 <code>getByText</code> / <code>getByRole</code>，少用 <code>.find('.ai-btn')</code>
+            扛 className——class 一改名测试全红，而用户从来不知道 class。</li>
+          <li><strong>测行为不测实现</strong>：断言「点了之后 toast 出现」，而不是「内部 state.step 变成 2」。</li>
+          <li><strong>快照测试要克制</strong>：snapshot 适合稳定的小结构（配置对象、图标），大 DOM 快照会变成「更新快照」仪式——那是假覆盖。</li>
+        </ul>
+        <div class="callout warn">
+          <strong class="tag">组件测试的边界</strong>
+          它测不了：真实布局/样式计算（jsdom 无布局引擎）、跨路由整页协作、真实网络时序、浏览器兼容。
+          这些是 E2E 和视觉回归的领地——别指望 mount 一次组件就覆盖「看起来对不对」。
+        </div>
+      </div>
+
+      <!-- 四、E2E -->
+      <div class="section" id="s4">
+        <h2>四、E2E 测试：解决「链路真实性」</h2>
+        <p>
+          E2E（端到端）在<strong>真实浏览器</strong>里驱动<strong>完整应用</strong>走用户旅程：
+          打开页面 → 登录 → 搜索 → 提交 → 看到结果。它回答的问题只有一个：
+          <strong>「用户用起来，这条关键路径是通的吗？」</strong>
+        </p>
+
+        <h3>4.1 它独有的保险（其他层买不到）</h3>
+        <ul>
+          <li><strong>集成缝</strong>：前端路由 ↔ 后端接口 ↔ 鉴权 ↔ 网关——单测组件各自绿、拼起来红的典型区域。</li>
+          <li><strong>真实环境差异</strong>：构建产物、环境变量、接口地址、CORS、Cookie——「本地是好的」专治现场。</li>
+          <li><strong>多模块协作</strong>：购物车→下单→支付状态流转，跨页面的状态与数据一致性。</li>
+          <li><strong>发布信心</strong>：上线前 smoke 一跑绿，才敢点部署——E2E 是「敢上线」的心理依据。</li>
+        </ul>
+
+        <h3>4.2 代价与反脆手法</h3>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>代价</th>
+              <th>表现</th>
+              <th>缓解</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>慢</strong></td>
+              <td>分钟级起步，全量套件半小时不罕见</td>
+              <td class="win">只测关键旅程（登录/主流程/付费路径）；并行执行（Playwright workers）</td>
+            </tr>
+            <tr>
+              <td><strong>脆</strong></td>
+              <td>等待时机、动画、异步竞态导致「偶发红」</td>
+              <td class="win">用自动等待的查询（getByRole）、避免 sleep、测试数据隔离</td>
+            </tr>
+            <tr>
+              <td><strong>贵</strong></td>
+              <td>要环境、要数据、要维护，失败排查慢</td>
+              <td>失败自动截图/trace/视频；E2E 失败先看产物再猜代码</td>
+            </tr>
+            <tr>
+              <td><strong>覆盖面幻觉</strong></td>
+              <td>以为 E2E 绿 = 质量好，其实边界分支全没走到</td>
+              <td>边界交给单测/组件测试——E2E 不追覆盖率数字</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="code-title">工具与现代姿势</div>
+        <pre class="code-block"><code class="language-text">Playwright（当前主流）  多浏览器、自动等待、trace 排障、并行 worker
+Cypress                 开发体验好、时间旅行调试；多标签/跨域历史包袱
+
+反脆三原则：
+1. 按「用户可见文本/角色」定位，不按易变的 CSS 选择器定位
+2. 测试数据独立可重置（每个 worker 一套账号/数据）
+3. 关键路径优先：登录 → 核心任务 → 付费/发布 之外的用例下放到组件层</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>E2E 的定位是「<strong>守门员不是主力前锋</strong>」——
+          一个 200 条用例的 E2E 套件不如「30 条关键旅程 + 扎实的组件测试」。
+          我会用 trace/失败录像把「偶发红」变成「可诊断」；接口层用稳定的 mock 或
+          测试环境固定数据，把「环境脆」从 E2E 里剥离出去。
+        </div>
+      </div>
+
+      <!-- 五、对照总表 -->
+      <div class="section" id="s5">
+        <h2>五、三层对照：一张表看清「分别解决什么」</h2>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>维度</th>
+              <th>单元测试</th>
+              <th>组件测试</th>
+              <th>E2E 测试</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>解决什么问题</strong></td>
+              <td class="win">逻辑正确性：边界、分支、协议解析</td>
+              <td class="win">交互契约：props/事件/状态行为</td>
+              <td class="win">链路真实性：集成缝、环境、用户旅程</td>
+            </tr>
+            <tr>
+              <td>被测对象</td>
+              <td>函数 / 模块 / 类</td>
+              <td>一个组件（或小型组件组合）</td>
+              <td>整个应用 / 关键业务流程</td>
+            </tr>
+            <tr>
+              <td>运行环境</td>
+              <td>Node（无 DOM 或极简）</td>
+              <td>jsdom / happy-dom + test-utils</td>
+              <td>真实浏览器（Chromium/WebKit/Firefox）</td>
+            </tr>
+            <tr>
+              <td>反馈速度</td>
+              <td class="win">毫秒级</td>
+              <td>秒级</td>
+              <td>分钟级</td>
+            </tr>
+            <tr>
+              <td>编写成本</td>
+              <td class="win">低</td>
+              <td>中</td>
+              <td>高（+ 环境与数据维护）</td>
+            </tr>
+            <tr>
+              <td>稳定程度</td>
+              <td class="win">极稳</td>
+              <td>稳（测行为则稳，测实现则脆）</td>
+              <td>最易偶发红，需要反脆设计</td>
+            </tr>
+            <tr>
+              <td>防的事故</td>
+              <td>算错、边界漏、回归</td>
+              <td>接口改坏、交互回归、状态机错</td>
+              <td>配置错、集成炸、上线路径不通</td>
+            </tr>
+            <tr>
+              <td>不该指望它</td>
+              <td>UI 长相、跨模块协作</td>
+              <td>真实布局、浏览器兼容、端到端时序</td>
+              <td>边界分支穷举、覆盖率数字</td>
+            </tr>
+            <tr>
+              <td>典型工具</td>
+              <td>vitest / jest</td>
+              <td class="win">@vue/test-utils、Testing Library、vitest</td>
+              <td>Playwright / Cypress</td>
+            </tr>
+            <tr>
+              <td>建议比例（奖杯形）</td>
+              <td>多（逻辑密集处）</td>
+              <td class="win">最多（UI 产品的性价比之王）</td>
+              <td>少而精（关键旅程）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 六、放哪层 -->
+      <div class="section" id="s6">
+        <h2>六、一条用例放哪层？决策表</h2>
+        <p>实战里最常问的不是「要不要测」，而是「<strong>这玩意儿该放哪层</strong>」。按被测对象的性质分诊：</p>
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>你想验证的东西</th>
+              <th>放哪层</th>
+              <th>例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>纯函数/解析器/算法的输入输出</td>
+              <td class="win">单元</td>
+              <td>parseMessage 解析 SSE 帧、format-stat-value 数值格式化、BEM 类名拼接</td>
+            </tr>
+            <tr>
+              <td>「给这个 prop，组件该渲染/发出什么」</td>
+              <td class="win">组件</td>
+              <td>AiButton disabled 不发 click、AiChart 收到数据后生成 option</td>
+            </tr>
+            <tr>
+              <td>多个组件 + 状态管理协同（页面级小组件）</td>
+              <td>组件（挂父组件）或集成测试</td>
+              <td>输入框 + 历史记录面板的组合行为</td>
+            </tr>
+            <tr>
+              <td>「用户登录后能不能走完下单」</td>
+              <td class="win">E2E</td>
+              <td>登录 → 选品 → 支付 → 订单列表出现</td>
+            </tr>
+            <tr>
+              <td>构建产物/环境变量/路由配置是否正确</td>
+              <td>E2E 或部署后 smoke</td>
+              <td>「生产包里 feature flag 生效」</td>
+            </tr>
+            <tr>
+              <td>视觉长相（间距、主题切换观感）</td>
+              <td>视觉回归（截图对比），不是 E2E 断言</td>
+              <td>主题切换后按钮对比度达标</td>
+            </tr>
+            <tr>
+              <td>修了一个线上 bug</td>
+              <td class="win">哪层能最薄地复现就在哪层（优先下放）</td>
+              <td>解析 bug → 单测；点击没反应 → 组件；整页白屏 → E2E</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <strong class="tag">决策口诀</strong>
+          「<strong>能单测不组件，能组件不 E2E；能 E2E 的只留关键路径。</strong>」
+          下放的标准是「这条断言是否需要真实浏览器/真实路由/真实接口」——不需要就往下沉。
+          每条 E2E 用例都该能回答：「它守的这个风险，为什么组件层守不住？」答不上来就下放。
+        </div>
+      </div>
+
+      <!-- 七、真实实践 -->
+      <div class="section" id="s7">
+        <h2>七、真实实践：vitest 体系与测试门禁</h2>
+        <p>我的组件库 monorepo 用 vitest 一套打穿单测与组件测试，E2E 交给关键旅程：</p>
+        <div class="code-title">工具栈与命令（真实 package.json）</div>
+        <pre class="code-block"><code class="language-json">{
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui --coverage",
+    "build": "pnpm test && vue-tsc --noEmit && vite build"
+  },
+  "devDependencies": {
+    "vitest": "4.1.10",
+    "@vue/test-utils": "^2.4.6",
+    "jsdom": "^29.0.2",
+    "@vitest/coverage-v8": "4.1.10"
+  }
+}</code></pre>
+
+        <table class="map-table">
+          <thead>
+            <tr>
+              <th>层</th>
+              <th>我项目的落点</th>
+              <th>例子（真实文件）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>单元</strong></td>
+              <td>协议解析、工具函数、composables 纯逻辑</td>
+              <td class="win"><code>ai-chat/__tests__/message-parser.test.ts</code>、<code>stream-reader.test.ts</code>、<code>format-stat-value.test.ts</code></td>
+            </tr>
+            <tr>
+              <td><strong>组件</strong></td>
+              <td>primitives / blocks / scenes 三级组件，mount + trigger + emitted</td>
+              <td class="win"><code>ui/__tests__/primitives/AiButton.test.ts</code>、<code>blocks/ai-chart-block.test.ts</code>、<code>scenes/ai-chat.test.ts</code></td>
+            </tr>
+            <tr>
+              <td><strong>协议/集成</strong></td>
+              <td>用 vitest 做跨包协议兼容验证（不启浏览器的「准 E2E」）</td>
+              <td><code>chat-vue/__tests__/protocol-compat-e2e.test.ts</code></td>
+            </tr>
+            <tr>
+              <td><strong>E2E</strong></td>
+              <td>示例应用关键旅程（ai-test-app 联调路径）</td>
+              <td>登录/AI 对话主流程（Playwright 类工具）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">门禁：测试不是可选项</div>
+        <pre class="code-block"><code class="language-text">① build = pnpm test && vue-tsc && vite build   —— 测试不过就构建失败，坏产物出不去
+② pre-commit 跑 pnpm test:core                —— 提交前核心包测试拦截（simple-git-hooks）
+③ CI 全量 vitest + coverage                   —— 覆盖率报告跟 MR 走
+④ 测试规范（GOLDEN_RULES）：公共 API 必须有单测；
+   测试放 __tests__/，命名 &lt;module&gt;.test.ts     —— 组织约定进契约文档</code></pre>
+        <div class="talk">
+          <strong>面试怎么讲：</strong>我们不是「为了覆盖率写测试」，而是<strong>把测试焊进交付链</strong>：
+          build 前置测试、pre-commit 拦核心包、CI 全量。分层策略上——
+          SSE 解析器这种协议边界用单测穷举；组件库每个 primitive/block 测「交互契约」
+          （点击、disabled、loading、slot）；跨包协议兼容用集成级用例守；
+          整页旅程交给示例应用的 E2E。<strong>每层各守各的风险，不越权也不漏守。</strong>
+        </div>
+
+        <div class="callout info">
+          <strong class="tag">覆盖率怎么看</strong>
+          覆盖率是「缺测地图」不是「质量 KPI」：100% 覆盖率也可以全是断言一行的假测试。
+          我看三个信号：① 新公共 API 的测试是否随代码一起进 MR（测试是交付的一部分）；
+          ② bug 修复是否带回归用例；③ 覆盖率骤降的模块是否被解释。<strong>行为契约的数量，比行覆盖的百分比诚实。</strong>
+        </div>
+      </div>
+
+      <!-- 八、追问链 -->
+      <div class="section" id="s8">
+        <h2>八、面试追问链</h2>
+
+        <details class="qa">
+          <summary>Q1 · 单元测试、组件测试、E2E 分别解决什么问题？（必考）</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：单元测试解决「逻辑对不对」——函数/模块的边界与分支，毫秒反馈，防算错与回归；
+            组件测试解决「交互契约对不对」——props/slots/事件与可观察行为，秒级反馈，防接口改坏；
+            E2E 解决「真实链路通不通」——真实浏览器里的用户旅程，分钟级反馈，防集成缝与环境问题。
+            一句话：单元买正确性、组件买契约、E2E 买真实感；越往上越贵，所以能下放就下放。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q2 · 测试金字塔和测试奖杯有什么区别？你站哪边？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：金字塔强调单测数量最多、E2E 最少；测试奖杯（Kent C. Dodds）针对现代前端，
+            认为 jsdom 让组件测试足够便宜，「组件层最厚」性价比最高。我实践偏奖杯：
+            协议/算法用单测锁死，UI 组件测行为契约，E2E 只守关键旅程。形状是表象，
+            内核原则一致——反馈快的层多写，反馈慢的层少写且只守底线。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q3 · 组件测试怎么写才不脆？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：三条。① 按用户视角查询（getByRole/getByText），少依赖 className；
+            ② 测可观察行为（DOM/事件），不测内部实现（state 结构、私有方法）；
+            ③ 一个用例一个契约。快照测试只用于稳定小结构，大 DOM 快照会退化成「一键更新」的假覆盖。
+            我们 AiButton 的用例就是契约清单：渲染、点击、disabled 拦截、loading 拦截、slot——
+            重构实现只要契约在，测试就不动。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q4 · E2E 又慢又脆，怎么管理？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：少而精 + 反脆设计。只测关键旅程（登录/主流程/付费），其余下放；
+            定位用用户可见文本而非易变选择器；测试数据隔离可重置；失败产出 trace/截图/视频保证可诊断；
+            并行执行摊薄时间。每条 E2E 都要能回答「为什么组件层守不住」——答不上来就下放。
+            E2E 偶发红要当事故修，不能习惯性重跑——「重跑就绿」是测试体系的癌。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q5 · 覆盖率多少合适？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：覆盖率是缺测地图不是 KPI。与其定「80% 行覆盖」，
+            不如定「公共 API 必须有用例、bug 修复必须带回归」这类行为规则——
+            我项目 GOLDEN_RULES 就是这么写的。看数字也看三件事：新 API 是否测试随行、
+            bugfix 是否带用例、骤降模块是否被解释。100% 覆盖率的假测试比 60% 的真测试危险。</p>
+          </div>
+        </details>
+
+        <details class="qa">
+          <summary>Q6 · 测试应该谁写？TDD 怎么看？</summary>
+          <div class="qa-body">
+            <p><strong>答</strong>：测试是交付的一部分，写功能的人写测试（谁生产谁负责），
+            review 里测试和实现同权——没有测试的 MR 我们会打回。TDD 我按场景用：
+            协议解析、算法这类「输入输出明确」的地方，先写用例很舒服（也是最好的边界清单）；
+            探索型 UI 交互先实现再补契约测试更顺。不搞形式主义 TDD，但修 bug 必须「先复现再修」。</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- 九、速记卡 -->
+      <div class="section" id="s9">
+        <h2>九、一页速记卡</h2>
+        <div class="memo">
+          <ol>
+            <li><strong>一句话</strong>：单元买「正确性」，组件买「契约」，E2E 买「真实感」——越往上越贵越慢越接近用户抱怨。</li>
+            <li><strong>单元</strong>：函数/模块的输入→输出；防边界遗漏与回归；不测实现细节、不测框架本身。</li>
+            <li><strong>组件</strong>：props/slots/事件 → 可观察行为；测试四契约（渲染/交互/状态/内容）；按用户视角查询，测行为不测 class。</li>
+            <li><strong>E2E</strong>：真实浏览器里的用户旅程；防集成缝/配置/跨模块；少而精，反脆三原则（用户定位、数据隔离、失败可诊断）。</li>
+            <li><strong>形状</strong>：金字塔（单测最多）vs 测试奖杯（组件层最厚）；原则只有一个——快层多写、慢层守底线。</li>
+            <li><strong>决策口诀</strong>：能单测不组件，能组件不 E2E；E2E 每条用例要能回答「为什么下放不了」。</li>
+            <li><strong>快照</strong>：只适合稳定小结构；大 DOM 快照 = 假覆盖。</li>
+            <li><strong>覆盖率</strong>：缺测地图不是 KPI；公共 API 有用例、bug 修带回归，比百分比诚实。</li>
+            <li><strong>真实工程</strong>：vitest + @vue/test-utils + jsdom 打穿单测/组件层；build = test &amp;&amp; tsc &amp;&amp; build；pre-commit 拦 test:core。</li>
+            <li><strong>金句</strong>：「E2E 是守门员不是前锋——它保证球进不了门，但进球靠的是前场（单测/组件）的日常训练。」</li>
+          </ol>
+        </div>
+        <div class="callout tip" style="margin-bottom: 0">
+          <strong class="tag">收尾金句</strong>
+          「测试分层不是仪式，是成本会计：用毫秒级的检查去买密度，用分钟级的检查去买信心——
+          密度靠单测和组件测试，信心靠 E2E；账要算在风险上，不是行数上。」
+        </div>
+      </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+      <span class="close">&times;</span>
+      <div class="modal-content" id="modalImage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <script>
+      document
+        .querySelectorAll("pre.code-block code")
+        .forEach(function (el) {
+          const hasLang = Array.from(el.classList).some(function (c) {
+            return c.indexOf("language-") === 0;
+          });
+          if (!hasLang) el.classList.add("language-javascript");
+        });
+      if (window.hljs) hljs.highlightAll();
+
+      const modal = document.getElementById("imageModal");
+      const modalImg = document.getElementById("modalImage");
+      const closeBtn = document.getElementsByClassName("close")[0];
+      document.addEventListener("click", function (e) {
+        const container = e.target.closest(".diagram-container");
+        if (container) {
+          const svg = container.querySelector("svg");
+          if (svg) {
+            modal.style.display = "flex";
+            modalImg.innerHTML = "";
+            const clone = svg.cloneNode(true);
+            clone.removeAttribute("style");
+            clone.removeAttribute("width");
+            clone.removeAttribute("height");
+            clone.style.width = "100%";
+            clone.style.height = "auto";
+            modalImg.appendChild(clone);
+            document.body.style.overflow = "hidden";
+          }
+        }
+      });
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      };
+      modal.onclick = function (e) {
+        if (e.target === modal) {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      };
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.style.display === "flex") {
+          modal.style.display = "none";
+          document.body.style.overflow = "auto";
+        }
+      });
+    </script>
+  </body>
+</html>
